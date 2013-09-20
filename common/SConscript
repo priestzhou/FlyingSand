@@ -1,0 +1,56 @@
+Import('env')
+
+env.install(env.compileAndJar('testing.jar', 'testing', 
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/argparser.jar'),
+    ], 
+    standalone=True, manifest={'Main-Class': 'testing.main'}))
+env.install(env.compileAndJar('runtests.jar', 'runtests',
+    libs=[env['CLOJURE'],
+          env.File('$EXTLIB/clansi-1.2.0-SNAPSHOT.jar'),
+          env.File('$BUILD_DIR/utilities.jar'),
+          env.File('$BUILD_DIR/argparser.jar'),
+    ],
+    standalone=True, manifest={'Main-Class': 'runtests.main'}))
+env.install(env.compileAndJar('utilities.jar', 'utilities',
+    libs=[env['CLOJURE'],
+        env.File('$EXTLIB/ring-1.1.8.jar'),
+        env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
+    ],
+    attempt=2))
+env.install(env.compileAndJar('argparser.jar', 'argparser',
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/utilities.jar'),
+    ]))
+env.install(env.compileAndJar('common_unittest.jar', 'unittest',
+    libs=[env['CLOJURE'], 
+        env.File('$BUILD_DIR/testing.jar'),
+        env.File('$BUILD_DIR/utilities.jar'),
+    ],
+    standalone=True, manifest={'Main-Class': 'unittest.main'}))
+env.install(env.compileAndJar('common_smoketest.jar', 'smoketest',
+    libs=[env['CLOJURE'], 
+        env.File('$BUILD_DIR/testing.jar'),
+        env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/zktools.jar'),
+        env.File('$BUILD_DIR/kfktools.jar'),
+        env.File('$EXTLIB/ring-1.1.8.jar'),
+        env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
+    ],
+    install={env.File('smoketest/utilities/open-file.txt'): "@/resources"},
+    standalone=True, manifest={'Main-Class': 'smoketest.main'}))
+env.install(env.compileAndJar('zktools.jar', 'zktools',
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/utilities.jar')
+    ]))
+env.install(env.compileAndJar('kfktools.jar', 'kfktools',
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$EXTLIB/kafka-client-0.8.0-beta1.jar'),
+    ],
+    attempt=2))
+env.install(env.compileAndJar('logging.jar', 'logging',
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$EXTLIB/slf4j-api-1.7.5.jar'),
+    ]))
