@@ -510,7 +510,10 @@ def compileJs(env, dstJs, srcDir, **kwargs):
         suffix='.jar')})
     env._compileJs(target=dstJs, source=srcDir)
     for f in env.walkDir(srcDir):
-        env.Depends(dstJs, f)
+        if f.abspath.endswith('.cljs') or f.abspath.endswith('.clj') or f.abspath.endswith('.js'):
+            env.Depends(dstJs, f)
+        else:
+            env.Ignore(dstJs, f)
     for f in libs:
         env.Depends(dstJs, f)
 
