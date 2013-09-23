@@ -1,1 +1,19 @@
 Import('env')
+
+env.install(env.compileAndJar('agent.jar', 'agent', 
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/argparser.jar'),
+        env.File('$EXTLIB/ring-1.1.8.jar'),
+        env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
+        env.File('$EXTLIB/compojure-1.1.5.jar'),
+        env.File('$EXTLIB/data.json-0.2.2.jar'),
+        env.File('$BUILD_DIR/logging.jar'),
+        env.File('$BUILD_DIR/utilities.jar'),                  
+    ], 
+    standalone=True, manifest={'Main-Class': 'agent.main'}))
+
+env.install(env.compileAndJar('monitor.jar', 'monitor', 
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/argparser.jar'),
+    ], 
+    standalone=True, manifest={'Main-Class': 'monitor.main'}))
