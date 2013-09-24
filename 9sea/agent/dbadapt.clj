@@ -17,9 +17,8 @@
 
 (defn- get-schema-db [dbset]
     (let [db (:db dbset)
-            dbname ((:get-dbname *db-func-map*) db) 
+            dbname ((:get-dbname *db-func-map*) db)
         ]
-
         dbname
     )
 )

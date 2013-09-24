@@ -18,7 +18,13 @@
         (try
             (jdbc/with-connection mysqldb
                 (jdbc/with-query-results res [sql]
-                    (doall res)
+                    (->>
+                        res
+                        first
+                        vals
+                        first
+                        doall
+                    )
                 )
             )
             (catch Exception e
