@@ -35,6 +35,30 @@
     )
 )
 
+(defn- get-table-schema [db tn]
+    (let [mysqldb (get-db db)
+            sql (str "desc " tn " ;")
+        ]
+        (try
+            (jdbc/with-connection mysqldb
+                (jdbc/with-query-results res [sql]
+                    (->>
+                        res
+                        doall
+                    )
+                )
+            )
+            (catch Exception e
+                (println e)
+                (println (.printStackTrace e) )
+            )
+        )
+    )
+)
+
 (def mysql-map 
-    {:get-dbname get-dbname}
+    {
+        :get-dbname get-dbname
+        :get-table-schema get-table-schema
+    }
 )
