@@ -15,18 +15,28 @@
 (defn app [opts]
     (handler/site
         (defroutes app-routes
-            (GET "/test" {params :params} 
-                (format "You requested with query %s" params)
-            )
-            (POST "/query/create" {params :params}
-                {:status 202
+            (POST "/login" {params :params}
+                (prn params)
+                {:status 201
                     :headers {
-                        "Access-Control-Allow-Origin" "*"
-                        "content-type" "application/json"
+                        "content-type" "text/html"
                     }
+                    :cookies {"email" (:email params)}
+                    :body "
+<!doctype html>
+<html>
+<head>
+<meta http-equiv='refresh' content='1;url=/hello'>
+</head>
+</html>
+"
                 }
             )
-            (route/files "/" {:root (:dir opts)})
+            (GET "/hello" {:keys [cookies]} 
+                (prn cookies)
+                (format "Hello, %s" (-> cookies (get "email") (:value)))
+            )
+            (route/files "/" {:root (:dir opts) :allow-symlinks? true})
             (route/not-found "Not Found")
         )
     )
