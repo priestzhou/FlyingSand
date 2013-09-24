@@ -9,10 +9,14 @@
         [compojure.core :as cp]        
         [compojure.handler :as handler]
         [compojure.route :as route]
-        [clojure.data.json :as js]        
+        [clojure.data.json :as js]
+        [agent.dbadapt :as dba]
+        [agent.mysqladapt :as mysql]        
     )
     (:gen-class)
 )
+
+[]
 
 (def ^:private dbatom
     (atom {})
@@ -20,13 +24,7 @@
 
 (cp/defroutes app-routes
     (cp/GET "/test" {params :params} 
-        (format "You requested with query %s" params)
-    )
-    (cp/POST "/query/create" {params :params}
-        "sd"
-    )
-    (cp/GET "/testlog/first" []
-        "get-log-example"
+        (dba/get-schemas @dbatom)
     )
     (route/not-found "Not Found")
 )
@@ -70,23 +68,26 @@
             (println (arg/default-doc arg-spec))
             (System/exit 0)            
         )
+        (println "t1")
         (let [dbsetting (->>
                             opts-with-default
                             :dbsetting
                             first
                             slurp
-                            js/read-str
+                            (#(js/read-str % :key-fn keyword))
                 )
+                t1 (println "==" dbsetting)
             ]
+            (println dbsetting)
             (reset! dbatom dbsetting)
-
         )
+        (println "t2")
         (rj/run-jetty #'app 
             {
                 :port 
                 (read-string (first (:webport opts-with-default))) 
                 :join? false
             }
-        )        
+        )    
     )
 )
