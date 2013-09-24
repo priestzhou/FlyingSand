@@ -6,19 +6,26 @@
 )
 
 (defn- get-db [db]
-    (println  " get-db sf")
-    (assoc db :subprotocol "mysql")
+    (assoc db :subprotocol "mysql" :classname "com.mysql.jdbc.Driver")
 )
 
 (defn- get-dbname [db]
-    (println "dbname ")
     (let [mysqldb (get-db db)
             sql (str "select database();")
-            t1 (println  " dbname = " sql )
         ]
-        (println "mysql dbname")
-        (jdbc/query mysqldb sql)
-        (println "mysql dbname2")
+        ;(jdbc/query mysqldb sql)
+        ;(jdbc/insert-rows mysqldb :test1 [1 "Tim"] [2 "Tom"])
+        (try
+            (jdbc/with-connection mysqldb
+                (jdbc/with-query-results res [sql]
+                    (doall res)
+                )
+            )
+            (catch Exception e
+                (println e)
+                (println (.printStackTrace e) )
+            )
+        )
     )
 )
 

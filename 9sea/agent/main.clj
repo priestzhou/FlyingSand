@@ -68,7 +68,6 @@
             (println (arg/default-doc arg-spec))
             (System/exit 0)            
         )
-        (println "t1")
         (let [dbsetting (->>
                             opts-with-default
                             :dbsetting
@@ -76,12 +75,9 @@
                             slurp
                             (#(js/read-str % :key-fn keyword))
                 )
-                t1 (println "==" dbsetting)
             ]
-            (println dbsetting)
             (reset! dbatom dbsetting)
         )
-        (println "t2")
         (rj/run-jetty #'app 
             {
                 :port 

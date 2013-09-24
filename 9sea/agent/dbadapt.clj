@@ -17,17 +17,15 @@
 
 (defn- get-schema-db [dbset]
     (let [db (:db dbset)
-            t1 (println "get-schema-db " db)
-            dbname ((:get-dbname *db-func-map*) db)       
-            t3 (println dbname)
+            dbname ((:get-dbname *db-func-map*) db) 
         ]
+
         dbname
     )
 )
 
 (defn get-schemas [dbsetting]
     (let [dblist (:database dbsetting)
-            t1 (println "get-schemas 1" dblist)
             dbList (map 
                 (fn [db]
                     {:db 
@@ -42,7 +40,6 @@
                 )
                 dblist
             )
-            t2 (println "get-schemas 2" dbList)
         ]
         (map get-schema-db dbList)
     )
