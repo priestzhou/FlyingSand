@@ -20,8 +20,11 @@
         (println "require -d to specify directory")
         (System/exit 1)
     )
-    (let [port (:port opts)]
-        (assoc opts :port (read-string (first port)))
+    (let [
+        port (first (:port opts))
+        dir (first (:dir opts))
+        ]
+        (assoc opts :port (read-string port) :dir dir)
     )
 )
 
