@@ -1,0 +1,17 @@
+Import('env')
+
+env.install(env.compileAndJar('jstesting.jar', 'testing',
+        libs=[env['CLOJURE']],
+    ))
+env.install(env.compileAndJar('jsutilities.jar', 'utilities',
+        libs=[env['CLOJURE']],
+    ))
+
+env.install(env.compileJs('front_unittest.js', 'unittest',
+    libs=[env.File('$BUILD_DIR/jsutilities.jar'),
+    ],
+    options={":optimizations": ":simple", ":pretty-print": True,
+        ":externs": ["\"%s\"" % (env.File('resources/js/goog.extern.js').abspath),
+        ],
+    }
+))
