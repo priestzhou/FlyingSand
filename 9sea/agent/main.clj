@@ -11,7 +11,8 @@
         [compojure.route :as route]
         [clojure.data.json :as js]
         [agent.dbadapt :as dba]
-        [agent.mysqladapt :as mysql]        
+        [agent.mysqladapt :as mysql]
+        [monitor.tools :as tool]        
     )
     (:gen-class)
 )
@@ -84,6 +85,12 @@
                 (read-string (first (:webport opts-with-default))) 
                 :join? false
             }
+        )
+        (tool/check 
+            "monitor.main"  
+            " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
+            10000
         )    
     )
 )
+;" java -cp  .:monitor.jar monitor.mian "

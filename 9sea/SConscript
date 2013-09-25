@@ -10,12 +10,13 @@ env.install(env.compileAndJar('agent.jar', 'agent',
         env.File('$EXTLIB/java.jdbc-0.3.0-alpha5.jar'),
         env.File('$EXTLIB/mysql-connector-java-5.1.26-bin.jar'),
         env.File('$BUILD_DIR/logging.jar'),
-        env.File('$BUILD_DIR/utilities.jar'),                  
+        env.File('$BUILD_DIR/utilities.jar'),   
+        env.File('$BUILD_DIR/monitor.jar')               
     ], 
     standalone=True, manifest={'Main-Class': 'agent.main'}))
 
 env.install(env.compileAndJar('monitor.jar', 'monitor', 
     libs=[env['CLOJURE'],
-        env.File('$BUILD_DIR/argparser.jar'),
+        env.File('$BUILD_DIR/utilities.jar'),
     ], 
     standalone=True, manifest={'Main-Class': 'monitor.main'}))
