@@ -49,3 +49,35 @@
         (map get-schema-db dbList)
     )
 )
+
+(defn- get-db-table-list' [dbset]
+    (let [db (:db dbset)
+            dbname ((:get-dbname *db-func-map*) db)
+            tb (:tables dbset)
+            tbl (map #(hash-map % db ) tb)
+            tbmap (reduce merge {} tbl )
+        ]
+        { dbname tbmap }
+    )
+)
+
+(defn get-db-table-list [dbsetting]
+    (let [dblist (:database dbsetting)
+            dbList (map 
+                (fn [db]
+                    {:db 
+                        (get-sql 
+                            (:dbconnstr db) 
+                            (:dbuser db) 
+                            (:dbpassword db)
+                        ) 
+                        :tables
+                        (map  :tablename  (:tables db)) 
+                    }
+                )
+                dblist
+            )
+        ]
+        (reduce merge {} (map get-db-table-list' dbList))
+    )
+)

@@ -86,6 +86,7 @@
                 :join? false
             }
         )
+        (println (get-in (dba/get-db-table-list @dbatom) ["test" "test1"])  )
         (tool/check 
             "monitor.main"  
             " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
