@@ -48,10 +48,6 @@
     )
 )
 
-(defn iterable->lazy-seq [^Iterable it]
-    (iterator->lazy-seq! (.iterator it))
-)
-
 (defn- array-lazy-seq' [arr i]
     (if (= i (alength arr))
         []
@@ -73,3 +69,40 @@
 (defn str->bytes ^bytes [^String s]
     (.getBytes s StandardCharsets/UTF_8)
 )
+
+(defn low-byte->char [b]
+{
+    :pre [(<= 0 b 15)]
+}
+    (cond
+        (<= 0 b 9) (char (+ b 48))
+        :else (char (+ b 87))
+    )
+)
+
+(defn byte->digits! [^StringBuilder sb b]
+{
+    :pre [(<= -128 b 127)]
+}
+    (if-not (neg? b)
+        (do
+            (.append sb (low-byte->char (quot b 16)))
+            (.append sb (low-byte->char (rem b 16)))
+        )
+        (let [b (+ b 256)]
+            (.append sb (low-byte->char (quot b 16)))
+            (.append sb (low-byte->char (rem b 16)))
+        )
+    )
+)
+
+(defn hexdigits [^bytes bytes]
+    (let [sb (StringBuilder. (* 2 (alength bytes)))]
+        (doseq [b (array->lazy-seq bytes)]
+            (byte->digits! sb b)
+        )
+        (str sb)
+    )
+)
+
+
