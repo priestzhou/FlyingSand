@@ -236,6 +236,59 @@
     )
 )
 
+(defn render-saved-queries [response]
+    (format "
+<table>
+<thead><tr><th align=\"left\">name</th><th align=\"left\">query</th></tr></thead>
+<tbody>%s</tbody>
+</table>
+"
+        (str/join ""
+            (for [[k v] response]
+                (format "<tr><td align=\"left\">%s</td><td align=\"left\">%s</td></tr>" k v)
+            )
+        )
+    )
+)
+
+(defn fetch-saved-queries []
+    (ajax/GET "/sql/GetSavedQueries"
+        {
+            :handler (fn [response]
+                (let [html (render-saved-queries response)]
+                    (-> "saved_queries"
+                        (dom/by-id)
+                        (dom/set-html! html)
+                    )
+                )
+            )
+        }
+    )
+)
+
+(defn save-sql []
+    (let [
+        qname (-> "query_name" (dom/by-id) (dom/value) (str/trim))
+        sql (-> "sql-input" (dom/by-id) (dom/value) (str/trim))
+        ]
+        (ajax/POST 
+            (ajax/uri-with-params "/sql/AddQuery" {
+                :name qname
+                :query sql
+            }) 
+            {
+                :response-format :raw
+                :handler (fn [response]
+                    (fetch-saved-queries)
+                )
+                :error-handler (fn [{:keys [response]}]
+                    (js/alert (str "duplicated name:" response))
+                )
+            }
+        )
+    )
+)
+
 (defn ^:export on-load []
     (-> "submit-sql"
         (dom/by-id)
@@ -245,5 +298,10 @@
         (dom/by-id)
         (dom/set-value! "")
     )
+    (-> "save"
+        (dom/by-id)
+        (evt/listen! :click save-sql)
+    )
     (fetch-meta)
+    (fetch-saved-queries)
 )

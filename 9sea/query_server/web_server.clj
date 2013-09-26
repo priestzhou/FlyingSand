@@ -202,6 +202,46 @@
     }
 )
 
+(def saved-queries (ref {}))
+
+(defn add-query [params cookies]
+    (let [
+        qname (:name params)
+        sql (:query params)
+        r (dosync
+            (if (contains? @saved-queries qname)
+                qname
+                (do
+                    (alter saved-queries assoc qname sql)
+                    nil
+                )
+            )
+        )
+        ]
+        (prn qname sql r)
+        (if r
+            {
+                :status 400
+                :headers {"content-type" "text/plain"}
+                :body r
+            }
+            {
+                :status 201
+                :headers {"content-type" "text/plain"}
+                :body "xx"
+            }
+        )
+    )
+)
+
+(defn get-saved-queries []
+    {
+        :status 200
+        :headers {"content-type" "application/json"}
+        :body (json/write-str @saved-queries)
+    }
+)
+
 (defn app [opts]
     (handler/site
         (defroutes app-routes
@@ -230,11 +270,17 @@
             (POST "/sql/SubmitQuery" {:keys [cookies params]}
                 (submit-query params cookies)
             )
+            (POST "/sql/AddQuery" {:keys [cookies params]}
+                (add-query params cookies)
+            )
             (GET "/sql/GetResult" {:keys [params]}
                 (get-result params)
             )
-            (GET "/sql/GetMeta" {:keys [params]}
+            (GET "/sql/GetMeta" {:keys [params cookies]}
                 (get-meta)
+            )
+            (GET "/sql/GetSavedQueries" {:keys [cookies]}
+                (get-saved-queries)
             )
             (GET "/sql" {:keys [cookies]}
                 (if (and cookies (get cookies "user_id"))
