@@ -282,7 +282,37 @@
                     (fetch-saved-queries)
                 )
                 :error-handler (fn [{:keys [response]}]
-                    (js/alert (str "duplicated name:" response))
+                    (js/alert (str "duplicated name: " response))
+                )
+            }
+        )
+    )
+)
+
+(defn delete-sql []
+    (let [
+        qname (-> "query_name" (dom/by-id) (dom/value) (str/trim))
+        sql (-> "sql-input" (dom/by-id) (dom/value) (str/trim))
+        ]
+        (ajax/ajax-request 
+            (ajax/uri-with-params "/sql/DeleteSavedQuery" {
+                :name qname
+                :query sql
+            }) 
+            "DELETE"
+            {
+                :handler (fn [response]
+                    (fetch-saved-queries)
+                )
+                :error-handler (fn [{:keys [response]}]
+                    (dom/log response)
+                    (case (response "error")
+                        "name"
+                            (js/alert (str "inexistent name: " (response "message")))
+                        "query"
+                            (js/alert (str "unmatch query: " (response "message")))
+                    )
+                    (fetch-saved-queries)
                 )
             }
         )
@@ -298,9 +328,13 @@
         (dom/by-id)
         (dom/set-value! "")
     )
-    (-> "save"
+    (-> "add"
         (dom/by-id)
         (evt/listen! :click save-sql)
+    )
+    (-> "delete"
+        (dom/by-id)
+        (evt/listen! :click delete-sql)
     )
     (fetch-meta)
     (fetch-saved-queries)

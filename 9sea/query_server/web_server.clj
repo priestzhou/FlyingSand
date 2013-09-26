@@ -8,7 +8,7 @@
         [utilities.shutil :as sh]
     )
     (:use
-        [compojure.core :only (defroutes GET PUT POST ANY)]
+        [compojure.core :only (defroutes GET PUT POST DELETE)]
         [ring.adapter.jetty :only (run-jetty)]
         [korma.db :only (defdb sqlite3)]
         [logging.core :only [defloggers]]
@@ -204,6 +204,14 @@
 
 (def saved-queries (ref {}))
 
+(defn get-saved-queries []
+    {
+        :status 200
+        :headers {"content-type" "application/json"}
+        :body (json/write-str @saved-queries)
+    }
+)
+
 (defn add-query [params cookies]
     (let [
         qname (:name params)
@@ -228,18 +236,43 @@
             {
                 :status 201
                 :headers {"content-type" "text/plain"}
-                :body "xx"
+                :body "OK"
             }
         )
     )
 )
 
-(defn get-saved-queries []
-    {
-        :status 200
-        :headers {"content-type" "application/json"}
-        :body (json/write-str @saved-queries)
-    }
+(defn delete-saved-query [params cookies]
+    (let [
+        qname (:name params)
+        sql (:query params)
+        r (dosync
+            (if-let [q (@saved-queries qname)]
+                (if (= q sql)
+                    (do
+                        (alter saved-queries dissoc qname)
+                        nil
+                    )
+                    {:error "query" :message sql}
+                )
+                {:error "name" :message qname}
+            )
+        )
+        ]
+        (prn qname sql r)
+        (if r
+            {
+                :status 404
+                :headers {"content-type" "application/json"}
+                :body (json/write-str r)
+            }
+            {
+                :status 200
+                :headers {"content-type" "application/json"}
+                :body (json/write-str {})
+            }
+        )
+    )
 )
 
 (defn app [opts]
@@ -281,6 +314,9 @@
             )
             (GET "/sql/GetSavedQueries" {:keys [cookies]}
                 (get-saved-queries)
+            )
+            (DELETE "/sql/DeleteSavedQuery" {:keys [params cookies]}
+                (delete-saved-query params cookies)
             )
             (GET "/sql" {:keys [cookies]}
                 (if (and cookies (get cookies "user_id"))
