@@ -23,6 +23,10 @@
     (atom {})
 )
 
+(def db-table-list 
+    (memoize dba/get-db-table-list )
+)
+
 (cp/defroutes app-routes
     (cp/GET "/test" {params :params} 
         (dba/get-schemas @dbatom)
@@ -86,12 +90,14 @@
                 :join? false
             }
         )
-        (println (get-in (dba/get-db-table-list @dbatom) ["test" "test1"])  )
+        (println  (db-table-list @dbatom)   )
+        (println (get-in (db-table-list @dbatom) ["test" "test1"])  )
+        (println (get-in (db-table-list @dbatom) ["test" "test"])  )
         (tool/check 
             "monitor.main"  
             " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
             10000
-        )    
+        )
     )
 )
 ;" java -cp  .:monitor.jar monitor.mian "

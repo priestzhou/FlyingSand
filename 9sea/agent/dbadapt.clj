@@ -62,6 +62,7 @@
 )
 
 (defn get-db-table-list [dbsetting]
+    (println "run once!")
     (let [dblist (:database dbsetting)
             dbList (map 
                 (fn [db]

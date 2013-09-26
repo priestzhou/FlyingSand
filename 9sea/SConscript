@@ -20,3 +20,22 @@ env.install(env.compileAndJar('monitor.jar', 'monitor',
         env.File('$BUILD_DIR/utilities.jar'),
     ], 
     standalone=True, manifest={'Main-Class': 'monitor.main'}))
+
+env.install(env.compileAndJar('9sea_unittest.jar', 'unittest',
+    libs=[env['CLOJURE'], 
+        env.File('$EXTLIB/tools.cli-0.2.2.jar'),
+        env.File('$BUILD_DIR/testing.jar'),
+        env.File('$BUILD_DIR/agent.jar'),
+        ],
+
+    standalone=True, manifest={'Main-Class': 'unittest.main'}))
+env.install(env.compileAndJar('9sea_smoketest.jar', 'smoketest',
+    libs=[env['CLOJURE'], 
+        env.File('$EXTLIB/tools.cli-0.2.2.jar'),
+        env.File('$BUILD_DIR/testing.jar'),
+        env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/monitor.jar'),
+        env.File('$EXTLIB/data.json-0.2.2.jar'),
+        
+    ],
+    standalone=True, manifest={'Main-Class': 'smoketest.main'}))

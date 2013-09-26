@@ -7,7 +7,7 @@
     )
 )
 
-(defn- check-process [tag]
+(defn check-process [tag]
     (let [
             cmd  (into-array 
                     ["/bin/sh" "-c" 
@@ -28,25 +28,22 @@
     )
 )
 
-(defn- restart-process [bash]
+ (defn now [] (new java.util.Date))
+
+(defn restart-process [bash]
     (let [
             cmd  (into-array 
                     ["/bin/sh" "-c" 
-                        bash 
+                        bash ";"
                     ]
                 )
             run (Runtime/getRuntime)
             ;p (apply (partial sh/execute " java ") bash)
+            t1 (println "t1" (now) )
             p (.exec run cmd)
-            out (->>
-                    (.getInputStream p)
-                    BufferedInputStream.
-                    InputStreamReader.
-                    BufferedReader.
-                    .readLine
-                )
+            t2 (println "t2" (now) )
         ]
-        out
+        p
     )
 )
 
