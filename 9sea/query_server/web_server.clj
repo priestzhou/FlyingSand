@@ -60,7 +60,6 @@
 (def results (ref {}))
 
 (defn progress [qid result total-stages current-stage]
-    (prn current-stage total-stages)
     (if (< current-stage total-stages)
         (do
             (dosync
@@ -112,23 +111,19 @@
         (try
             (let [result (db/exec-raw [query] :results)]
                 (future (progress qid (reformat-result result) progress-stages 0))
-                {
-                    :status 201
-                    :headers {
-                        "content-type" "application/json"
-                    }
-                    :body (json/write-str {:id qid})
-                }
             )
         (catch SQLException ex
-            {
-                :status 400
-                :headers {
-                    "content-type" "application/json"
-                }
-                :body (json/write-str "invalid sql query")
-            }
+            (dosync
+                (alter results update-in [qid] assoc :status "failed" :error "invalid sql")
+            )
         ))
+        {
+            :status 201
+            :headers {
+                "content-type" "application/json"
+            }
+            :body (json/write-str {:id qid})
+        }
     )
 )
 

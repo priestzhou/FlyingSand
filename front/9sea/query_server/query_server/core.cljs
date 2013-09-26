@@ -7,8 +7,8 @@
     )
 )
 
-(defn on-error [{:keys [status status-text]}]
-    (dom/log (format "fetch updates error: %d %s %s" status status-text))
+(defn on-error [{:keys [status response]}]
+    (dom/log (format "fetch updates error: %d %s" status response))
 )
 
 (defn validate-sql [sql]
@@ -55,7 +55,7 @@
     )
 )
 
-(defn process-result [response]
+(defn render-result [response]
     (when-let [result (response "result")]
         (let [html (format-table result)]
             (-> "result_tbl"
@@ -77,6 +77,13 @@
             (dom/set-attrs! p {:value (first progress) :max (second progress)})
         )
     )
+    (when-let [error-msg (response "error")]
+        (let [
+            l (dom/by-id "log")
+            ]
+            (dom/set-value! l error-msg)
+        )
+    )
     (when-let [status (response "status")]
         (= status "running")
     )
@@ -90,7 +97,7 @@
         }) 
         {
             :handler (fn [response]
-                (if (process-result response)
+                (if (render-result response)
                     (js/setTimeout (partial fetch-result qid) 1000)
                 )
             )
