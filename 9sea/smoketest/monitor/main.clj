@@ -13,37 +13,50 @@
 (def mtag "\" monitor.main\"")
 (def mbash " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & " )
 
-(suite "monitor and agent start each other"
-    (:fact agent_start_monitor
-        (do
-            (println (mt/check-process mtag))
-            (println (nil? (mt/check-process mtag)))               
-            (assert
-                (nil? (mt/check-process mtag))
-            )
-            (assert
-                (nil? (mt/check-process atag))
-            )            
-            (mt/restart-process mbash)
-            (assert
-                (not (nil? (mt/check-process mtag)))
-            )
-            (Thread/sleep 40000)
-            (println (mt/check-process atag))
-            (println (nil? (mt/check-process atag)))            
-            (assert
-                (not (nil? (mt/check-process atag)))
-            )            
-            (println "test end")
+
+(defn- killone [tag]
+    (mt/restart-process 
+        (str 
+            "ps -ef |grep -v grep |grep " 
+            tag 
+            "| awk '{print $2}' | xargs  kill -9 "
         )
-        :is
-        nil
     )
 )
 
+(defn- kill_all []
+    (killone atag)
+    (killone mtag)
+)
+
 (suite "monitor and agent start each other"
+    (:fact agent_start_monitor
+        (do
+            (kill_all)   
+            (Thread/sleep 2000)
+            (assert
+                (nil? (mt/check-process mtag))
+            )
+            (assert
+                (nil? (mt/check-process atag))
+            )            
+            (mt/restart-process abash)
+            (assert
+                (not (nil? (mt/check-process atag)))
+            )
+            (Thread/sleep 20000)          
+            (assert
+                (not (nil? (mt/check-process mtag)))
+            )            
+            (println "test end")
+        )
+        :is
+        nil
+    )
     (:fact monitor_start_agent
         (do
+            (kill_all)
+            (Thread/sleep 2000)          
             (assert
                 (nil? (mt/check-process mtag))
             )            
@@ -54,7 +67,7 @@
             (assert
                 (not (nil? (mt/check-process mtag)))
             )
-            (Thread/sleep 15000)
+            (Thread/sleep 20000)
             (assert
                 (not (nil? (mt/check-process atag)))
             )            
@@ -63,4 +76,63 @@
         :is
         nil
     )
+    (:fact restart_muti_times
+        (do
+            (kill_all)
+            (Thread/sleep 2000)          
+            (assert
+                (nil? (mt/check-process mtag))
+            )            
+            (assert
+                (nil? (mt/check-process atag))
+            )
+            (mt/restart-process mbash)
+            (assert
+                (not (nil? (mt/check-process mtag)))
+            )
+            (Thread/sleep 20000)
+            (assert
+                (not (nil? (mt/check-process atag)))
+            )
+            (killone mtag)
+            (Thread/sleep 2000)          
+            (assert
+                (nil? (mt/check-process mtag))
+            )
+            (Thread/sleep 20000)
+            (assert
+                (not (nil? (mt/check-process mtag)))
+            )
+            (killone atag)
+            (Thread/sleep 2000)          
+            (assert
+                (nil? (mt/check-process atag))
+            )
+            (Thread/sleep 20000)
+            (assert
+                (not (nil? (mt/check-process atag)))
+            )
+            (killone mtag)
+            (Thread/sleep 2000)          
+            (assert
+                (nil? (mt/check-process mtag))
+            )
+            (Thread/sleep 20000)
+            (assert
+                (not (nil? (mt/check-process mtag)))
+            )
+            (killone atag)
+            (Thread/sleep 2000)          
+            (assert
+                (nil? (mt/check-process atag))
+            )
+            (Thread/sleep 20000)
+            (assert
+                (not (nil? (mt/check-process atag)))
+            )            
+            (println "test end")
+        )
+        :is
+        nil
+    )    
 )
