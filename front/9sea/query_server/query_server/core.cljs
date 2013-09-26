@@ -134,6 +134,108 @@
     )
 )
 
+(declare render-meta-node)
+
+(defn render-meta-table [lvl node]
+    (let [
+        name (node "name")
+        ys (node "columns")
+        samples (node "samples")
+        ]
+        (format "
+<h6>%s</h6>
+<table>
+<thead>
+<tr>%s</tr>
+<tr>%s</tr>
+</thead>
+<tbody>
+%s
+</tbody>
+</table>
+" 
+            name
+            (str/join ""
+                (for [y ys]
+                    (format "<th align=\"right\">%s</th>" (y "name"))
+                )
+            )
+            (str/join ""
+                (for [y ys]
+                    (format "<th align=\"right\">%s</th>" (y "type"))
+                )
+            )
+            (str/join "\n"
+                (for [rows samples]
+                    (format "<tr>%s</tr>"
+                        (str/join ""
+                            (for [cell rows]
+                                (format "<td align=\"right\">%s</td>" cell)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(defn render-meta-namespace [lvl node]
+    (let [
+        name (node "name")
+        ys (node "children")
+        h (case lvl
+            1 "h1"
+            2 "h2"
+            3 "h3"
+            4 "h4"
+            5 "h5"
+        )
+        ]
+        (format "<%s>%s</%s>%s" h name h
+            (str/join ""
+                (for [y ys]
+                    (render-meta-node (inc lvl) y)
+                )
+            )
+        )
+    )
+)
+
+(defn render-meta-node [lvl node]
+    (let [type (node "type")]
+        (case type
+            "namespace" (render-meta-namespace lvl node)
+            "table" (render-meta-table lvl node)
+        )
+    )
+)
+
+(defn render-meta-top [xs]
+    (str/join ""
+        (for [x xs]
+            (render-meta-node 1 x)
+        )
+    )
+)
+
+(defn render-meta [response]
+    (let [html (render-meta-top response)]
+        (-> "meta"
+            (dom/by-id)
+            (dom/set-html! html)
+        )
+    )
+)
+
+(defn fetch-meta []
+    (ajax/GET "/sql/GetMeta"
+        {
+            :handler render-meta
+        }
+    )
+)
+
 (defn ^:export on-load []
     (-> "submit-sql"
         (dom/by-id)
@@ -143,4 +245,5 @@
         (dom/by-id)
         (dom/set-value! "")
     )
+    (fetch-meta)
 )

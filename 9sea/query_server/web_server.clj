@@ -161,6 +161,47 @@
     )
 )
 
+(defn get-meta []
+    {
+        :status 200
+        :headers {"content-type" "application/json"}
+        :body (json/write-str
+            [
+                {
+                    :type "namespace"
+                    :name "WoW"
+                    :children [
+                        {
+                            :type "namespace"
+                            :name "panda"
+                            :children [
+                                {
+                                    :type "table"
+                                    :name "smile"
+                                    :columns [
+                                        {
+                                            :name "item"
+                                            :type "varchar(255)"
+                                        }
+                                        {
+                                            :name "id"
+                                            :type "integer primary key autoincrement"
+                                        }
+                                    ]
+                                    :samples [
+                                        ["hehe" 1]
+                                        ["haha" 2]
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        )
+    }
+)
+
 (defn app [opts]
     (handler/site
         (defroutes app-routes
@@ -191,6 +232,9 @@
             )
             (GET "/sql/GetResult" {:keys [params]}
                 (get-result params)
+            )
+            (GET "/sql/GetMeta" {:keys [params]}
+                (get-meta)
             )
             (GET "/sql" {:keys [cookies]}
                 (if (and cookies (get cookies "user_id"))
