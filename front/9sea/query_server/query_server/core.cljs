@@ -8,7 +8,7 @@
 )
 
 (defn on-error [{:keys [status status-text]}]
-    (dom/log (format "fetch updates error: %d %s " status status-text))
+    (dom/log (format "fetch updates error: %d %s %s" status status-text))
 )
 
 (defn validate-sql [sql]
@@ -21,12 +21,50 @@
     )
 )
 
+(defn format-titles [titles]
+    (str/join ""
+        (for [t titles]
+            (format "<td align=\"right\">%s</td>" t)
+        )
+    )
+)
+
+(defn format-values [values]
+    (str/join ""
+        (for [r values]
+            (format "<tr>%s</tr>"
+                (str/join ""
+                    (for [v r]
+                        (str "<td align=\"right\">" v "</td>")
+                    )
+                )
+            )
+        )
+    )
+)
+
+(defn format-table [result]
+    (let [
+        titles (result "titles")
+        values (result "values")
+        ]
+        (format "<table><thead>%s</thead><tbody>%s</tbody></table>"
+            (format-titles titles)
+            (format-values values)
+        )
+    )
+)
+
 (defn process-result [response]
     (when-let [result (response "result")]
-        (dom/log result)
+        (let [html (format-table result)]
+            (-> "result_tbl"
+                (dom/by-id)
+                (dom/set-html! html)
+            )
+        )
     )
     (when-let [new-log (response "log")]
-        (dom/log logs)
         (let [
             l (dom/by-id "log")
             cur-log (dom/value l)
@@ -80,7 +118,9 @@
                             (fetch-result qid)
                         )
                     )
-                    :error-handler on-error
+                    :error-handler (fn [{:keys [status response]}]
+                        (js/alert (format "error %d: %s" status response))
+                    )
                 }
             )
         )
@@ -91,5 +131,9 @@
     (-> "submit-sql"
         (dom/by-id)
         (evt/listen! :click submit-sql)
+    )
+    (-> "log"
+        (dom/by-id)
+        (dom/set-value! "")
     )
 )

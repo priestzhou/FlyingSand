@@ -64,12 +64,16 @@
     (if (< current-stage total-stages)
         (do
             (dosync
-                (alter results 
-                    update-in [qid] 
-                    assoc :progress [current-stage total-stages]
+                (let [
+                    log (-> (@results qid) (:log) (.concat (format "stage %d\n" current-stage)))
+                    ]
+                    (alter results 
+                        update-in [qid] 
+                        assoc :progress [current-stage total-stages] :log log
+                    )
                 )
             )
-            (Thread/sleep 1000)
+            (Thread/sleep 600)
             (recur qid result total-stages (inc current-stage))
         )
         (do
@@ -85,11 +89,29 @@
     )
 )
 
+(defn reformat-row [titles row]
+    (vec (for [
+        t titles
+        :let [v (row t)]
+        ]
+        v
+    ))
+)
+
+(defn reformat-result [result]
+    (let [
+        titles (->> result (map keys) (map set) (reduce into) (vec))
+        values (->> result (map (partial reformat-row titles)) (vec))
+        ]
+        {:titles titles :values values}
+    )
+)
+
 (defn do-query [qid query]
     (let [progress-stages (inc (rand-int 10))]
         (try
             (let [result (db/exec-raw [query] :results)]
-                (future (progress qid result progress-stages 0))
+                (future (progress qid (reformat-result result) progress-stages 0))
                 {
                     :status 201
                     :headers {
@@ -102,9 +124,9 @@
             {
                 :status 400
                 :headers {
-                    "content-type" "text/plain"
+                    "content-type" "application/json"
                 }
-                :body "invalid sql query"
+                :body (json/write-str "invalid sql query")
             }
         ))
     )
@@ -116,40 +138,24 @@
         app (:app params)
         ver (:version params)
         query (:query params)
+        qid (rand-int 10000)
         ]
-        (cond
-            (not= app "WoW") {
-                :status 400 
-                :headers {"content-type" "text/plain"} 
-                :body "app must be WoW"
-            }
-            (not= ver "panda") {
-                :status 400
-                :headers {"content-type" "text/plain"}
-                :body "version must be panda"
-            }
-            :else (let [
-                qid (rand-int 10000)
-                ]
-                (dosync
-                    (alter results assoc qid {:status "running"})
-                )
-                (do-query qid query)
-            )
+        (dosync
+            (alter results assoc qid {:status "running" :log ""})
         )
+        (do-query qid query)
     )
 )
 
 (defn get-result [params]
     (let [
         qid (Long/parseLong (:id params))
-        result (@results qid)
-        ; (dosync
-        ;     (let [r (@results qid)]
-        ;         (alter results update-in [qid] assoc :log "")
-        ;         r
-        ;     )
-        ; )
+        result (dosync
+            (let [r (@results qid)]
+                (alter results update-in [qid] assoc :log "")
+                r
+            )
+        )
         ]
         (prn qid result)
         {
