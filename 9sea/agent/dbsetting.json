@@ -1,0 +1,22 @@
+{
+    version:"0.1"
+    app:"appname",
+    appversion:"appversion",
+    database:[
+        {
+        dbconnstr:"",
+        dbuser:"admin",
+        dbpassword:"1234",
+        tables:[
+            {
+                tablename:"t1",
+                hasTimestamp:"true",
+                timestampCol:"timestamp"
+            },
+            {
+                tablename:"t2",
+                hasTimestamp:"false"
+            }]
+        }
+    ]
+}
