@@ -15,3 +15,5 @@ env.install(env.compileJs('front_unittest.js', 'unittest',
         ],
     }
 ))
+
+env.SConscript(dirs=['9sea'], exports='env')
