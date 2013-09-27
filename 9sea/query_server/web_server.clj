@@ -10,7 +10,7 @@
         [clj-time.core :as time]
     )
     (:use
-        [compojure.core :only (defroutes GET PUT POST DELETE HEAD)]
+        [compojure.core :only (defroutes GET PUT POST DELETE HEAD ANY)]
         [ring.adapter.jetty :only (run-jetty)]
         [korma.db :only (defdb sqlite3)]
         [logging.core :only [defloggers]]
@@ -88,7 +88,7 @@
                             :result result 
                             :status "done" 
                             :progress [total-stages total-stages]
-                            :url (format "query/%d/csv" qid)
+                            :url (format "queries/%d/csv" qid)
                     )
                 )
                 (Thread/sleep 3000)
@@ -168,9 +168,9 @@
     )
 )
 
-(defn get-result [params]
+(defn get-result [qid]
     (let [
-        qid (Long/parseLong (:id params))
+        qid (Long/parseLong qid)
         result (dosync
             (let [r (@results qid)]
                 (alter results update-in [qid] assoc :log "")
@@ -237,6 +237,7 @@
 (def saved-queries (ref {}))
 
 (defn get-saved-queries []
+    (prn @saved-queries)
     {
         :status 200
         :headers {"Content-Type" "application/json"}
@@ -252,13 +253,13 @@
             (if (contains? @saved-queries qname)
                 qname
                 (do
-                    (alter saved-queries assoc qname sql)
+                    (alter saved-queries assoc (rand-int 1000) {:name qname :query sql})
                     nil
                 )
             )
         )
         ]
-        (prn qname sql r)
+        (prn r)
         (if r
             {
                 :status 400
@@ -274,34 +275,24 @@
     )
 )
 
-(defn delete-saved-query [params cookies]
+(defn delete-saved-query [cookies params]
     (let [
-        qname (:name params)
-        sql (:query params)
+        id (->> params (:qid) (Long/parseLong))
         r (dosync
-            (if-let [q (@saved-queries qname)]
-                (if (= q sql)
-                    (do
-                        (alter saved-queries dissoc qname)
-                        nil
-                    )
-                    {:error "query" :message sql}
+            (if-let [q (@saved-queries id)]
+                (do
+                    (alter saved-queries dissoc id)
+                    id
                 )
-                {:error "name" :message qname}
             )
         )
         ]
-        (prn qname sql r)
         (if r
             {
-                :status 404
-                :headers {"Content-Type" "application/json"}
-                :body (json/write-str r)
+                :status 200
             }
             {
-                :status 200
-                :headers {"Content-Type" "application/json"}
-                :body (json/write-str {})
+                :status 404
             }
         )
     )
@@ -333,10 +324,9 @@
     )
 )
 
-(defn list-queries [params cookies]
+(defn list-queries [cookies]
     (let [
         user-id (extract-user-id cookies)
-        _ (prn user-id)
         r (dosync
             (let [ks (keys @results)]
                 (into {}
@@ -355,7 +345,6 @@
             )
         )
         ]
-        (prn r)
         {
             :status 200
             :headers {"Content-Type" "application/json"}
@@ -367,6 +356,20 @@
 (defn app [opts]
     (handler/site
         (defroutes app-routes
+            (ANY "/sql" {}
+                {
+                    :status 200
+                    :headers {"Content-Type" "text/html"}
+                    :body "
+<!doctype html>
+<html>
+<head>
+<meta http-equiv='refresh' content='1;url=/sql/'>
+</head>
+</html>
+"
+                }
+            )
             (POST "/sql/" {params :params}
                 (if-let [auth (authenticate (:email params) (:password params))]
                     {
@@ -374,12 +377,12 @@
                         :headers {
                             "Content-Type" "text/html"
                         }
-                        :cookies {"user_id" {:value auth :path "/sql" :max-age 36000}}
+                        :cookies {"user_id" {:value auth :path "/sql/" :max-age 36000}}
                         :body "
 <!doctype html>
 <html>
 <head>
-<meta http-equiv='refresh' content='1;url=/sql'>
+<meta http-equiv='refresh' content='1;url=/sql/'>
 </head>
 </html>
 "
@@ -389,34 +392,38 @@
                     }
                 )
             )
-            (POST "/sql/SubmitQuery" {:keys [cookies params]}
-                (submit-query params cookies)
-            )
-            (POST "/sql/AddQuery" {:keys [cookies params]}
-                (add-query params cookies)
-            )
-            (GET "/sql/GetResult" {:keys [params]}
-                (get-result params)
-            )
-            (HEAD "/sql/query/:qid/csv" [qid]
-                (sniff (Long/parseLong qid))
-            )
-            (GET "/sql/query/:qid/csv" [qid]
-                (download (Long/parseLong qid))
-            )
-            (GET "/sql/query/" {:keys [params cookies]}
-                (println "GET /sql/query/")
-                (list-queries params cookies)
-            )
-            (GET "/sql/GetMeta" {:keys [params cookies]}
+
+            (GET "/sql/meta/" {:keys [cookies]}
                 (get-meta)
             )
-            (GET "/sql/GetSavedQueries" {:keys [cookies]}
+
+            (POST "/sql/queries/" {:keys [params cookies]}
+                (submit-query params cookies)
+            )
+            (GET "/sql/queries/" {:keys [cookies]}
+                (list-queries cookies)
+            )
+            (GET "/sql/queries/:qid/" [qid]
+                (get-result qid)
+            )
+            (HEAD "/sql/queries/:qid/csv" [qid]
+                (sniff (Long/parseLong qid))
+            )
+            (GET "/sql/queries/:qid/csv" [qid]
+                (download (Long/parseLong qid))
+            )
+
+
+            (POST "/sql/saved/" {:keys [cookies params]}
+                (add-query params cookies)
+            )
+            (GET "/sql/saved/" {:keys [cookies]}
                 (get-saved-queries)
             )
-            (DELETE "/sql/DeleteSavedQuery" {:keys [params cookies]}
-                (delete-saved-query params cookies)
+            (DELETE "/sql/saved/:qid/" {:keys [cookies params]}
+                (delete-saved-query cookies params)
             )
+            
             (GET "/sql/" {:keys [cookies]}
                 (if (and cookies (get cookies "user_id"))
                     (slurp (.toFile (sh/getPath (:dir opts) "query.html")))

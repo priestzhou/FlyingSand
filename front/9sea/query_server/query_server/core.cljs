@@ -113,8 +113,7 @@
 
 (defn fetch-result [qid]
     (ajax/GET 
-        (ajax/uri-with-params "/sql/GetResult" {
-            :id qid
+        (ajax/uri-with-params (format "/sql/queries/%s/" qid) {
             :timestamp (Date/now)
         }) 
         {
@@ -138,7 +137,7 @@
         ]
         (when (validate-sql sql)
             (ajax/POST 
-                (ajax/uri-with-params "/sql/SubmitQuery" {
+                (ajax/uri-with-params "/sql/queries/" {
                     :query sql
                     :app app
                     :version ver
@@ -254,7 +253,7 @@
 )
 
 (defn fetch-meta []
-    (ajax/GET "/sql/GetMeta"
+    (ajax/GET "/sql/meta/"
         {
             :handler render-meta
         }
@@ -269,17 +268,22 @@
 </table>
 "
         (str/join ""
-            (for [[k v] response]
-                (format "<tr><td align=\"left\">%s</td><td align=\"left\">%s</td></tr>" k v)
+            (for [[_ v] response]
+                (format "<tr><td align=\"left\">%s</td><td align=\"left\">%s</td></tr>" 
+                    (v "name") (v "query")
+                )
             )
         )
     )
 )
 
+(def saved-queries (atom {}))
+
 (defn fetch-saved-queries []
-    (ajax/GET "/sql/GetSavedQueries"
+    (ajax/GET "/sql/saved/"
         {
             :handler (fn [response]
+                (reset! saved_queries response)
                 (let [html (render-saved-queries response)]
                     (-> "saved_queries"
                         (dom/by-id)
@@ -297,7 +301,7 @@
         sql (-> "sql-input" (dom/by-id) (dom/value) (str/trim))
         ]
         (ajax/POST 
-            (ajax/uri-with-params "/sql/AddQuery" {
+            (ajax/uri-with-params "/sql/saved/" {
                 :name qname
                 :query sql
             }) 
@@ -317,36 +321,38 @@
 (defn delete-sql []
     (let [
         qname (-> "query_name" (dom/by-id) (dom/value) (str/trim))
-        sql (-> "sql-input" (dom/by-id) (dom/value) (str/trim))
+        qid (for [
+            [qid v] @saved_queries
+            :let [name (v "name")]
+            :when (= name qname)
+            ]
+            qid
+        )
         ]
-        (ajax/ajax-request 
-            (ajax/uri-with-params "/sql/DeleteSavedQuery" {
-                :name qname
-                :query sql
-            }) 
-            "DELETE"
-            (ajax/transform-opts {
-                :handler (fn [response]
-                    (fetch-saved-queries)
-                )
-                :error-handler (fn [{:keys [response]}]
-                    (dom/log response)
-                    (case (response "error")
-                        "name"
-                            (js/alert (str "inexistent name: " (response "message")))
-                        "query"
-                            (js/alert (str "unmatch query: " (response "message")))
+        (dom/log qid)
+        (when-not (empty? qid)
+            (ajax/ajax-request (format "/sql/saved/%d/" (first qid))
+                "DELETE"
+                (ajax/transform-opts {
+                    :format :raw
+                    :response-format :raw
+                    :handler (fn []
+                        (dom/log "OK")
+                        (fetch-saved-queries)
                     )
-                    (fetch-saved-queries)
-                )
-            })
+                    :error-handler (fn []
+                        (dom/log "FAILED")
+                        (fetch-saved-queries)
+                    )
+                })
+            )
         )
     )
 )
 
 (defn fetch-history []
     (ajax/GET
-        (ajax/uri-with-params "/sql/query/" {
+        (ajax/uri-with-params "/sql/queries/" {
             :timestamp (Date/now)
         })
         {
