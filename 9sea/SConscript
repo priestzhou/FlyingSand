@@ -27,7 +27,6 @@ env.install(env.compileAndJar('9sea_unittest.jar', 'unittest',
         env.File('$BUILD_DIR/testing.jar'),
         env.File('$BUILD_DIR/agent.jar'),
         ],
-
     standalone=True, manifest={'Main-Class': 'unittest.main'}))
 env.install(env.compileAndJar('9sea_smoketest.jar', 'smoketest',
     libs=[env['CLOJURE'], 
