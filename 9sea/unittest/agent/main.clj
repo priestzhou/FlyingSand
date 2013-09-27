@@ -37,7 +37,17 @@
 )
 
 (suite "test"
-    (:fact test1
+    (:fact get-schemas-from-db-0
+        (->>
+            {:database 
+                [] 
+            }
+            get-schemas
+        )
+        :is
+        []
+    )
+    (:fact get-schemas-from-db-1
         (->>
             {:database 
                 [
@@ -61,4 +71,33 @@
             ]
         }]
     )
+    (:fact get-schemas-from-db-2
+        (->>
+            {:database 
+                [
+                    {:dbconnstr "test1" 
+                        :dbuser "root" 
+                        :dbpassword "ff" 
+                        :tables [
+                            {:tablename "test-table1"} 
+                            {:tablename "test-table2"}
+                        ]
+                    }
+                    {:dbconnstr "test2" 
+                        :dbuser "root" 
+                        :dbpassword "ff" 
+                        :tables [
+                            {:tablename "test-table1"} 
+                            {:tablename "test-table2"}
+                        ]
+                    }
+                ] 
+            }
+            get-schemas
+            count
+        )
+        :is
+        2
+    )
 )
+
