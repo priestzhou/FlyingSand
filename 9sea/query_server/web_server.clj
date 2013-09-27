@@ -9,7 +9,7 @@
         [utilities.shutil :as sh]
     )
     (:use
-        [compojure.core :only (defroutes GET PUT POST DELETE)]
+        [compojure.core :only (defroutes GET PUT POST DELETE HEAD)]
         [ring.adapter.jetty :only (run-jetty)]
         [korma.db :only (defdb sqlite3)]
         [logging.core :only [defloggers]]
@@ -88,6 +88,9 @@
                             :progress [total-stages total-stages]
                             :url (format "query/%d/csv" qid)
                     )
+                )
+                (Thread/sleep 3000)
+                (dosync
                     (alter csv
                         assoc qid (str/join "\n"
                             (cons
@@ -97,6 +100,7 @@
                         )
                     )
                 )
+                (prn "done" @csv)
             )
         )
     )
@@ -290,11 +294,24 @@
 )
 
 (defn download [qid]
+    (prn qid)
     (if-let [r (@csv qid)]
         {
             :status 200
             :headers {"Content-Type" "text/csv"}
             :body r
+        }
+        {
+            :status 404
+        }
+    )
+)
+
+(defn sniff [qid]
+    (prn qid @csv)
+    (if-let [r (@csv qid)]
+        {
+            :status 200
         }
         {
             :status 404
@@ -335,6 +352,9 @@
             )
             (GET "/sql/GetResult" {:keys [params]}
                 (get-result params)
+            )
+            (HEAD "/sql/query/:qid/csv" [qid]
+                (sniff (Long/parseLong qid))
             )
             (GET "/sql/query/:qid/csv" [qid]
                 (download (Long/parseLong qid))

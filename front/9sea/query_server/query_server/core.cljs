@@ -77,12 +77,6 @@
             (dom/set-attrs! p {:value (first progress) :max (second progress)})
         )
     )
-    (when-let [url (response "url")]
-        (-> "url"
-            (dom/by-id)
-            (dom/set-attr! :href url)
-        )
-    )
     (when-let [error-msg (response "error")]
         (let [
             l (dom/by-id "log")
@@ -92,6 +86,30 @@
     )
     (when-let [status (response "status")]
         (= status "running")
+    )
+)
+
+(defn sniff-csv [url]
+    (ajax/ajax-request 
+        (ajax/uri-with-params url {
+            :timestamp (Date/now)
+        }) 
+        "HEAD"
+        (ajax/transform-opts {
+            :format :raw
+            :response-format :raw
+            :handler (fn []
+                (dom/log "sniff ok" url)
+                (-> "url"
+                    (dom/by-id)
+                    (dom/set-attr! :href url)
+                )
+            )
+            :error-handler (fn [{:keys [status]}]
+                (dom/log "failed " status ": " url)
+                (js/setTimeout (partial sniff-csv url) 1000)
+            )
+        })
     )
 )
 
@@ -105,6 +123,7 @@
             :handler (fn [response]
                 (if (render-result response)
                     (js/setTimeout (partial fetch-result qid) 1000)
+                    (js/setTimeout (partial sniff-csv (response "url")) 1000)
                 )
             )
             :error-handler on-error
@@ -124,7 +143,7 @@
                     :query sql
                     :app app
                     :version ver
-                }) 
+                })
                 {
                     :handler (fn [response]
                         (when-let [qid (response "id")]
@@ -306,7 +325,7 @@
                 :query sql
             }) 
             "DELETE"
-            {
+            (ajax/transform-opts {
                 :handler (fn [response]
                     (fetch-saved-queries)
                 )
@@ -320,7 +339,7 @@
                     )
                     (fetch-saved-queries)
                 )
-            }
+            })
         )
     )
 )

@@ -3,7 +3,7 @@ Import('env')
 env.install(env.compileJs('query_server.js', 'query_server',
     libs=[
     env.File('$EXTLIB/domina-1.0.2-SNAPSHOT.jar'),
-    env.File('$EXTLIB/cljs-ajax-0.1.6.jar'),
+    env.File('$EXTLIB/cljs-ajax-0.2.0.jar'),
     env.File('$BUILD_DIR/jsutilities.jar'),
     ],
     options={":optimizations": ":simple", ":pretty-print": True,
