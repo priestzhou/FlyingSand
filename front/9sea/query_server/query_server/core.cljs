@@ -99,14 +99,12 @@
             :format :raw
             :response-format :raw
             :handler (fn []
-                (dom/log "sniff ok" url)
                 (-> "url"
                     (dom/by-id)
                     (dom/set-attr! :href url)
                 )
             )
             :error-handler (fn [{:keys [status]}]
-                (dom/log "failed " status ": " url)
                 (js/setTimeout (partial sniff-csv url) 1000)
             )
         })
@@ -136,6 +134,7 @@
         app (-> "app" (dom/by-id) (dom/value) (str/trim))
         ver (-> "version" (dom/by-id) (dom/value) (str/trim))
         sql (-> "sql-input" (dom/by-id) (dom/value) (str/trim))
+        db (-> "db" (dom/by-id) (dom/value) (str/trim))
         ]
         (when (validate-sql sql)
             (ajax/POST 
@@ -143,6 +142,7 @@
                     :query sql
                     :app app
                     :version ver
+                    :db db
                 })
                 {
                     :handler (fn [response]
@@ -344,6 +344,52 @@
     )
 )
 
+(defn fetch-history []
+    (ajax/GET
+        (ajax/uri-with-params "/sql/query/" {
+            :timestamp (Date/now)
+        })
+        {
+            :response-format :json
+            :handler (fn [response]
+                (-> "history"
+                    (dom/by-id)
+                    (dom/set-html! (format "
+<table>
+<thead><tr>
+<th align=\"right\">query</th>
+<th align=\"right\">status</th>
+<th align=\"right\">submit time</th>
+<th align=\"url\">url</th>
+</tr></thead>
+<tbody>
+%s
+</tbody>
+</table>
+"                       (str/join "\n"
+                            (for [
+                                [_ v] response
+                                :let [query (v "query")]
+                                :let [status (v "status")]
+                                :let [submit-time (v "submit-time")]
+                                :let [url (v "url")]
+                                ]
+                                (format 
+"<tr><td align=\"right\">%s</td><td align=\"right\">%s</td><td align=\"right\">%s</td><td align=\"right\">%s</td></tr>"
+                                    query status (.toISOString (js/Date. submit-time)) url
+                                )
+                            )
+                        )
+                    ))
+                )
+            )
+            :error-handler (fn [{:keys [status status-text]}]
+                (js/alert (format "error %d: %s" status status-text))
+            )
+        }
+    )
+)
+
 (defn ^:export on-load []
     (-> "submit-sql"
         (dom/by-id)
@@ -363,4 +409,5 @@
     )
     (fetch-meta)
     (fetch-saved-queries)
+    (fetch-history)
 )

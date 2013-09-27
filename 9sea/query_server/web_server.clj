@@ -7,12 +7,14 @@
         [clojure.string :as str]
         [utilities.core :as util]
         [utilities.shutil :as sh]
+        [clj-time.core :as time]
     )
     (:use
         [compojure.core :only (defroutes GET PUT POST DELETE HEAD)]
         [ring.adapter.jetty :only (run-jetty)]
         [korma.db :only (defdb sqlite3)]
         [logging.core :only [defloggers]]
+        [clj-time.coerce :only (to-long)]
     )
     (:import
         [java.security MessageDigest]
@@ -150,11 +152,17 @@
         user-id (extract-user-id cookies)
         app (:app params)
         ver (:version params)
+        db (:db params)
         query (:query params)
         qid (rand-int 10000)
         ]
         (dosync
-            (alter results assoc qid {:status "running" :log ""})
+            (alter results assoc qid {
+                :status "running" 
+                :query query
+                :log "" 
+                :submit-time (to-long (time/now))
+            })
         )
         (do-query qid query)
     )
@@ -194,21 +202,27 @@
                             :name "panda"
                             :children [
                                 {
-                                    :type "table"
-                                    :name "smile"
-                                    :columns [
+                                    :type "namespace"
+                                    :name "db"
+                                    :children [
                                         {
-                                            :name "item"
-                                            :type "varchar(255)"
+                                            :type "table"
+                                            :name "smile"
+                                            :columns [
+                                                {
+                                                    :name "item"
+                                                    :type "varchar(255)"
+                                                }
+                                                {
+                                                    :name "id"
+                                                    :type "integer primary key autoincrement"
+                                                }
+                                            ]
+                                            :samples [
+                                                ["hehe" 1]
+                                                ["haha" 2]
+                                            ]
                                         }
-                                        {
-                                            :name "id"
-                                            :type "integer primary key autoincrement"
-                                        }
-                                    ]
-                                    :samples [
-                                        ["hehe" 1]
-                                        ["haha" 2]
                                     ]
                                 }
                             ]
@@ -319,6 +333,37 @@
     )
 )
 
+(defn list-queries [params cookies]
+    (let [
+        user-id (extract-user-id cookies)
+        _ (prn user-id)
+        r (dosync
+            (let [ks (keys @results)]
+                (into {}
+                    (for [
+                        k ks
+                        :let [v (@results k)]
+                        :let [{:keys [query status url submit-time]} v]
+                        ]
+                        [k (merge 
+                                {:query query :status status :submit-time submit-time}
+                                (if url {:url url} {})
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+        ]
+        (prn r)
+        {
+            :status 200
+            :headers {"Content-Type" "application/json"}
+            :body (json/write-str r)
+        }
+    )
+)
+
 (defn app [opts]
     (handler/site
         (defroutes app-routes
@@ -358,6 +403,10 @@
             )
             (GET "/sql/query/:qid/csv" [qid]
                 (download (Long/parseLong qid))
+            )
+            (GET "/sql/query/" {:keys [params cookies]}
+                (println "GET /sql/query/")
+                (list-queries params cookies)
             )
             (GET "/sql/GetMeta" {:keys [params cookies]}
                 (get-meta)
