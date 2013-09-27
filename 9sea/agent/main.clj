@@ -17,14 +17,8 @@
     (:gen-class)
 )
 
-[]
-
 (def ^:private dbatom
     (atom {})
-)
-
-(def db-table-list 
-    (memoize dba/get-db-table-list )
 )
 
 (cp/defroutes app-routes
@@ -81,7 +75,7 @@
                             (#(js/read-str % :key-fn keyword))
                 )
             ]
-            (reset! dbatom dbsetting)
+        (reset! dbatom dbsetting)
         )
         (rj/run-jetty #'app 
             {

@@ -30,10 +30,28 @@
     )
 )
 
-(defn- get-db-table-list [in]
+(defn- get-table-all-data [in qstr]
     (binding [dba/*db-func-map* mock-map]
-        (dba/get-db-table-list in)
+        (dba/get-table-all-data in qstr)
     )
+)
+
+(def dbsetting                     
+            {
+            :app "testapp"
+            :appversion "ves-1"
+            :database 
+                [
+                    {:dbconnstr "test1" 
+                        :dbuser "root" 
+                        :dbpassword "ff" 
+                        :tables [
+                            {:tablename "test-table1"} 
+                            {:tablename "test-table2"}
+                        ]
+                    }
+                ] 
+            }
 )
 
 (suite "test"
@@ -98,6 +116,61 @@
         )
         :is
         2
+    )
+    (:fact test-table-all-data-apperro
+        (->>
+            (get-table-all-data
+                dbsetting
+                "abc.bsc.def.test1"
+            )
+            :errCode
+        )
+        :is
+        "app mismach"
+    )
+    (:fact test-table-all-data-versionerro
+        (->>
+            (get-table-all-data
+                dbsetting
+                "testapp.bsc.def.test1"
+            )
+            :errCode
+        )
+        :is
+        "version mismach"
+    )
+    (:fact test-table-all-data-dberro
+        (->>
+            (get-table-all-data
+                dbsetting
+                "testapp.ves-1.def.test1"
+            )
+            :errCode
+        )
+        :is
+        "db not find"
+    )
+    (:fact test-table-all-data-tberro
+        (->>
+            (get-table-all-data
+                dbsetting
+                "testapp.ves-1.test db.test1"
+            )
+            :errCode
+        )
+        :is
+        "table not find"
+    )
+    (:fact test-table-all-data-allmetapass
+        (->>
+            (get-table-all-data
+                dbsetting
+                "testapp.ves-1.test db.test-table1"
+            )
+            :errCode
+        )
+        :is
+        nil
     )
 )
 
