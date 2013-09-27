@@ -92,8 +92,8 @@
         )
         (future 
             (tool/check 
-                "monitor.main"  
-                " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
+                "\" monitor.main\""  
+                " nohup java -cp .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
                 5000
             )
         )
