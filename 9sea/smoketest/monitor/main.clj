@@ -44,7 +44,7 @@
             (assert
                 (not (nil? (mt/check-process atag)))
             )
-            (Thread/sleep 20000)          
+            (Thread/sleep 60000)          
             (assert
                 (not (nil? (mt/check-process mtag)))
             )            
@@ -75,7 +75,10 @@
         )
         :is
         nil
-    )
+    ) 
+)
+
+(comment
     (:fact restart_muti_times
         (do
             (kill_all)
@@ -134,5 +137,5 @@
         )
         :is
         nil
-    )    
+    )   
 )

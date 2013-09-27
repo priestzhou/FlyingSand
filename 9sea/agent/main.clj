@@ -90,13 +90,12 @@
                 :join? false
             }
         )
-        (println  (db-table-list @dbatom)   )
-        (println (get-in (db-table-list @dbatom) ["test" "test1"])  )
-        (println (get-in (db-table-list @dbatom) ["test" "test"])  )
-        (tool/check 
-            "monitor.main"  
-            " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
-            10000
+        (future 
+            (tool/check 
+                "monitor.main"  
+                " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
+                5000
+            )
         )
     )
 )
