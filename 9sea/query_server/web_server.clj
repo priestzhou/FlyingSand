@@ -86,7 +86,7 @@
                         update-in [qid]
                         assoc 
                             :result result 
-                            :status "done" 
+                            :status "success" 
                             :progress [total-stages total-stages]
                             :url (format "queries/%d/csv" qid)
                     )
@@ -102,7 +102,6 @@
                         )
                     )
                 )
-                (prn "done" @csv)
             )
         )
     )
@@ -150,12 +149,10 @@
 (defn submit-query [params cookies]
     (let [
         user-id (extract-user-id cookies)
-        app (:app params)
-        ver (:version params)
-        db (:db params)
-        query (:query params)
+        {:keys [app version db query]} params
         qid (rand-int 10000)
         ]
+        (println "POST queries/ " (pr-str {:user_id user-id :app app :version version :db db :query query}))
         (dosync
             (alter results assoc qid {
                 :status "running" 
@@ -171,6 +168,7 @@
 (defn get-result [qid]
     (let [
         qid (Long/parseLong qid)
+        _ (println (format "GET queries/%d/" qid))
         result (dosync
             (let [r (@results qid)]
                 (alter results update-in [qid] assoc :log "")
@@ -178,7 +176,6 @@
             )
         )
         ]
-        (prn qid result)
         {
             :status 200
             :headers {"Content-Type" "application/json"}
@@ -187,89 +184,109 @@
     )
 )
 
-(defn get-meta []
-    {
-        :status 200
-        :headers {"Content-Type" "application/json"}
-        :body (json/write-str
-            [
-                {
-                    :type "namespace"
-                    :name "WoW"
-                    :children [
-                        {
-                            :type "namespace"
-                            :name "panda"
-                            :children [
-                                {
-                                    :type "namespace"
-                                    :name "db"
-                                    :children [
-                                        {
-                                            :type "table"
-                                            :name "smile"
-                                            :columns [
-                                                {
-                                                    :name "item"
-                                                    :type "varchar(255)"
-                                                }
-                                                {
-                                                    :name "id"
-                                                    :type "integer primary key autoincrement"
-                                                }
-                                            ]
-                                            :samples [
-                                                ["hehe" 1]
-                                                ["haha" 2]
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        )
-    }
+(defn get-meta [cookies]
+    (let [user-id (extract-user-id cookies)]
+        (println "GET meta" (pr-str {:user_id user-id}))
+        {
+            :status 200
+            :headers {"Content-Type" "application/json"}
+            :body (json/write-str
+                [
+                    {
+                        :type "namespace"
+                        :name "WoW"
+                        :children [
+                            {
+                                :type "namespace"
+                                :name "panda"
+                                :children [
+                                    {
+                                        :type "namespace"
+                                        :name "db"
+                                        :children [
+                                            {
+                                                :type "table"
+                                                :name "smile"
+                                                :columns [
+                                                    {
+                                                        :name "item"
+                                                        :type "varchar(255)"
+                                                    }
+                                                    {
+                                                        :name "id"
+                                                        :type "integer primary key autoincrement"
+                                                    }
+                                                ]
+                                                :samples [
+                                                    ["hehe" 1]
+                                                    ["haha" 2]
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            )
+        }
+    )
 )
 
 (def saved-queries (ref {}))
 
-(defn get-saved-queries []
-    (prn @saved-queries)
-    {
-        :status 200
-        :headers {"Content-Type" "application/json"}
-        :body (json/write-str @saved-queries)
-    }
+(defn get-saved-queries [cookies]
+    (let [user-id (extract-user-id cookies)]
+        (println (format "GET saved/ %s" (pr-str {:user_id user-id})))
+        {
+            :status 200
+            :headers {"Content-Type" "application/json"}
+            :body (json/write-str @saved-queries)
+        }
+    )
 )
 
 (defn add-query [params cookies]
     (let [
-        qname (:name params)
-        sql (:query params)
+        user-id (extract-user-id cookies)
+        {:keys [name app version db query]} params
+        qname name
+        _ (println (format "POST saved/?name=%s&app=%s&version=%s&db=%s&query=%s %s" app version db qname query (pr-str {:user_id user-id})))
         r (dosync
-            (if (contains? @saved-queries qname)
-                qname
-                (do
-                    (alter saved-queries assoc (rand-int 1000) {:name qname :query sql})
-                    nil
+            (let [qid (for [
+                    [id {:keys [name]}] @saved-queries
+                    :when (= name qname)
+                    ] 
+                    id
+                )
+                ]
+                (if (empty? qid)
+                    (do
+                        (alter saved-queries assoc (rand-int 1000) {
+                            :name qname 
+                            :app app
+                            :version version
+                            :db db
+                            :query query
+                        })
+                        true
+                    )
+                    false
                 )
             )
         )
         ]
-        (prn r)
         (if r
-            {
-                :status 400
-                :headers {"Content-Type" "text/plain"}
-                :body r
-            }
             {
                 :status 201
                 :headers {"Content-Type" "text/plain"}
                 :body "OK"
+            }
+            {
+                :status 400
+                :headers {"Content-Type" "text/plain"}
+                :body r
             }
         )
     )
@@ -277,7 +294,9 @@
 
 (defn delete-saved-query [cookies params]
     (let [
+        user-id (extract-user-id cookies)
         id (->> params (:qid) (Long/parseLong))
+        _ (println (format "DELETE saved/%d/ %s" id (pr-str {:user_id user-id})))
         r (dosync
             (if-let [q (@saved-queries id)]
                 (do
@@ -299,7 +318,7 @@
 )
 
 (defn download [qid]
-    (prn qid)
+    (println (format "HEAD queries/%d/csv" qid))
     (if-let [r (@csv qid)]
         {
             :status 200
@@ -313,13 +332,17 @@
 )
 
 (defn sniff [qid]
-    (prn qid @csv)
+    (println (format "HEAD queries/%d/csv" qid))
     (if-let [r (@csv qid)]
         {
             :status 200
+            :headers {"Content-Type" "application/json"}
+            :body "{}"
         }
         {
             :status 404
+            :headers {"Content-Type" "application/json"}
+            :body "{}"
         }
     )
 )
@@ -327,6 +350,7 @@
 (defn list-queries [cookies]
     (let [
         user-id (extract-user-id cookies)
+        _ (println "GET queries/" (pr-str {:user_id user-id}))
         r (dosync
             (let [ks (keys @results)]
                 (into {}
@@ -356,7 +380,7 @@
 (defn app [opts]
     (handler/site
         (defroutes app-routes
-            (ANY "/sql" {}
+            (GET "/sql" {}
                 {
                     :status 200
                     :headers {"Content-Type" "text/html"}
@@ -393,8 +417,8 @@
                 )
             )
 
-            (GET "/sql/meta/" {:keys [cookies]}
-                (get-meta)
+            (GET "/sql/meta" {:keys [cookies]}
+                (get-meta cookies)
             )
 
             (POST "/sql/queries/" {:keys [params cookies]}
@@ -418,12 +442,12 @@
                 (add-query params cookies)
             )
             (GET "/sql/saved/" {:keys [cookies]}
-                (get-saved-queries)
+                (get-saved-queries cookies)
             )
             (DELETE "/sql/saved/:qid/" {:keys [cookies params]}
                 (delete-saved-query cookies params)
             )
-            
+
             (GET "/sql/" {:keys [cookies]}
                 (if (and cookies (get cookies "user_id"))
                     (slurp (.toFile (sh/getPath (:dir opts) "query.html")))

@@ -7,8 +7,8 @@
     )
 )
 
-(defn on-error [{:keys [status response]}]
-    (dom/log (format "fetch updates error: %d %s" status response))
+(defn on-error [{:keys [status status-text]}]
+    (dom/log (format "fetch updates error: %d %s" status status-text))
 )
 
 (defn validate-sql [sql]
@@ -253,7 +253,7 @@
 )
 
 (defn fetch-meta []
-    (ajax/GET "/sql/meta/"
+    (ajax/GET "/sql/meta"
         {
             :handler render-meta
         }
@@ -263,14 +263,20 @@
 (defn render-saved-queries [response]
     (format "
 <table>
-<thead><tr><th align=\"left\">name</th><th align=\"left\">query</th></tr></thead>
+<thead><tr>
+<th align=\"left\">name</th>
+<th align=\"left\">app</th>
+<th align=\"left\">version</th>
+<th align=\"left\">db</th>
+<th align=\"left\">query</th>
+</tr></thead>
 <tbody>%s</tbody>
 </table>
 "
         (str/join ""
             (for [[_ v] response]
-                (format "<tr><td align=\"left\">%s</td><td align=\"left\">%s</td></tr>" 
-                    (v "name") (v "query")
+                (format "<tr><td align=\"left\">%s</td><td align=\"left\">%s</td><td align=\"left\">%s</td><td align=\"left\">%s</td><td align=\"left\">%s</td></tr>" 
+                    (v "name") (v "app") (v "version") (v "db") (v "query")
                 )
             )
         )
@@ -282,6 +288,7 @@
 (defn fetch-saved-queries []
     (ajax/GET "/sql/saved/"
         {
+            :response-format :json
             :handler (fn [response]
                 (reset! saved_queries response)
                 (let [html (render-saved-queries response)]
@@ -298,11 +305,17 @@
 (defn save-sql []
     (let [
         qname (-> "query_name" (dom/by-id) (dom/value) (str/trim))
+        app (-> "app" (dom/by-id) (dom/value) (str/trim))
+        ver (-> "version" (dom/by-id) (dom/value) (str/trim))
+        db (-> "db" (dom/by-id) (dom/value) (str/trim))
         sql (-> "sql-input" (dom/by-id) (dom/value) (str/trim))
         ]
         (ajax/POST 
             (ajax/uri-with-params "/sql/saved/" {
                 :name qname
+                :app app
+                :version ver
+                :db db
                 :query sql
             }) 
             {
@@ -334,14 +347,13 @@
             (ajax/ajax-request (format "/sql/saved/%d/" (first qid))
                 "DELETE"
                 (ajax/transform-opts {
-                    :format :raw
                     :response-format :raw
                     :handler (fn []
                         (dom/log "OK")
                         (fetch-saved-queries)
                     )
-                    :error-handler (fn []
-                        (dom/log "FAILED")
+                    :error-handler (fn [{:keys [status-text]}]
+                        (dom/log "FAILED" status-text)
                         (fetch-saved-queries)
                     )
                 })
