@@ -278,7 +278,7 @@
 (defn app [opts]
     (handler/site
         (defroutes app-routes
-            (POST "/sql" {params :params}
+            (POST "/sql/" {params :params}
                 (if-let [auth (authenticate (:email params) (:password params))]
                     {
                         :status 201
@@ -318,13 +318,13 @@
             (DELETE "/sql/DeleteSavedQuery" {:keys [params cookies]}
                 (delete-saved-query params cookies)
             )
-            (GET "/sql" {:keys [cookies]}
+            (GET "/sql/" {:keys [cookies]}
                 (if (and cookies (get cookies "user_id"))
                     (slurp (.toFile (sh/getPath (:dir opts) "query.html")))
                     (slurp (.toFile (sh/getPath (:dir opts) "index.html")))
                 )
             )
-            (route/files "/" {:root (:dir opts) :allow-symlinks? true})
+            (route/files "/sql/" {:root (:dir opts) :allow-symlinks? true})
             (route/not-found "Not Found")
         )
     )
