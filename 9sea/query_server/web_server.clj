@@ -4,6 +4,7 @@
         [compojure.route :as route]
         [korma.core :as db]
         [clojure.data.json :as json]
+        [clojure.string :as str]
         [utilities.core :as util]
         [utilities.shutil :as sh]
     )
@@ -58,6 +59,7 @@
 )
 
 (def results (ref {}))
+(def csv (ref {}))
 
 (defn progress [qid result total-stages current-stage]
     (if (< current-stage total-stages)
@@ -80,7 +82,19 @@
                 (dosync
                     (alter results
                         update-in [qid]
-                        assoc :result result :status "done" :progress [total-stages total-stages]
+                        assoc 
+                            :result result 
+                            :status "done" 
+                            :progress [total-stages total-stages]
+                            :url (format "query/%d/csv" qid)
+                    )
+                    (alter csv
+                        assoc qid (str/join "\n"
+                            (cons
+                                (str/join "," (:titles result))
+                                (map #(str/join "," %) (:values result))
+                            )
+                        )
                     )
                 )
             )
@@ -120,7 +134,7 @@
         {
             :status 201
             :headers {
-                "content-type" "application/json"
+                "Content-Type" "application/json"
             }
             :body (json/write-str {:id qid})
         }
@@ -155,7 +169,7 @@
         (prn qid result)
         {
             :status 200
-            :headers {"content-type" "application/json"}
+            :headers {"Content-Type" "application/json"}
             :body (json/write-str result)
         }
     )
@@ -164,7 +178,7 @@
 (defn get-meta []
     {
         :status 200
-        :headers {"content-type" "application/json"}
+        :headers {"Content-Type" "application/json"}
         :body (json/write-str
             [
                 {
@@ -207,7 +221,7 @@
 (defn get-saved-queries []
     {
         :status 200
-        :headers {"content-type" "application/json"}
+        :headers {"Content-Type" "application/json"}
         :body (json/write-str @saved-queries)
     }
 )
@@ -230,12 +244,12 @@
         (if r
             {
                 :status 400
-                :headers {"content-type" "text/plain"}
+                :headers {"Content-Type" "text/plain"}
                 :body r
             }
             {
                 :status 201
-                :headers {"content-type" "text/plain"}
+                :headers {"Content-Type" "text/plain"}
                 :body "OK"
             }
         )
@@ -263,15 +277,28 @@
         (if r
             {
                 :status 404
-                :headers {"content-type" "application/json"}
+                :headers {"Content-Type" "application/json"}
                 :body (json/write-str r)
             }
             {
                 :status 200
-                :headers {"content-type" "application/json"}
+                :headers {"Content-Type" "application/json"}
                 :body (json/write-str {})
             }
         )
+    )
+)
+
+(defn download [qid]
+    (if-let [r (@csv qid)]
+        {
+            :status 200
+            :headers {"Content-Type" "text/csv"}
+            :body r
+        }
+        {
+            :status 404
+        }
     )
 )
 
@@ -283,7 +310,7 @@
                     {
                         :status 201
                         :headers {
-                            "content-type" "text/html"
+                            "Content-Type" "text/html"
                         }
                         :cookies {"user_id" {:value auth :path "/sql" :max-age 36000}}
                         :body "
@@ -308,6 +335,9 @@
             )
             (GET "/sql/GetResult" {:keys [params]}
                 (get-result params)
+            )
+            (GET "/sql/query/:qid/csv" [qid]
+                (download (Long/parseLong qid))
             )
             (GET "/sql/GetMeta" {:keys [params cookies]}
                 (get-meta)

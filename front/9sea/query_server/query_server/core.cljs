@@ -77,6 +77,12 @@
             (dom/set-attrs! p {:value (first progress) :max (second progress)})
         )
     )
+    (when-let [url (response "url")]
+        (-> "url"
+            (dom/by-id)
+            (dom/set-attr! :href url)
+        )
+    )
     (when-let [error-msg (response "error")]
         (let [
             l (dom/by-id "log")
