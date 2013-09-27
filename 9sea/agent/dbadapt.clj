@@ -15,11 +15,13 @@
     }
 )
 
-(defn- get-schema-table [db tablename]
-    ((:get-table-schema *db-func-map*) db tablename)
+(defn get-schema-table [db tablename]
+    (let [table-schema ((:get-table-schema *db-func-map*) db tablename)]
+        {:tablename tablename :cols table-schema}
+    )
 )
 
-(defn- get-schema-db [dbset]
+(defn get-schema-db [dbset]
     (let [db (:db dbset)
             dbname ((:get-dbname *db-func-map*) db)
             tableNameList (:tables dbset)
@@ -62,7 +64,6 @@
 )
 
 (defn get-db-table-list [dbsetting]
-    (println "run once!")
     (let [dblist (:database dbsetting)
             dbList (map 
                 (fn [db]

@@ -23,12 +23,15 @@
 
 (defn- get-schemas [in]
     (binding [dba/*db-func-map* mock-map] 
-        (dba/get-schemas in)
+        (let [out (dba/get-schemas in)]
+            (println out)
+            out
+        )
     )
 )
 
 (defn- get-db-table-list [in]
-    (binding [dba/*db-func-map* mock-map] 
+    (binding [dba/*db-func-map* mock-map]
         (dba/get-db-table-list in)
     )
 )
@@ -36,10 +39,26 @@
 (suite "test"
     (:fact test1
         (->>
-            {}
+            {:database 
+                [
+                    {:dbconnstr "test1" 
+                        :dbuser "root" 
+                        :dbpassword "ff" 
+                        :tables [
+                            {:tablename "test-table1"} 
+                            {:tablename "test-table2"}
+                        ]
+                    }
+                ] 
+            }
             get-schemas
         )
         :is
-        nil
+        [{:dbname "test db", 
+            :tables [
+            {:tablename "test-table1", :cols [{:name "col2", :id "id2"} {:name "col1", :id "id1"}]} 
+            {:tablename "test-table2", :cols [{:name "col2", :id "id2"} {:name "col1", :id "id1"}]}
+            ]
+        }]
     )
 )
