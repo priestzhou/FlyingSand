@@ -78,10 +78,33 @@
 
 )
 
+(defn- get-table-inc-data [db tn qkey qnum]
+    (let [mysqldb (get-db db)
+            sql (str "select * from " tn " where " qkey " > " qnum)
+        ]
+        (try
+            (jdbc/with-connection mysqldb
+                (jdbc/with-query-results res [sql]
+                    (->>
+                        res
+                        doall
+                    )
+                )
+            )
+            (catch Exception e
+                (println e)
+                (println (.printStackTrace e) )
+            )
+        )        
+    )
+
+)
+
 (def mysql-map 
     {
         :get-dbname get-dbname
         :get-table-schema get-table-schema
         :get-table-all-data get-table-all-data
+        :get-table-inc-data get-table-inc-data
     }
 )

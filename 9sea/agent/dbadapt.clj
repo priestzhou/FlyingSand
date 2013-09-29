@@ -106,6 +106,7 @@
             :else {:status "sucess" 
                     :db (first (get-in tbl [db table])) 
                     :table table
+                    :key (:timestampCol (second (get-in tbl [db table])))
                 }
         )
     )
@@ -118,6 +119,25 @@
             { 
                 :data 
                 ((:get-table-all-data *db-func-map*) (:db flag) (:table flag))
+            }
+            flag
+        )
+    )
+)
+
+(defn get-table-inc-data [dbsetting qstr qnum]
+    (let [flag (check-meta dbsetting qstr)
+        ]
+        (if (nil? (:errCode flag))
+            { 
+                :data 
+                (
+                    (:get-table-inc-data *db-func-map*) 
+                    (:db flag) 
+                    (:table flag) 
+                    (:key flag)
+                    qnum
+                )
             }
             flag
         )

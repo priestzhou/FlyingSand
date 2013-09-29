@@ -36,6 +36,18 @@
                 :body (js/write-str r)
             }
         )
+    )
+    (cp/GET "/get-table-inc-data" {params :params}
+        (let [r (dba/get-table-inc-data @dbatom (:namespace params) (:keynum params))]
+            (println r)
+            {:status 202
+                :headers {
+                    "Access-Control-Allow-Origin" "*"
+                    "content-type" "application/json"
+                }
+                :body (js/write-str r)
+            }
+        )
     )    
     (route/not-found "Not Found")
 )
