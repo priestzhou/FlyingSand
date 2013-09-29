@@ -377,6 +377,7 @@
 <thead><tr>
 <th align=\"right\">query</th>
 <th align=\"right\">status</th>
+<th align=\"right\">duration</th>
 <th align=\"right\">submit time</th>
 <th align=\"url\">url</th>
 </tr></thead>
@@ -390,11 +391,12 @@
                                 :let [query (v "query")]
                                 :let [status (v "status")]
                                 :let [submit-time (v "submit-time")]
+                                :let [duration (v "duration")]
                                 :let [url (v "url")]
                                 ]
                                 (format 
 "<tr><td align=\"right\">%s</td><td align=\"right\">%s</td><td align=\"right\">%s</td><td align=\"right\">%s</td></tr>"
-                                    query status (.toISOString (js/Date. submit-time)) url
+                                    query status duration (.toISOString (js/Date. submit-time)) url
                                 )
                             )
                         )

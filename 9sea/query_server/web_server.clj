@@ -80,15 +80,16 @@
             (recur qid result total-stages (inc current-stage))
         )
         (do
-            (let []
+            (let [now (to-long (time/now))]
                 (dosync
                     (alter results
                         update-in [qid]
                         assoc 
                             :result result 
-                            :status "success" 
+                            :status "succeeded" 
                             :progress [total-stages total-stages]
                             :url (format "queries/%d/csv" qid)
+                            :duration (- now (:submit-time (@results qid)))
                     )
                 )
                 (Thread/sleep 3000)
@@ -151,6 +152,7 @@
         user-id (extract-user-id cookies)
         {:keys [app version db query]} params
         qid (rand-int 10000)
+        now (to-long (time/now))
         ]
         (println "POST queries/ " (pr-str {:user_id user-id :app app :version version :db db :query query}))
         (dosync
@@ -158,7 +160,7 @@
                 :status "running" 
                 :query query
                 :log "" 
-                :submit-time (to-long (time/now))
+                :submit-time now
             })
         )
         (do-query qid query)
@@ -262,17 +264,17 @@
                 )
                 ]
                 (if (empty? qid)
-                    (do
-                        (alter saved-queries assoc (rand-int 1000) {
+                    (let [new-id (rand-int 1000)]
+                        (alter saved-queries assoc new-id {
                             :name qname 
                             :app app
                             :version version
                             :db db
                             :query query
                         })
-                        true
+                        new-id
                     )
-                    false
+                    nil
                 )
             )
         )
@@ -281,12 +283,12 @@
             {
                 :status 201
                 :headers {"Content-Type" "text/plain"}
-                :body "OK"
+                :body (format "%d" r)
             }
             {
                 :status 400
                 :headers {"Content-Type" "text/plain"}
-                :body r
+                :body qname
             }
         )
     )
@@ -318,7 +320,7 @@
 )
 
 (defn download [qid]
-    (println (format "HEAD queries/%d/csv" qid))
+    (println (format "GET queries/%d/csv" qid))
     (if-let [r (@csv qid)]
         {
             :status 200
@@ -357,10 +359,11 @@
                     (for [
                         k ks
                         :let [v (@results k)]
-                        :let [{:keys [query status url submit-time]} v]
+                        :let [{:keys [query status url submit-time duration]} v]
                         ]
                         [k (merge 
                                 {:query query :status status :submit-time submit-time}
+                                (if duration {:duration duration} {})
                                 (if url {:url url} {})
                             )
                         ]

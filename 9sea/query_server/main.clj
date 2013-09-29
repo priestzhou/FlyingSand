@@ -16,13 +16,10 @@
         (println "require -p to specify port")
         (System/exit 1)
     )
-    (when-not (:dir opts)
-        (println "require -d to specify directory")
-        (System/exit 1)
-    )
     (let [
         port (first (:port opts))
-        dir (first (:dir opts))
+        dir (:dir opts)
+        dir (if (empty? dir) "publics" (first dir))
         ]
         (assoc opts :port (read-string port) :dir dir)
     )
