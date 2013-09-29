@@ -41,7 +41,7 @@
     )
 )
 
-(defn authenticate [email psw]
+(defn log-in [email psw]
     (let [res (db/select users
             (db/fields :user_id)
             (db/where {:email email :password (-> psw (sha1) (util/hexdigits))})
@@ -55,10 +55,30 @@
 )
 
 (defn extract-user-id [cookies]
-    (when-let [user-id (cookies "user_id")]
-        (:value user-id)
+    (if cookies
+        (when-let [user-id (cookies "user_id")]
+            (:value user-id)
+        )
     )
 )
+
+(defn authenticate [cookies]
+    (if-let [user-id (extract-user-id cookies)]
+        (let [
+            res (db/select users
+                (db/fields :user_id)
+                (db/where {:user_id user-id})
+            )
+            ]
+            (if (empty? res)
+                nil
+                (-> res (first) (:user_id))
+            )
+        )
+    )
+)
+
+; query
 
 (def results (ref {}))
 (def csv (ref {}))
@@ -380,6 +400,43 @@
     )
 )
 
+; collector adminstration
+
+(def collectors (ref {
+    1 {
+        :name "xixi"
+        :url "http://1.1.1.1:1111/xixi"
+        :status "running"
+        :recent-sync (to-long (time/now))
+        :synced-data 12345
+    }
+    2 {
+        :name "hehe"
+        :url "http://2.2.2.2:2222/hehe"
+        :status "stopped"
+        :recent-sync (to-long (time/now))
+        :synced-data 54321
+    }
+    3 {
+        :name "haha"
+        :url "http://3.3.3.3:3333/haha"
+        :status "no-sync"
+    }
+}))
+
+
+(defn list-collectors [cookies]
+    (println "GET /sql/collectors/" {:user_id (extract-user-id cookies)})
+    (if-not (authenticate cookies)
+        {:status 401}
+        {
+            :status 200
+            :headers {"Content-Type" "application/json"}
+            :body (json/write-str @collectors)
+        }
+    )
+)
+
 (defn app [opts]
     (handler/site
         (defroutes app-routes
@@ -398,7 +455,7 @@
                 }
             )
             (POST "/sql/" {params :params}
-                (if-let [auth (authenticate (:email params) (:password params))]
+                (if-let [auth (log-in (:email params) (:password params))]
                     {
                         :status 201
                         :headers {
@@ -457,6 +514,22 @@
                     (slurp (.toFile (sh/getPath (:dir opts) "index.html")))
                 )
             )
+
+            ; the following is for collector adminitration page
+
+            (GET "/sql/collectors/" {:keys [cookies]}
+                (list-collectors cookies)
+            )
+
+            (GET "/sql/admin.html" {:keys [cookies]}
+                (println "GET /sql/admin.html" {:user_id (extract-user-id cookies)})
+                (if (authenticate cookies)
+                    (slurp (.toFile (sh/getPath (:dir opts) "admin.html")))
+                    (slurp (.toFile (sh/getPath (:dir opts) "index.html")))
+                )
+            )
+
+            ; the defaults
             (route/files "/sql/" {:root (:dir opts) :allow-symlinks? true})
             (route/not-found "Not Found")
         )
