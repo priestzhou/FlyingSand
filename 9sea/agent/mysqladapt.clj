@@ -56,9 +56,32 @@
     )
 )
 
+(defn- get-table-all-data [db tn]
+    (let [mysqldb (get-db db)
+            sql (str "select * from " tn)
+        ]
+        (try
+            (jdbc/with-connection mysqldb
+                (jdbc/with-query-results res [sql]
+                    (->>
+                        res
+                        doall
+                    )
+                )
+            )
+            (catch Exception e
+                (println e)
+                (println (.printStackTrace e) )
+            )
+        )        
+    )
+
+)
+
 (def mysql-map 
     {
         :get-dbname get-dbname
         :get-table-schema get-table-schema
+        :get-table-all-data get-table-all-data
     }
 )

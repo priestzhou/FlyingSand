@@ -25,6 +25,18 @@
     (cp/GET "/test" {params :params} 
         (dba/get-schemas @dbatom)
     )
+    (cp/GET "/get-table-all-data" {params :params}
+        (let [r (dba/get-table-all-data @dbatom (:namespace params))]
+            (println r)
+            {:status 202
+                :headers {
+                    "Access-Control-Allow-Origin" "*"
+                    "content-type" "application/json"
+                }
+                :body (js/write-str r)
+            }
+        )
+    )    
     (route/not-found "Not Found")
 )
 
@@ -84,7 +96,7 @@
                 :join? false
             }
         )
-        (future 
+        (comment future 
             (tool/check 
                 "\" monitor.main\""  
                 " nohup java -cp .:monitor.jar monitor.main 2>&1 >>monitor.log & "  

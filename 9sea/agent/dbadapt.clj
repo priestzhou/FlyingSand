@@ -103,11 +103,23 @@
             (not (= version (:appversion dbs))) {:errCode "version mismach"}
             (nil? (find tbl db))  {:errCode "db not find"}
             (nil? (get-in tbl [db table]))  {:errCode "table not find"}
-            :else {:status "sucess"}
+            :else {:status "sucess" 
+                    :db (first (get-in tbl [db table])) 
+                    :table table
+                }
         )
     )
 )
 
 (defn get-table-all-data [dbsetting qstr]
-    (check-meta dbsetting qstr)
+    (let [flag (check-meta dbsetting qstr)
+        ]
+        (if (nil? (:errCode flag))
+            { 
+                :data 
+                ((:get-table-all-data *db-func-map*) (:db flag) (:table flag))
+            }
+            flag
+        )
+    )
 )

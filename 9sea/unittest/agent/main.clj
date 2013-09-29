@@ -14,10 +14,15 @@
     [{:id "id2" :name "col2"} {:id "id1" :name "col1"}]
 )
 
+(defn- table-all-data [in1 in2]
+    [{:id "id2" :name "col2"} {:id "id1" :name "col1"}]
+)
+
 (def  mock-map    
     {
         :get-dbname get-dbname
         :get-table-schema get-table-schema
+        :get-table-all-data table-all-data
     }
 )
 
@@ -171,6 +176,18 @@
         )
         :is
         nil
+    )
+    (:fact test-table-all-data-getdata
+        (->>
+            (get-table-all-data
+                dbsetting
+                "testapp.ves-1.test db.test-table1"
+            )
+            :data
+            count
+        )
+        :is
+        2
     )
 )
 
