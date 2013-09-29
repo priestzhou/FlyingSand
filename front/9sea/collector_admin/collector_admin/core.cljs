@@ -1,7 +1,4 @@
 (ns collector-admin.core
-    (:use
-        [domina.css :only (sel)]
-    )
     (:require
         [clojure.string :as str]
         [domina :as dom]
@@ -84,15 +81,38 @@
         idx (.-selectedIndex selector)
         option (.item selector idx)
         cid (dom/text option)
+        collector (@collectors cid)
+        name (collector "name")
+        url (collector "url")
         ]
-        (let [
-            collector (@collectors cid)
-            name (collector "name")
-            url (collector "url")
-            ]
-            (-> "name" (dom/by-id) (dom/set-value! name))
-            (if url
-                (-> "url" (dom/by-id) (dom/set-value! url))
+        (-> "name" (dom/by-id) (dom/set-value! name))
+        (if url
+            (-> "url" (dom/by-id) (dom/set-value! url))
+        )
+    )
+)
+
+(defn add-collector []
+    (let [
+        name (-> "name" (dom/by-id) (dom/value) (str/trim))
+        url (-> "url" (dom/by-id) (dom/value) (str/trim))
+        ]
+        (when (and name url)
+            (ajax/POST
+                (ajax/uri-with-params "collectors/" {
+                    :name name
+                    :url url
+                })
+                {
+                    :response-format :raw
+                    :handler (fn [response]
+                        (dom/log response)
+                    )
+                    :error-handler (fn [{:keys [status status-text response]}]
+                        (dom/log status-text)
+                        (js/alert (format "error %d: %s" status response))
+                    )
+                }
             )
         )
     )
@@ -102,6 +122,10 @@
     (-> "cids"
         (dom/by-id)
         (evt/listen! :change change-collector)
+    )
+    (-> "add"
+        (dom/by-id)
+        (evt/listen! :click add-collector)
     )
     (fetch-collectors)
 )

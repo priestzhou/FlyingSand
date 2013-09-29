@@ -424,6 +424,66 @@
     }
 }))
 
+(defn add-collector [params cookies]
+    (println "POST /sql/collectors" (assoc params :user_id (extract-user-id cookies)))
+    (if-not (authenticate cookies)
+        {:status 401}
+        (let [
+            name (:name params)
+            url (:url params)
+            cid (rand-int 1000)
+            r (dosync
+                (if-not (empty? (for [
+                            [_ v] @collectors
+                            :let [x (:name v)]
+                            :when (= x name)
+                        ]
+                        x
+                    ))
+                    {
+                        :status 409
+                        :headers {"Content-Type" "text/plain"}
+                        :body "duplicated name"
+                    }
+                    (let [
+                        duplicated-urls (for [
+                            [_ v] @collectors
+                            :let [x (:url v)]
+                            :when (= x url)
+                            ]
+                            x
+                        )
+                        ]
+                        (if-not (empty? duplicated-urls)
+                            {
+                                :status 409
+                                :headers {"Content-Type" "text/plain"}
+                                :body "duplicated url"
+                            }
+                            (do
+                                (alter collectors
+                                    assoc cid
+                                    {
+                                        :name name
+                                        :url url
+                                        :status "no-sync"
+                                    }
+                                )
+                                {
+                                    :status 201
+                                    :headers {"Content-Type" "application/json"}
+                                    :body (json/write-str {:id cid})
+                                }
+                            )
+                        )
+                    )
+                )
+            )
+            ]
+            r
+        )
+    )
+)
 
 (defn list-collectors [cookies]
     (println "GET /sql/collectors/" {:user_id (extract-user-id cookies)})
@@ -517,6 +577,9 @@
 
             ; the following is for collector adminitration page
 
+            (POST "/sql/collectors/" {:keys [params cookies]}
+                (add-collector params cookies)
+            )
             (GET "/sql/collectors/" {:keys [cookies]}
                 (list-collectors cookies)
             )
