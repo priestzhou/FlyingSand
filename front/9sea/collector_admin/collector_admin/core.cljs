@@ -140,6 +140,39 @@
     )
 )
 
+(defn edit-collector []
+    (let [
+        selector (dom/by-id "cids")
+        idx (.-selectedIndex selector)
+        option (.item selector idx)
+        cid (dom/text option)
+        name (-> "name" (dom/by-id) (dom/value) (str/trim))
+        url (-> "url" (dom/by-id) (dom/value) (str/trim))
+        ]
+        (cond
+            (nil? name) (js/alert "missing name")
+            (nil? url) (js/alert "missing url")
+            :else (ajax/ajax-request (format "collectors/%s" cid) "PUT"
+                (ajax/transform-opts {
+                    :params {
+                        :name name
+                        :url url
+                    }
+                    :format :json
+                    :response-format :raw
+                    :handler (fn [response]
+                        (dom/log response)
+                    )
+                    :error-handler (fn [{:keys [status status-text response]}]
+                        (dom/log status-text)
+                        (js/alert (format "error %d: %s" status response))
+                    )
+                })
+            )
+        )
+    )
+)
+
 (defn ^:export on-load []
     (-> "cids"
         (dom/by-id)
@@ -152,6 +185,10 @@
     (-> "delete"
         (dom/by-id)
         (evt/listen! :click del-collector)
+    )
+    (-> "edit"
+        (dom/by-id)
+        (evt/listen! :click edit-collector)
     )
     (fetch-collectors)
 )

@@ -5,6 +5,7 @@
         [korma.core :as db]
         [clojure.data.json :as json]
         [clojure.string :as str]
+        [clojure.java.io :as io]
         [utilities.core :as util]
         [utilities.shutil :as sh]
         [clj-time.core :as time]
@@ -515,6 +516,47 @@
     )
 )
 
+(defn edit-collector [params cookies body]
+    (if-not (authenticate cookies)
+        {:status 401 :headers {"Content-Type" "text/plain"} :body ""}
+        (let [
+            cid (Long/parseLong (:cid params))
+            rdr (io/reader body :encoding "UTF-8")
+            body (json/read rdr :key-fn keyword)
+            name (:name body)
+            url (:url body)
+            ]
+            (println (format "PUT /sql/collectors/%s" (:cid params)) 
+                {:user_id (extract-user-id cookies)}
+                body
+            )
+            (dosync
+                (if-let [v (@collectors cid)]
+                    (if (= (:status v) "no-sync")
+                        (if (empty? (for [
+                                [_ v] @collectors
+                                :let [x (:name v)]
+                                :when (not= x name)
+                                :let [y (:url v)]
+                                :when (not= y url)
+                                ]
+                                v
+                            ))
+                            (do
+                                (alter collectors update-in [cid] assoc :name name :url url)
+                                {:status 200 :headers {"Content-Type" "text/plain"} :body ""}
+                            )
+                            {:status 409 :headers {"Content-Type" "text/plain"} :body ""}
+                        )
+                        {:status 403 :headers {"Content-Type" "text/plain"} :body ""}
+                    )
+                    {:status 404 :headers {"Content-Type" "text/plain"} :body ""}
+                )
+            )
+        )
+    )
+)
+
 (defn app [opts]
     (handler/site
         (defroutes app-routes
@@ -603,6 +645,9 @@
             )
             (DELETE "/sql/collectors/:cid" {:keys [params cookies]}
                 (delete-collector params cookies)
+            )
+            (PUT "/sql/collectors/:cid" {:keys [params cookies body]}
+                (edit-collector params cookies body)
             )
 
             (GET "/sql/admin.html" {:keys [cookies]}
