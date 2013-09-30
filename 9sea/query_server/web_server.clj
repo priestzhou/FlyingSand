@@ -9,6 +9,7 @@
         [utilities.core :as util]
         [utilities.shutil :as sh]
         [clj-time.core :as time]
+        [query-server.query-backend :as backend]
     )
     (:use
         [compojure.core :only (defroutes GET PUT POST DELETE HEAD ANY)]
@@ -169,44 +170,64 @@
     )
 )
 
+(defn get-account-id
+    [user-id]
+    (let [res (db/select users
+            (db/fields :account_id)
+            (db/where {:user_id user-id})
+    )]
+        (if (empty? res)
+            nil
+            (-> res (first) (:account_id))
+        )
+    )
+    )
+
+
 (defn submit-query [params cookies]
     (let [
         user-id (extract-user-id cookies)
         {:keys [app version db query]} params
-        qid (rand-int 10000)
-        now (to-long (time/now))
-        ]
-        (println "POST queries/ " (pr-str {:user_id user-id :app app :version version :db db :query query}))
-        (dosync
-            (alter results assoc qid {
-                :status "running" 
-                :query query
-                :log "" 
-                :submit-time now
-            })
+         ]
+
+         ; find account by user id
+         (let [account-id (get-account-id user-id)]
+
+            (let [qid (backend/submit-query account-id app version db query)]
+               (println (str "qid is:" qid))
+
+            {
+                :status 201
+                :headers {
+                    "Content-Type" "application/json"
+                }
+                :body (json/write-str {:id qid})
+            }
+
+            )
+
         )
-        (do-query qid query)
+         
     )
 )
-
+      
+      
+      
+      
 (defn get-result [qid]
     (let [
         qid (Long/parseLong qid)
         _ (println (format "GET queries/%d/" qid))
-        result (dosync
-            (let [r (@results qid)]
-                (alter results update-in [qid] assoc :log "")
-                r
-            )
-        )
-        ]
+        result (backend/get-query-result qid)
+         ]
+        (println result)
         {
             :status 200
             :headers {"Content-Type" "application/json"}
             :body (json/write-str result)
         }
     )
-)
+) 
 
 (defn get-meta [cookies]
     (let [user-id (extract-user-id cookies)]
@@ -217,40 +238,7 @@
             :body (json/write-str
                 [
                     {
-                        :type "namespace"
-                        :name "WoW"
-                        :children [
-                            {
-                                :type "namespace"
-                                :name "panda"
-                                :children [
-                                    {
-                                        :type "namespace"
-                                        :name "db"
-                                        :children [
-                                            {
-                                                :type "table"
-                                                :name "smile"
-                                                :columns [
-                                                    {
-                                                        :name "item"
-                                                        :type "varchar(255)"
-                                                    }
-                                                    {
-                                                        :name "id"
-                                                        :type "integer primary key autoincrement"
-                                                    }
-                                                ]
-                                                :samples [
-                                                    ["hehe" 1]
-                                                    ["haha" 2]
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
+            
                     }
                 ]
             )

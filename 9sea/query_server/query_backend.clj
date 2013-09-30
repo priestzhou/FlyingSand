@@ -68,10 +68,7 @@
 (defn get-query-result
   [query-id]
   (let [result (shark/get-result query-id)]
-    (case (@result query-id)
-      "Success" (future (shark/clear-result-map query-id))
-      "Failed" (shark/clear-result-map query-id)
-       )
+   println result
     (-> result)
 ))
 

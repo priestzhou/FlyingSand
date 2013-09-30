@@ -43,8 +43,8 @@
 (def ^:private result-map (atom {}))
 
 (def ^:private max-result-size 1024)
-(def ^:private result-file-dir "C:\\feisha\\result\\")
-(def ^:private ret-result-size 5)
+(def ^:private result-file-dir "/home/admin/fancong/result")
+(def ^:private ret-result-size 100)
 
 (defn persist-query-result
   [result-set filename]
@@ -63,12 +63,33 @@
   )
   )
 
+(defn transform-result
+  [raw-result]
+
+  (let [r (first raw-result)
+        titles (keys r)
+        values []
+       ]
+
+    (doseq [row raw-result]
+
+      (conj values (vals row))
+    )
+
+    {
+      :titles titles
+      :values values
+    }
+  )
+)
+
+
 (defn update-result-map
   [q-id stats ret-result error-message csv-filename]
   (case stats
     "Running" (swap! result-map update-in [q-id] assoc 
              :status stats 
-             :start-time (System/currentTimeMillis)
+             :submit-time (System/currentTimeMillis)
              :end-time 0 
              :log "0 stage:0"
              :error-message error-message
@@ -78,7 +99,7 @@
              :end-time (str (System/currentTimeMillis))
              :log "1 stage 1"
              :error-message error-message
-             :download-uri csv-filename
+             :uri csv-filename
              :result ret-result)
     "Failed" (swap! result-map  update-in [q-id] assoc 
              :status stats 
@@ -93,11 +114,12 @@
   [q-id result-set]
   (let [{{q-time :start-time} q-id} @result-map
         ret-result (doall (take ret-result-size result-set))
+	transformed-result (transform-result ret-result)
         result-to-save (atom (take max-result-size result-set))
         filename (format "%s/%d_%d_result.csv" result-file-dir q-id q-time)
        ]
-        (println q-time ret-result)
-        (update-result-map q-id "Success" ret-result nil filename)
+        (println q-time transformed-result)
+        (update-result-map q-id "Success" transformed-result nil filename)
         (persist-query-result @result-to-save filename)
        ; (persist-query-result result-set q-id q-time)
       ))
@@ -105,14 +127,17 @@
 (defn run-shark-query
   [q-id query-str]
   (try
-  ( sql/with-connection pooled-db
+   (println (str "run-shark-query:" q-id))
+  ( sql/with-connection db
     (sql/with-query-results rs [query-str]
+  ; (println (str rs))
       
       (process-query q-id rs)
       ))
   (catch Exception exception
+   (.printStackTrace exception)
     ; we should seperate exception
-    (update-result-map q-id "Failed" nil exception)
+  ;  (update-result-map q-id "Failed" nil exception)
     )))
 
 (defn submit-query
@@ -122,10 +147,13 @@
   (println (str q-id ":" query-str))
   (update-result-map q-id "Running" {} nil nil)
   (future (run-shark-query q-id query-str)))
+ ;  (run-shark-query q-id query-str))
       
 (defn get-result
   [q-id]
-  (println (get @result-map q-id)))
+  (println (get @result-map q-id))
+  (get @result-map q-id)
+)
   
 (defn clear-result-map
   [q-id]
