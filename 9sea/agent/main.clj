@@ -22,7 +22,18 @@
 )
 
 (cp/defroutes app-routes
-    (cp/GET "/test" {params :params} 
+    (cp/GET "/get-setting" {params :params} 
+        (let [h (hash @dbatom )]
+            {:status 202
+                :headers {
+                    "Access-Control-Allow-Origin" "*"
+                    "content-type" "application/json"
+                }
+                :body (js/write-str (assoc @dbatom :hashcode r) )
+            }
+        )
+    )
+    (cp/GET "/get-schemas" {params :params} 
         (dba/get-schemas @dbatom)
     )
     (cp/GET "/get-table-all-data" {params :params}
