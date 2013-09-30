@@ -118,6 +118,28 @@
     )
 )
 
+(defn del-collector []
+    (let [
+        selector (dom/by-id "cids")
+        idx (.-selectedIndex selector)
+        option (.item selector idx)
+        cid (dom/text option)
+        ]
+        (ajax/ajax-request (format "collectors/%s" cid) "DELETE"
+            (ajax/transform-opts {
+                :response-format :raw
+                :handler (fn [response]
+                    (dom/log response)
+                )
+                :error-handler (fn [{:keys [status status-text response]}]
+                    (dom/log status-text)
+                    (js/alert (format "error %d: %s" status response))
+                )
+            })
+        )
+    )
+)
+
 (defn ^:export on-load []
     (-> "cids"
         (dom/by-id)
@@ -126,6 +148,10 @@
     (-> "add"
         (dom/by-id)
         (evt/listen! :click add-collector)
+    )
+    (-> "delete"
+        (dom/by-id)
+        (evt/listen! :click del-collector)
     )
     (fetch-collectors)
 )

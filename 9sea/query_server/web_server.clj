@@ -497,6 +497,24 @@
     )
 )
 
+(defn delete-collector [params cookies]
+    (println (format "DELETE /sql/collectors/%s" (:cid params)) {:user_id (extract-user-id cookies)})
+    (if-not (authenticate cookies)
+        {:status 401 :headers {"Content-Type" "text/plain"} :body ""}
+        (let [cid (Long/parseLong (:cid params))]
+            (dosync
+                (if (contains? @collectors cid)
+                    (do
+                        (alter collectors dissoc cid)
+                        {:status 200 :headers {"Content-Type" "text/plain"} :body ""}
+                    )
+                    {:status 404 :headers {"Content-Type" "text/plain"} :body ""}
+                )
+            )
+        )
+    )
+)
+
 (defn app [opts]
     (handler/site
         (defroutes app-routes
@@ -582,6 +600,9 @@
             )
             (GET "/sql/collectors/" {:keys [cookies]}
                 (list-collectors cookies)
+            )
+            (DELETE "/sql/collectors/:cid" {:keys [params cookies]}
+                (delete-collector params cookies)
             )
 
             (GET "/sql/admin.html" {:keys [cookies]}
