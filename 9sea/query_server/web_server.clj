@@ -16,6 +16,7 @@
         [korma.db :only (defdb sqlite3)]
         [logging.core :only [defloggers]]
         [clj-time.coerce :only (to-long)]
+        [slingshot.slingshot :only (try+ throw+)]
     )
     (:import
         [java.security MessageDigest]
@@ -425,136 +426,215 @@
     }
 }))
 
+(defn check-collector [msg pred]
+    (let [cids (for [
+            [cid v] @collectors
+            :when (pred cid v)
+            ]
+            cid
+        )
+        ]
+        (when-not (empty? cids)
+            (throw+
+                {
+                    :status 409 
+                    :headers {"Content-Type" "application/json"} 
+                    :body (json/write-str {
+                        :error msg
+                        :collector (first cids)
+                    })
+                }
+            )
+        )
+    )
+)
+
+(defn check-duplicated-name?
+    ([cid name]
+        (check-collector "duplicated name"
+            (fn [c v]
+                (and (not= cid c) (= name (:name v)))
+            )
+        )
+    )
+
+    ([name]
+        (check-collector "duplicated name"
+            (fn [c v]
+                (= name (:name v))
+            )
+        )
+    )
+)
+
+(defn check-duplicated-url?
+    ([cid url]
+        (check-collector "duplicated url"
+            (fn [c v]
+                (and (not= cid c) (= url (:url v)))
+            )
+        )
+    )
+
+    ([url]
+        (check-collector "duplicated url"
+            (fn [c v]
+                (= url (:url v))
+            )
+        )
+    )
+)
+
+(defn is-collector-no-sync? [cid]
+    (if-let [v (@collectors cid)]
+        (when-not (= (:status v) "no-sync")
+            (throw+
+                {
+                    :status 403 
+                    :headers {"Content-Type" "application/json"} 
+                    :body "null"
+                }
+            )
+        )
+    )
+)
+
+(defn does-collector-exist? [cid]
+    (when-not (contains? @collectors cid)
+        (throw+
+            {
+                :status 404 
+                :headers {"Content-Type" "application/json"} 
+                :body "null"
+            }
+        )
+    )
+)
+
+(defn authenticate* [cookies]
+    (if-let [user-id (extract-user-id cookies)]
+        (let [
+            res (db/select users
+                (db/fields :user_id)
+                (db/where {:user_id user-id})
+            )
+            ]
+            (if (empty? res)
+                (throw+
+                    {
+                        :status 401 
+                        :headers {"Content-Type" "application/json"} 
+                        :body "null"
+                    }
+                )
+            )
+        )
+    )
+)
+
 (defn add-collector [params cookies]
-    (println "POST /sql/collectors" (assoc params :user_id (extract-user-id cookies)))
-    (if-not (authenticate cookies)
-        {:status 401}
+    (println "POST /sql/collectors" params cookies)
+    (try+
+        (authenticate* cookies)
         (let [
             name (:name params)
             url (:url params)
             cid (rand-int 1000)
-            r (dosync
-                (if-not (empty? (for [
-                            [_ v] @collectors
-                            :let [x (:name v)]
-                            :when (= x name)
-                        ]
-                        x
-                    ))
+            ]
+            (dosync
+                (check-duplicated-name? name)
+                (check-duplicated-url? url)
+
+                (let [r {:status "no-sync" :name name :url url}]
+                    (alter collectors assoc cid r)
                     {
-                        :status 409
-                        :headers {"Content-Type" "text/plain"}
-                        :body "duplicated name"
+                        :status 201
+                        :headers {"Content-Type" "application/json"}
+                        :body (json/write-str (assoc r :id cid))
                     }
-                    (let [
-                        duplicated-urls (for [
-                            [_ v] @collectors
-                            :let [x (:url v)]
-                            :when (= x url)
-                            ]
-                            x
-                        )
-                        ]
-                        (if-not (empty? duplicated-urls)
-                            {
-                                :status 409
-                                :headers {"Content-Type" "text/plain"}
-                                :body "duplicated url"
-                            }
-                            (do
-                                (alter collectors
-                                    assoc cid
-                                    {
-                                        :name name
-                                        :url url
-                                        :status "no-sync"
-                                    }
-                                )
-                                {
-                                    :status 201
-                                    :headers {"Content-Type" "application/json"}
-                                    :body (json/write-str {:id cid})
-                                }
-                            )
-                        )
-                    )
                 )
             )
-            ]
-            r
         )
-    )
+    (catch map? ex
+        ex
+    ))
 )
 
 (defn list-collectors [cookies]
-    (println "GET /sql/collectors/" {:user_id (extract-user-id cookies)})
-    (if-not (authenticate cookies)
-        {:status 401}
-        {
-            :status 200
-            :headers {"Content-Type" "application/json"}
-            :body (json/write-str @collectors)
-        }
-    )
+    (println "GET /sql/collectors/" cookies)
+    (try+
+        (authenticate* cookies)
+
+        (let [r (dosync
+                (for [
+                    [cid v] @collectors
+                    ]
+                    (assoc v :id cid)
+                )
+            )
+            ]
+            {
+                :status 200
+                :headers {"Content-Type" "application/json"}
+                :body (json/write-str r)
+            }
+        )
+    (catch map? ex
+        ex
+    ))
 )
 
 (defn delete-collector [params cookies]
-    (println (format "DELETE /sql/collectors/%s" (:cid params)) {:user_id (extract-user-id cookies)})
-    (if-not (authenticate cookies)
-        {:status 401 :headers {"Content-Type" "text/plain"} :body ""}
-        (let [cid (Long/parseLong (:cid params))]
+    (try+
+        (let [cid (-> params (:cid) (Long/parseLong))]
+            (println (format "DELETE /sql/collectors/%d" cid) cookies)
+            (authenticate* cookies)
             (dosync
-                (if (contains? @collectors cid)
-                    (do
-                        (alter collectors dissoc cid)
-                        {:status 200 :headers {"Content-Type" "text/plain"} :body ""}
-                    )
-                    {:status 404 :headers {"Content-Type" "text/plain"} :body ""}
-                )
+                (does-collector-exist? cid)
+
+                (alter collectors dissoc cid)
+                {
+                    :status 200 
+                    :headers {"Content-Type" "application/json"} 
+                    :body (json/write-str {})
+                }
             )
         )
-    )
+    (catch map? ex
+        ex
+    ))
 )
 
 (defn edit-collector [params cookies body]
-    (if-not (authenticate cookies)
-        {:status 401 :headers {"Content-Type" "text/plain"} :body ""}
+    (try+
+        (authenticate* cookies)
         (let [
             cid (Long/parseLong (:cid params))
-            rdr (io/reader body :encoding "UTF-8")
-            body (json/read rdr :key-fn keyword)
+            body (-> body 
+                (io/reader :encoding "UTF-8") 
+                (json/read :key-fn keyword)
+            )
             name (:name body)
             url (:url body)
             ]
-            (println (format "PUT /sql/collectors/%s" (:cid params)) 
-                {:user_id (extract-user-id cookies)}
-                body
-            )
+            (println (format "PUT /sql/collectors/%d" cid) cookies body)
             (dosync
-                (if-let [v (@collectors cid)]
-                    (if (= (:status v) "no-sync")
-                        (if (empty? (for [
-                                [_ v] @collectors
-                                :let [x (:name v)]
-                                :when (not= x name)
-                                :let [y (:url v)]
-                                :when (not= y url)
-                                ]
-                                v
-                            ))
-                            (do
-                                (alter collectors update-in [cid] assoc :name name :url url)
-                                {:status 200 :headers {"Content-Type" "text/plain"} :body ""}
-                            )
-                            {:status 409 :headers {"Content-Type" "text/plain"} :body ""}
-                        )
-                        {:status 403 :headers {"Content-Type" "text/plain"} :body ""}
-                    )
-                    {:status 404 :headers {"Content-Type" "text/plain"} :body ""}
-                )
+                (does-collector-exist? cid)
+                (is-collector-no-sync? cid)
+                (check-duplicated-name? cid name)
+                (check-duplicated-url? cid url)
+
+                (alter collectors update-in [cid] assoc :name name :url url)
+                {
+                    :status 200 
+                    :headers {"Content-Type" "application/json"} 
+                    :body (json/write-str {})
+                }
             )
         )
-    )
+    (catch map? ex
+        ex
+    ))
 )
 
 (defn app [opts]

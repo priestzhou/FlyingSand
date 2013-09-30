@@ -16,25 +16,30 @@
 (defn render-collectors-tbl [response]
     (str/join "\n"
         (for [
-            [k v] response
-            :let [name (v "name")]
-            :let [status (v "status")]
-            :let [recent-sync (v "recent-sync")]
-            :let [synced-data (v "synced-data")]
+            collector response
+            :let [name (collector "name")]
+            :let [status (collector "status")]
+            :let [recent-sync (collector "recent-sync")]
+            :let [synced-data (collector "synced-data")]
+            :let [url (collector "url")]
             ]
-            (format "<tr><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>"
+            (format "<tr><td>%s</td><td>%s</td><td>%d</td><td>%s</td><td>%s</td></tr>"
                 name
                 (if recent-sync (.toISOString (js/Date. recent-sync)) "")
                 (if synced-data synced-data 0)
                 status
+                (if url url "")
             )
         )
     )
 )
 
-(defn render-cids [cids]
+(defn render-cids [response]
     (str/join "\n"
-        (for [cid cids]
+        (for [
+            collector response
+            :let [cid (collector "id")]
+            ]
             (format "<option>%s</option>" cid)
         )
     )
@@ -45,22 +50,18 @@
         (dom/by-id)
         (dom/set-html! (render-collectors-tbl response))
     )
-    (let [cids (keys response)]
-        (-> "cids"
-            (dom/by-id)
-            (dom/set-html! (render-cids cids))
-        )
-        (when-not (empty? cids)
-            (let [
-                cid (first cids)
-                name ((response cid) "name")
-                url ((response cid) "url")
-                ]
-                (-> "name" (dom/by-id) (dom/set-value! name))
-                (if url
-                    (-> "url" (dom/by-id) (dom/set-value! url))
-                )
-            )
+    (-> "cids"
+        (dom/by-id)
+        (dom/set-html! (render-cids response))
+    )
+    (when-not (empty? response)
+        (let [
+            collector (first response)
+            name (collector "name")
+            url (collector "url")
+            ]
+            (-> "name" (dom/by-id) (dom/set-value! name))
+            (-> "url" (dom/by-id) (dom/set-value! (if url url "")))
         )
     )
     (reset! collectors response)
@@ -80,14 +81,24 @@
         selector (dom/by-id "cids")
         idx (.-selectedIndex selector)
         option (.item selector idx)
-        cid (dom/text option)
-        collector (@collectors cid)
-        name (collector "name")
-        url (collector "url")
+        cid (int (dom/text option))
+        collectors (for [
+            c @collectors
+            :when (= cid (c "id"))
+            ]
+            c
+        )
         ]
-        (-> "name" (dom/by-id) (dom/set-value! name))
-        (if url
-            (-> "url" (dom/by-id) (dom/set-value! url))
+        (if (empty? collectors)
+            (js/alert "no collector")
+            (let [
+                collector (first collectors)
+                name (collector "name")
+                url (collector "url")
+                ]
+                (-> "name" (dom/by-id) (dom/set-value! name))
+                (-> "url" (dom/by-id) (dom/set-value! (if url url "")))
+            )
         )
     )
 )
@@ -107,6 +118,7 @@
                     :response-format :raw
                     :handler (fn [response]
                         (dom/log response)
+                        (fetch-collectors)
                     )
                     :error-handler (fn [{:keys [status status-text response]}]
                         (dom/log status-text)
@@ -127,9 +139,10 @@
         ]
         (ajax/ajax-request (format "collectors/%s" cid) "DELETE"
             (ajax/transform-opts {
-                :response-format :raw
+                :response-format :json
                 :handler (fn [response]
                     (dom/log response)
+                    (fetch-collectors)
                 )
                 :error-handler (fn [{:keys [status status-text response]}]
                     (dom/log status-text)
@@ -159,9 +172,10 @@
                         :url url
                     }
                     :format :json
-                    :response-format :raw
+                    :response-format :json
                     :handler (fn [response]
                         (dom/log response)
+                        (fetch-collectors)
                     )
                     :error-handler (fn [{:keys [status status-text response]}]
                         (dom/log status-text)
