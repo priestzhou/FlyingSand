@@ -8,17 +8,31 @@
     )
 )
 
-(defn- positional-stream' [s offset line row]
+(defn default-ISE [msg]
+    (InvalidSyntaxException. msg)
+)
+
+(defn str->stream [str]
     (lazy-seq
-        (if (empty? s)
-            [[:eof offset line row]]
-            (let [[x & xs] s]
-                (if (= x \newline)
-                    (cons [x offset line row] 
-                        (positional-stream' xs (inc offset) (inc line) 1)
-                    )
-                    (cons [x offset line row] 
-                        (positional-stream' xs (inc offset) line (inc row))
+        (if (empty? str)
+            [[:eof {:gen-ISE default-ISE}]]
+            (let [[x & xs] str]
+                (cons [x {:gen-ISE default-ISE}]
+                    (str->stream xs)
+                )
+            )
+        )
+    )
+)
+
+(defn reader->stream! [^java.io.Reader rdr]
+    (lazy-seq
+        (let [ch (.read rdr)]
+            (if (< ch 0)
+                [[:eof {:gen-ISE default-ISE}]]
+                (let [ch (char ch)]
+                    (cons [ch {:gen-ISE default-ISE}] 
+                        (reader->stream! rdr)
                     )
                 )
             )
@@ -26,36 +40,54 @@
     )
 )
 
-(defn positional-stream [str]
-    (positional-stream' str 0 1 1)
+(defn positional-ISE [line column msg]
+    (let [msg (format "%s at %d:%d" msg line column)]
+        (InvalidSyntaxException. msg)
+    )
 )
 
-(defn gen-ISE [stream msg]
-    {
-        :pre [
-            (not (empty? stream))
-        ]
-    }
-    (let [[[x _ l r] & _] stream]
-        (if (= x :eof)
-            (InvalidSyntaxException. msg)
-            (InvalidSyntaxException. msg l r)
+(defn- positional-stream' [s line column]
+    (lazy-seq
+        (when-not (empty? s)
+            (let [[[ch add :as x] & xs] s
+                this [ch (assoc add :gen-ISE (partial positional-ISE line column))]
+                ]
+                (case ch
+                    :eof [x]
+                    \newline (cons this
+                        (positional-stream' xs (inc line) 1)
+                    )
+                    (cons this
+                        (positional-stream' xs line (inc column))
+                    )
+                )
+            )
         )
     )
 )
 
+(defn positional-stream [stream]
+    (positional-stream' stream 1 1)
+)
+
+(defn gen-ISE [stream msg]
+{
+    :pre [(not (empty? stream))]
+}
+    (let [[[_ addition]] stream]
+        (throw ((:gen-ISE addition) msg))
+    )
+)
 
 (defn- char-parser [pred format-eof format-char stream]
-    {
-        :pre [
-            (not (empty? stream))
-        ]
-    }
-    (let [[[x p l r] & xs] stream]
+{
+    :pre [(not (empty? stream))]
+}
+    (let [[[x] & xs] stream]
         (cond
-            (pred x) [xs [p (inc p)]]
-            (not= x :eof) (throw (InvalidSyntaxException. (format-char x) l r))
-            :else (throw (InvalidSyntaxException. (format-eof)))
+            (pred x) [xs x]
+            (not= x :eof) (gen-ISE stream (format-char x))
+            :else (gen-ISE stream (format-eof))
         )
     )
 )
@@ -74,19 +106,17 @@
     )
 )
 
-(defn expect-no-eof []
+(defn expect-any-char []
     (expect-char-if (fn [ch] (not= ch :eof)))
 )
 
 (defn- expect-eof-parser [stream]
-    {
-        :pre [
-            (not (empty? stream))
-        ]
-    }
-    (let [[[x p] & xs] stream]
+{
+    :pre [(not (empty? stream))]
+}
+    (let [[[x] & _] stream]
         (if (= x :eof)
-            [xs [p p]]
+            [stream :eof]
             (throw (gen-ISE stream "expect eof but not"))
         )
     )
@@ -97,10 +127,14 @@
 )
 
 (defn- string-parser' [str stream]
+{
+    :pre [(not (empty? stream))]
+}
     (if (empty? str)
         stream
-        (let [[x & xs] str
-                [strm] ((expect-char x) stream)
+        (let [
+            [x & xs] str
+            [strm] ((expect-char x) stream)
             ]
             (recur xs strm)
         )
@@ -108,17 +142,14 @@
 )
 
 (defn- string-parser [str stream]
-    (throw-if (empty? stream)
-        InvalidSyntaxException. 
-        (format "expect \"%s\"" str) 
-    )
-    (let [[[_ p] & _] stream]
-        (try
-            [(string-parser' str stream) [p (+ p (.length str))]]
-        (catch InvalidSyntaxException ex
-            (throw (gen-ISE stream (format "expect \"%s\"" str)))
-        ))
-    )
+{
+    :pre [(not (empty? stream))]
+}
+    (try
+        [(string-parser' str stream) str]
+    (catch InvalidSyntaxException ex
+        (throw (gen-ISE stream (format "expect \"%s\"" str)))
+    ))
 )
 
 (defn expect-string [str]
@@ -126,18 +157,16 @@
 )
 
 (defn- expect-string-while-parser' [pred start stream]
-    (let [[[ch p] & nxt-strm] stream]
+    (let [[[ch] & nxt-strm] stream]
         (if (pred ch)
             (recur pred start nxt-strm)
-            [stream [start p]]
+            [stream start]
         )
     )
 )
 
 (defn- expect-string-while-parser [pred stream]
-    (let [[[_ start]] stream]
-        (expect-string-while-parser' pred start stream)
-    )
+    (expect-string-while-parser' pred stream stream)
 )
 
 (defn expect-string-while [pred]
@@ -301,7 +330,7 @@
 
 (def whitespace #{\space \tab \formfeed \newline})
 
-(defn- extract-string-between' [sb end-stream start-stream]
+(defn- extract-string-between! [sb end-stream start-stream]
     (if (= start-stream end-stream)
         (str sb)
         (let [[[ch] & rest-stream] start-stream]
@@ -317,6 +346,26 @@
 
 (defn extract-string-between [start-stream end-stream]
     (let [sb (StringBuilder.)]
-        (extract-string-between' sb end-stream start-stream)
+        (extract-string-between! sb end-stream start-stream)
     )
+)
+
+(defn left-recursive-parser [real-parser stream]
+    (let [[[ch opts] & xs] stream]
+        (if-let [lr (:left-recursive opts)]
+            (if (contains? lr real-parser)
+                (gen-ISE stream "recursion")
+                (let [new-opts (assoc opts :left-recursive (conj lr real-parser))]
+                    (real-parser (cons [ch new-opts] xs))
+                )
+            )
+            (let [new-opts (assoc opts :left-recursive #{real-parser})]
+                (real-parser (cons [ch new-opts] xs))
+            )
+        )
+    )
+)
+
+(defn left-recursive [parser]
+    (partial left-recursive-parser parser)
 )
