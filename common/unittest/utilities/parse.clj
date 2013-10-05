@@ -1,83 +1,127 @@
 (ns unittest.utilities.parse
     (:use 
         testing.core
-        utilities.parse
+    )
+    (:require
+        [utilities.parse :as prs]
     )
     (:import
+        [java.io StringReader]
         [utilities.parse InvalidSyntaxException]
     )
 )
 
-(suite "InvalidSyntaxException"
-    (:fact ISE-throw
-        (fn [] (throw (InvalidSyntaxException. "msg" 1 2)))
-        :throws
-        InvalidSyntaxException
-    )
-    (:fact ISE-access-ISE
-        (try
-            (throw (InvalidSyntaxException. "msg" 1 2))
-        (catch InvalidSyntaxException ex
-            [(.getRawMessage ex) (.getLine ex) (.getRow ex) (.getMessage ex)]
-        ))
+(suite "str->stream"
+    (:fact str->stream
+        (prs/str->stream "ab")
         :is
-        ["msg" 1 2 "msg at 1:2"]
+        [
+            [\a {:gen-ISE prs/default-ISE}] 
+            [\b {:gen-ISE prs/default-ISE}] 
+            [:eof {:gen-ISE prs/default-ISE}]
+        ]
+    )
+)
+
+(suite "reader->stream"
+    (:fact reader->stream
+        (->> "ab"
+            (StringReader.)
+            (prs/reader->stream!)
+        )
+        :is
+        [
+            [\a {:gen-ISE prs/default-ISE}] 
+            [\b {:gen-ISE prs/default-ISE}] 
+            [:eof {:gen-ISE prs/default-ISE}]
+        ]
+    )
+)
+
+(defn extract-line-column [res stream]
+    (if (empty? stream)
+        res
+        (let [[_ & xs] stream]
+            (try
+                (prs/gen-ISE stream "msg")
+            (catch InvalidSyntaxException ex
+                (extract-line-column (conj res (.getMessage ex)) xs)
+            ))
+        )
     )
 )
 
 (suite "positional-stream"
     (:fact positional-stream
-        (positional-stream "ab\nc")
+        (extract-line-column []
+            (prs/positional-stream (prs/str->stream "ab\nc"))
+        )
         :is
-        [[\a 0 1 1] [\b 1 1 2] [\newline 2 1 3] [\c 3 2 1] [:eof 4 2 2]]
+        [
+            "msg at 1:1"
+            "msg at 1:2"
+            "msg at 1:3"
+            "msg at 2:1"
+            "msg"
+        ]
+    )
+)
+
+(defn extract-stream [stream]
+    (vec (map first stream))
+)
+
+(defn extract-result [result]
+    (let [[stream result] result]
+        [(extract-stream stream) result]
     )
 )
 
 (suite "expect-char"
     (:fact char-match
-        (
-            (expect-char \a)
-            (positional-stream "abc")
+        (->> "abc"
+            (prs/str->stream)
+            ((prs/expect-char \a))
+            (extract-result)
         )
         :is
-        [[[\b 1 1 2] [\c 2 1 3] [:eof 3 1 4]] [0 1]]
+        [[\b \c :eof] \a]
     )
     (:fact char-eof
         (fn []
-            (
-                (expect-char \a)
-                (positional-stream "")
+            (->> ""
+                (prs/str->stream)
+                ((prs/expect-char \a))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
     (:fact char-unmatch
         (fn []
-            (
-                (expect-char \b)
-                (positional-stream "abc")
+            (->> "abc"
+                (prs/str->stream)
+                ((prs/expect-char \b))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
 )
 
 (suite "expect-char-if"
     (:fact char-if-match
-        (
-            (expect-char-if #{\a})
-            (positional-stream "ab")
+        (->> "ab"
+            (prs/str->stream)
+            ((prs/expect-char-if #{\a}))
+            (extract-result)
         )
         :is
-        [[[\b 1 1 2] [:eof 2 1 3]] [0 1]]
+        [[\b :eof] \a]
     )
     (:fact char-if-unmatch
         (fn []
-            (
-                (expect-char-if #{\a})
-                (positional-stream "ba")
+            (->> "ba"
+                (prs/str->stream)
+                ((prs/expect-char-if #{\a}))
             )
         )
         :throws InvalidSyntaxException
@@ -94,7 +138,7 @@
     )
     (:fact digit
         (fn [ch]
-            (boolean (digit ch))
+            (boolean (prs/digit ch))
         )
         :eq
         (fn [ch]
@@ -113,7 +157,7 @@
     )
     (:fact letter
         (fn [ch]
-            (boolean (letter ch))
+            (boolean (prs/letter ch))
         )
         :eq
         (fn [ch]
@@ -122,20 +166,21 @@
     )
 )
 
-(suite "expect-no-eof"
-    (:fact no-eof-match
-        (
-            (expect-no-eof)
-            (positional-stream "a")
+(suite "expect-any-char"
+    (:fact any-char-match
+        (->> "a"
+            (prs/str->stream)
+            ((prs/expect-any-char))
+            (extract-result)
         )
         :is
-        [[[:eof 1 1 2]] [0 1]]
+        [[:eof] \a]
     )
-    (:fact no-eof-eof
+    (:fact any-char-eof
         (fn []
-            (
-                (expect-no-eof)
-                (positional-stream "")
+            (->> ""
+                (prs/str->stream)
+                ((prs/expect-any-char))
             )
         )
         :throws InvalidSyntaxException
@@ -144,234 +189,241 @@
 
 (suite "expect-eof"
     (:fact eof-eof
-        (
-            (expect-eof)
-            (positional-stream "")
+        (->> ""
+            (prs/str->stream)
+            ((prs/expect-eof))
+            (extract-result)
         )
         :is
-        [nil [0 0]]
+        [[:eof] :eof]
     )
     (:fact eof-noeof
         (fn []
-            (
-                (expect-eof)
-                (positional-stream "abc")
+            (->> "abc"
+                (prs/str->stream)
+                ((prs/expect-eof))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
 )
 
 (suite "expect-string"
     (:fact str-normal
-        (
-            (expect-string "ab") 
-            (positional-stream "abc")
+        (->> "abc"
+            (prs/str->stream)
+            ((prs/expect-string "ab"))
+            (extract-result)
         )
         :is
-        [[[\c 2 1 3] [:eof 3 1 4]] [0 2]]
+        [[\c :eof] "ab"]
     )
     (:fact str-eof
         (fn []
-            (
-                (expect-string "ab") 
-                (positional-stream "")
+            (->> ""
+                (prs/str->stream)
+                ((prs/expect-string "ab"))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
     (:fact str-short
         (fn []
-            (
-                (expect-string "ab") 
-                (positional-stream "a")
+            (->> "a"
+                (prs/str->stream)
+                ((prs/expect-string "ab"))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
     (:fact str-unmatch
         (fn []
-            (
-                (expect-string "ab") 
-                (positional-stream "acb")
+            (->> "acb"
+                (prs/str->stream)
+                ((prs/expect-string "ab"))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
 )
 
 (suite "expect-string-while"
-    (:fact expect-string-while-normal
-        (
-            (expect-string-while digit)
-            (positional-stream "1a")
+    (:fact string-while-normal
+        (->> "1a"
+            (prs/str->stream)
+            ((prs/expect-string-while prs/digit))
+            ((fn [[stream result]] [(extract-stream stream) (extract-stream result)]))
         )
         :is
-        [[[\a 1 1 2] [:eof 2 1 3]] [0 1]]
+        [[\a :eof] [\1 \a :eof]]
     )
-    (:fact expect-string-while-empty
-        (
-            (expect-string-while digit)
-            (positional-stream "a")
+    (:fact string-while-empty
+        (->> "a"
+            (prs/str->stream)
+            ((prs/expect-string-while prs/digit))
+            ((fn [[stream result]] [(extract-stream stream) (extract-stream result)]))
         )
         :is
-        [[[\a 0 1 1] [:eof 1 1 2]] [0 0]]
+        [[\a :eof] [\a :eof]]
     )
 )
 
 (suite "choice"
     (:fact choice-first
-        (
-            (choice (expect-char \a) (expect-string "ab"))
-            (positional-stream "abc")
+        (->> "abc"
+            (prs/str->stream)
+            ((prs/choice (prs/expect-char \a) (prs/expect-string "ab")))
+            (extract-result)
         )
         :is
-        [[[\b 1 1 2] [\c 2 1 3] [:eof 3 1 4]] [0 1]]
+        [[\b \c :eof] \a]
     )
     (:fact choice-second
-        (
-            (choice (expect-char \a) (expect-string "bc"))
-            (positional-stream "bcd")
+        (->> "bcd"
+            (prs/str->stream)
+            ((prs/choice (prs/expect-char \a) (prs/expect-string "bc")))
+            (extract-result)
         )
         :is
-        [[[\d 2 1 3] [:eof 3 1 4]] [0 2]]
+        [[\d :eof] "bc"]
     )
     (:fact choice-unmatch
         (fn []
-            (
-                (choice (expect-char \a) (expect-string "bc"))
-                (positional-stream "xyz")
+            (->> "xyz"
+                (prs/str->stream)
+                ((prs/choice (prs/expect-char \a) (prs/expect-string "bc")))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
 )
 
 (suite "optional"
     (:fact optional-match
-        (
-            (optional (expect-char \a))
-            (positional-stream "ab")
+        (->> "ab"
+            (prs/str->stream)
+            ((prs/optional (prs/expect-char \a)))
+            (extract-result)
         )
         :is
-        [[[\b 1 1 2] [:eof 2 1 3]] [0 1]]
+        [[\b :eof] \a]
     )
     (:fact optional-unmatch
-        (
-            (optional (expect-char \z))
-            (positional-stream "ab")
+        (->> "ab"
+            (prs/str->stream)
+            ((prs/optional (prs/expect-char \z)))
+            (extract-result)
         )
         :is
-        [[[\a 0 1 1] [\b 1 1 2] [:eof 2 1 3]] nil]
+        [[\a \b :eof] nil]
     )
 )
 
 (suite "many"
     (:fact many-one
-        (
-            (many (expect-char \a)) 
-            (positional-stream "ab")
+        (->> "ab"
+            (prs/str->stream)
+            ((prs/many (prs/expect-char \a)))
+            (extract-result)
         )
         :is
-        [[[\b 1 1 2] [:eof 2 1 3]] [[0 1]]]
+        [[\b :eof] [\a]]
     )
     (:fact many-many
-        (
-            (many (expect-char \a))
-            (positional-stream "aab")
+        (->> "aab"
+            (prs/str->stream)
+            ((prs/many (prs/expect-char \a)))
+            (extract-result)
         )
         :is
-        [[[\b 2 1 3] [:eof 3 1 4]] [[0 1] [1 2]]]
+        [[\b :eof] [\a \a]]
     )
     (:fact many-none
-        (
-            (many (expect-char \a))
-            (positional-stream "b")
+        (->> "b"
+            (prs/str->stream)
+            ((prs/many (prs/expect-char \a)))
+            (extract-result)
         )
         :is
-        [[[\b 0 1 1] [:eof 1 1 2]] []]
+        [[\b :eof] []]
     )
 )
 
 (suite "many1"
     (:fact many1-one
-        (
-            (many1 (expect-char \a)) 
-            (positional-stream "ab")
+        (->> "ab"
+            (prs/str->stream)
+            ((prs/many1 (prs/expect-char \a)))
+            (extract-result)
         )
         :is
-        [[[\b 1 1 2] [:eof 2 1 3]] [[0 1]]]
+        [[\b :eof] [\a]]
     )
     (:fact many1-many
-        (
-            (many1 (expect-char \a)) 
-            (positional-stream "aab")
+        (->> "aab"
+            (prs/str->stream)
+            ((prs/many1 (prs/expect-char \a)))
+            (extract-result)
         )
         :is
-        [[[\b 2 1 3] [:eof 3 1 4]] [[0 1] [1 2]]]
+        [[\b :eof] [\a \a]]
     )
     (:fact many1-none
         (fn []
-            (
-                (many1 (expect-char \a)) 
-                (positional-stream "b")
+            (->> "b"
+                (prs/str->stream)
+                ((prs/many1 (prs/expect-char \a)))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
 )
 
 (suite "chain"
     (:fact chain-match-both
-        (
-            (chain (expect-char \a) (expect-char \b))
-            (positional-stream "abc")
+        (->> "abc"
+            (prs/str->stream)
+            ((prs/chain (prs/expect-char \a) (prs/expect-char \b)))
+            (extract-result)
         )
         :is
-        [[[\c 2 1 3] [:eof 3 1 4]] [[0 1] [1 2]]]
+        [[\c :eof] [\a \b]]
     )
     (:fact chain-match-one
         (fn []
-            (
-                (chain (expect-char \a) (expect-char \z))
-                (positional-stream "abc")
+            (->> "abc"
+                (prs/str->stream)
+                ((prs/chain (prs/expect-char \a) (prs/expect-char \z)))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
     (:fact chain-match-none
         (fn []
-            (
-                (chain (expect-char \y) (expect-char \z))
-                (positional-stream "abc")
+            (->> "abc"
+                (prs/str->stream)
+                ((prs/chain (prs/expect-char \y) (prs/expect-char \b)))
             )
         )
-        :throws
-        InvalidSyntaxException
+        :throws InvalidSyntaxException
     )
 )
 
 (suite "between"
     (:fact between-match
-        (
-            (between (expect-char \{) (expect-char \}) (expect-no-eof))
-            (positional-stream "{a{b}}")
+        (->> "{a{a}}"
+            (prs/str->stream)
+            ((prs/between (prs/expect-char \{) (prs/expect-char \}) (prs/expect-any-char)))
+            (extract-result)
         )
         :is
-        [[[\} 5 1 6] [:eof 6 1 7]] [[0 1] [4 5] [[1 2] [2 3] [3 4]]]]
+        [[\} :eof] [\{ \} [\a \{ \a]]]
     )
     (:fact between-unmatch
         (fn []
-            (
-                (between (expect-char \{) (expect-char \}) (expect-no-eof))
-                (positional-stream "{a{b")
+            (->> "{a{b"
+                (prs/str->stream)
+                ((prs/between (prs/expect-char \{) (prs/expect-char \}) (prs/expect-any-char)))
             )
         )
         :throws InvalidSyntaxException
@@ -380,18 +432,19 @@
 
 (suite "foresee"
     (:fact foresee-match
-        (
-            (foresee (expect-char \a))
-            (positional-stream "a")
+        (->> "a"
+            (prs/str->stream)
+            ((prs/foresee (prs/expect-char \a)))
+            (extract-result)
         )
         :is
-        [[[\a 0 1 1] [:eof 1 1 2]] [0 1]]
+        [[\a :eof] \a]
     )
     (:fact foresee-unmatch
         (fn []
-            (
-                (foresee (expect-char \a))
-                (positional-stream "b")
+            (->> "b"
+                (prs/str->stream)
+                ((prs/foresee (prs/expect-char \a)))
             )
         )
         :throws InvalidSyntaxException
@@ -400,22 +453,81 @@
 
 (suite "extract-string-between"
     (:fact extract-string-between-normal
-        (let [start-stream (positional-stream "ab")
+        (let [start-stream (prs/str->stream "ab")
                 end-stream (next start-stream)
             ]
-            (extract-string-between start-stream end-stream)
+            (prs/extract-string-between start-stream end-stream)
         )
         :is
         "a"
     )
     (:fact extract-string-between-eof
         (fn []
-            (let [start-stream (positional-stream "ab")
-                    end-stream (next start-stream)
-                ]
-                (extract-string-between end-stream start-stream)
+            (let [start-stream (prs/str->stream "ab")]
+                (prs/extract-string-between start-stream nil)
             )
         )
         :throws IllegalArgumentException
+    )
+)
+
+(defn char-rule [stream]
+    (let [[strm prsd] (->> stream ((prs/expect-char-if #{\1 \2 \3})))]
+        (case prsd
+            \1 [strm 1]
+            \2 [strm 2]
+            \3 [strm 3]
+        )
+    )
+)
+
+(defn plus-rule [expr-parser stream]
+    (let [[strm1 prsd1] (->> stream
+            ((prs/chain expr-parser (prs/expect-char \+) expr-parser))
+        )
+        ]
+        [strm1 [+ (first prsd1) (last prsd1)]]
+    )
+)
+
+(defn plus-rule1 [expr-parser parsed stream]
+    (let [[strm1 prsd1] (->> stream
+            ((prs/chain (prs/expect-char \+) expr-parser))
+        )
+        ]
+        [strm1 [+ parsed (last prsd1)]]
+    )
+)
+
+(defn expression [stream]
+    (let [recursive-expression (prs/left-recursive expression)
+        [strm1 prsd1] (->> stream
+            ((prs/choice 
+                (partial plus-rule recursive-expression)
+                char-rule
+            ))
+        )
+        [strm2 prsd2] (->> strm1
+            ((prs/optional
+                (partial plus-rule1 recursive-expression prsd1)
+            ))
+        )
+        ]
+        (if prsd2
+            [strm2 prsd2]
+            [strm1 prsd1]
+        )
+    )
+)
+
+(suite "left recursion"
+    (:fact left-recursion
+        (->> "1+2+3" ; EXP=EXP+EXP | 1 | 2 | 3
+            (prs/str->stream)
+            (expression)
+            (second)
+        )
+        :is
+        [+ 1 [+ 2 3]]
     )
 )
