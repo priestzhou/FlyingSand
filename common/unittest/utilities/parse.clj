@@ -247,24 +247,24 @@
     )
 )
 
-(suite "expect-string-while"
-    (:fact string-while-normal
+(suite "skip-while"
+    (:fact skip-while
         (->> "1a"
             (prs/str->stream)
-            ((prs/expect-string-while prs/digit))
-            ((fn [[stream result]] [(extract-stream stream) (extract-stream result)]))
+            ((prs/skip-while prs/digit))
+            (extract-result)
         )
         :is
-        [[\a :eof] [\1 \a :eof]]
+        [[\a :eof] nil]
     )
-    (:fact string-while-empty
+    (:fact skip-while:empty
         (->> "a"
             (prs/str->stream)
-            ((prs/expect-string-while prs/digit))
-            ((fn [[stream result]] [(extract-stream stream) (extract-stream result)]))
+            ((prs/skip-while prs/digit))
+            (extract-result)
         )
         :is
-        [[\a :eof] [\a :eof]]
+        [[\a :eof] nil]
     )
 )
 
@@ -529,5 +529,26 @@
         )
         :is
         [+ 1 [+ 2 3]]
+    )
+)
+
+(suite "separated list"
+    (:fact separated-list:single
+        (->> "a"
+            (prs/str->stream)
+            (prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.))
+            (extract-result)
+        )
+        :is
+        [[:eof] [\a]]
+    )
+    (:fact separated-list:multiple
+        (->> "a.b"
+            (prs/str->stream)
+            (prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.))
+            (extract-result)
+        )
+        :is
+        [[:eof] [\a \b]]
     )
 )
