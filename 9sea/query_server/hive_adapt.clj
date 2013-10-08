@@ -25,29 +25,30 @@
 (defn- mysql-type-to-hive [colType]
     (->>
         colType
-        (re-find #"[a-zA-Z]+")
+        (re-find #"[a-zA-Z]+" )
         (cs/upper-case)
         (get mysql-hive-type-map)
     )
 )
 
 (defn- get-column [colMap]
-    (let [colname (:Field colMap)
-            colType (:Type colMap)
+    (let [colname (:field colMap)
+            colType (:type colMap)
             hiveType (mysql-type-to-hive colType)
         ]
-        (str colname " " hiveType ",")
+        (str colname " " hiveType )
     )
 )
 
 (defn create-table [tn collist]
-    (let [ colsql (apply str (map  get-column collist))
+    (let [ colsql (reduce #(str %1 "," %2) (map  get-column collist))
             mainSql (str 
                 " CREATE TABLE " tn 
-                " (" colsql 
+                " ( " colsql 
                 ") PARTITIONED BY (fs_agent STRING)" 
                 )
+            res (qc/run-shark-query "" mainSql)
         ]
-        (qc/run-shark-query "" mainSql)
+        res
     )
 )

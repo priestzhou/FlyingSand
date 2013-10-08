@@ -29,12 +29,21 @@
                     "Access-Control-Allow-Origin" "*"
                     "content-type" "application/json"
                 }
-                :body (js/write-str (assoc @dbatom :hashcode r) )
+                :body (js/write-str (assoc @dbatom :hashcode h) )
             }
         )
     )
     (cp/GET "/get-schemas" {params :params} 
-        (dba/get-schemas @dbatom)
+        (let [r (dba/get-schemas @dbatom)]
+            (println r)
+            {:status 202
+                :headers {
+                    "Access-Control-Allow-Origin" "*"
+                    "content-type" "application/json"
+                }
+                :body (js/write-str r)
+            }
+        )
     )
     (cp/GET "/get-table-all-data" {params :params}
         (let [r (dba/get-table-all-data @dbatom (:namespace params))]

@@ -52,8 +52,9 @@
                 )
                 dblist
             )
+            res (map get-schema-db dbList)
         ]
-        (map get-schema-db dbList)
+        res
     )
 )
 
