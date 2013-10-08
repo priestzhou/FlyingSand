@@ -45,8 +45,9 @@
             mainSql (str 
                 " CREATE TABLE " tn 
                 " ( " colsql 
-                ") PARTITIONED BY (fs_agent STRING)" 
+                ") PARTITIONED BY (fs_agent STRING) " 
                 )
+            t1 (print "hive sql " mainSql)
             res (qc/run-shark-query "" mainSql)
         ]
         res

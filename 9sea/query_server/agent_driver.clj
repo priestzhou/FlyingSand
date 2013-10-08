@@ -16,7 +16,6 @@
     }
 )
 
-
 (defn- runsql [sql]
                 (jdbc/with-connection qb/my-db
                     (jdbc/with-query-results res [sql]
@@ -28,14 +27,21 @@
                 )
 )
 
+(defn- runupdate [sql]
+                (jdbc/with-connection qb/my-db
+                    (jdbc/execute! qb/my-db  [sql])
+                )
+)
+
 (defn- check-table [tns]
     (let [sql (str "select * from TblMetaStore where namespace = '" tns "'")
             res (runsql sql)
             rcount (count   res)
+            t1 (println "res " res " rcount" rcount)
         ]
         (cond
             (nil? res) true
-            (<= 1 rcount) true
+            (> 1 rcount) true
             :else false
         )
     )
@@ -54,15 +60,44 @@
     (let [
             dbname (:dbname dbsc)
             tbl (:tables dbsc)
-            tns (str accountid "_" appname "_" appversion "_" dbname)
+            tns (str accountid "." appname "." appversion "." dbname)
         ]
-        (map #(assoc % :namespace (str tns "_" (:tablename %) )) tbl)
+        (map 
+            #(assoc % 
+                :namespace (str tns "." (:tablename %) )
+                :hiveName (str "tn_" (hash (str tns "." (:tablename %) )))
+                :dbname dbname
+            ) 
+            tbl
+        )
     )
 )
-(defn create-table [dataset]
+
+(defn- add-table [& allcol] 
+    (let [collist (reduce  #(str  %1 "','" %2)  allcol )
+            colstr (str "('" collist "')")
+            sql (str  "insert into TblMetaStore VALUES " colstr ";"
+            )
+            t1 (println sql)
+            res (runupdate sql)
+        ]
+        res
+    )
+)
+
+(defn create-table [appname appversion dataset]
+    (println dataset)
     (when (check-table (:namespace dataset))
         (do 
-            (ha/create-table (:namespace dataset) (:cols dataset))
+            (add-table 
+                (:namespace dataset) 
+                appname 
+                appversion 
+                (:dbname dataset)
+                (:tablename dataset)
+                (:hiveName dataset)
+            )
+            (ha/create-table (:hiveName dataset) (:cols dataset))
         )
     )
 )
@@ -86,12 +121,9 @@
                 )
             )
         ]
-        (map create-table datalist)
+        (map (partial create-table appname appversion) datalist )
     )
 )
-
-
-
 
 (defn -main []
     (println (new-agent "11" "dfdsf" "http://192.168.1.101:8082" "user1"))
