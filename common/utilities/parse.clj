@@ -185,7 +185,7 @@
 
 (defn- choice-parser [parsers stream]
     (if (empty? parsers)
-        (throw (gen-ISE stream "no parser can be applied"))
+        (gen-ISE stream "no parser can be applied")
         (let [[p & ps] parsers
                 [continue strm res] (choice-parser' p stream)
             ]
@@ -199,6 +199,26 @@
 
 (defn choice [& parsers]
     (partial choice-parser parsers)
+)
+
+(defn- choice*-parser [args stream]
+    (cond
+        (empty? args) (gen-ISE stream "no parser can be applied")
+        (= 1 (count args)) [stream (first args)]
+        :else (let [
+            [res parser & rest-args] args
+            [continue strm] (choice-parser' parser stream)
+            ]
+            (if continue
+                (recur rest-args stream)
+                [strm res]
+            )
+        )
+    )
+)
+
+(defn choice* [& args]
+    (partial choice*-parser args)
 )
 
 (defn- optional-parser [parser stream]

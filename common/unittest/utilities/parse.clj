@@ -298,6 +298,45 @@
     )
 )
 
+(suite "choice*"
+    (:fact choice*:first
+        (->> "a"
+            (prs/str->stream)
+            ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b)))
+            (extract-result)
+        )
+        :is
+        [[:eof] :a]
+    )
+    (:fact choice*:second
+        (->> "b"
+            (prs/str->stream)
+            ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b)))
+            (extract-result)
+        )
+        :is
+        [[:eof] :b]
+    )
+    (:fact choice*:default
+        (->> "c"
+            (prs/str->stream)
+            ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b) :default))
+            (extract-result)
+        )
+        :is
+        [[\c :eof] :default]
+    )
+    (:fact choice*:unmatch
+        (fn []
+            (->> "c"
+                (prs/str->stream)
+                ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b)))
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+)
+
 (suite "optional"
     (:fact optional-match
         (->> "ab"
