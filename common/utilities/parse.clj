@@ -156,21 +156,21 @@
     (partial string-parser str)
 )
 
-(defn- expect-string-while-parser' [pred start stream]
+(defn- skip-while-parser' [pred stream]
     (let [[[ch] & nxt-strm] stream]
         (if (pred ch)
-            (recur pred start nxt-strm)
-            [stream start]
+            (recur pred nxt-strm)
+            [stream nil]
         )
     )
 )
 
-(defn- expect-string-while-parser [pred stream]
-    (expect-string-while-parser' pred stream stream)
+(defn- skip-while-parser [pred stream]
+    (skip-while-parser' pred stream)
 )
 
-(defn expect-string-while [pred]
-    (partial expect-string-while-parser pred)
+(defn skip-while [pred]
+    (partial skip-while-parser pred)
 )
 
 (defn- choice-parser' [p stream]
@@ -368,4 +368,26 @@
 
 (defn left-recursive [parser]
     (partial left-recursive-parser parser)
+)
+
+(defn separated-list [element-parser separator-parser stream]
+    (let [
+        [strm prsd] (->> stream
+            ((chain
+                element-parser
+                (many
+                    (chain
+                        separator-parser
+                        element-parser
+                    )
+                )
+            ))
+        )
+        prsd (cons
+            (first prsd)
+            (for [[_ x] (second prsd)] x)
+        )
+        ]
+        [strm prsd]
+    )
 )
