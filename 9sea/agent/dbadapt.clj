@@ -20,49 +20,22 @@
     )
 )
 
-(defn- get-schema-table [db tablename]
-    (let [table-schema ((:get-table-schema *db-func-map*) db tablename)]
-        {:tablename tablename :cols table-schema}
-    )
-)
-
-(defn- get-schema-db [dbset]
-    (let [db (:db dbset)
-            dbname ((:get-dbname *db-func-map*) db)
-            tableNameList (:tables dbset)
-            tbl (map (partial get-schema-table db ) tableNameList)
-        ]
-        {:dbname dbname :tables tbl}
-    )
-)
-
-(defn get-schemas [dbsetting]
-    (let [dblist (:database dbsetting)
-            dbList (map 
-                (fn [db]
-                    {:db 
-                        (get-sql 
-                            (:dbconnstr db) 
-                            (:dbuser db) 
-                            (:dbpassword db)
-                        ) 
-                        :tables
-                        (map  :tablename  (:tables db)) 
-                    }
-                )
-                dblist
-            )
-            res (map get-schema-db dbList)
-        ]
-        res
-    )
-)
-
 (defn- get-db-table-list' [dbset]
     (let [db (:db dbset)
             dbname ((:get-dbname *db-func-map*) db)
             tb (:tables dbset)
             tbl (map #(hash-map (:tablename %) [db %] ) tb)
+            tbmap (reduce merge {} tbl )
+        ]
+        { dbname tbmap }
+    )
+)
+
+(defn- get-db-table-list'' [dbset]
+    (let [db (:db dbset)
+            dbname ((:get-dbname *db-func-map*) db)
+            tb (:tables dbset)
+            tbl (map #(hash-map (:tablename %)  % ) tb)
             tbmap (reduce merge {} tbl )
         ]
         { dbname tbmap }
@@ -94,14 +67,53 @@
     (memoize get-db-table-list)
 )
 
-(defn- check-meta [dbs qstr]
+
+(defn- get-schema-table [db tablename]
+    (let [table-schema ((:get-table-schema *db-func-map*) db tablename)]
+        {:tablename tablename :cols table-schema}
+    )
+)
+
+(defn- get-schema-db [dbset]
+    (let [db (:db dbset)
+            dbname ((:get-dbname *db-func-map*) db)
+            tableNameList (map :tablename (:tables dbset))
+            tbl (map (partial get-schema-table db ) tableNameList)
+        ]
+        {:dbname dbname :tables tbl}
+    )
+)
+
+(defn get-schemas [dbsetting]
+    (let [dblist (:database dbsetting)
+            dbList (map 
+                (fn [db]
+                    {:db 
+                        (get-sql 
+                            (:dbconnstr db) 
+                            (:dbuser db) 
+                            (:dbpassword db)
+                        ) 
+                        :tables
+                        (:tables db)
+                    }
+                )
+                dblist
+            )
+            t1 (println "dblist" dbList)
+            t2 (println "table list" (db-table-list dbsetting))
+            res1 (map #(merge (get-schema-db %) (get-db-table-list'' %)) dbList)
+            res (map get-schema-db dbList)
+        ]
+        res1
+    )
+)
+
+
+(defn- check-meta [dbs db table]
     (let [tbl (db-table-list dbs)
-            str-list (clojure.string/split qstr #"\.")
-            [app version db table] str-list 
         ]
         (cond
-            (not (= app (:app dbs))) {:errCode "app mismach"}
-            (not (= version (:appversion dbs))) {:errCode "version mismach"}
             (nil? (find tbl db))  {:errCode "db not find"}
             (nil? (get-in tbl [db table]))  {:errCode "table not find"}
             :else {:status "sucess" 
@@ -113,8 +125,8 @@
     )
 )
 
-(defn get-table-all-data [dbsetting qstr]
-    (let [flag (check-meta dbsetting qstr)
+(defn get-table-all-data [dbsetting db tb]
+    (let [flag (check-meta dbsetting db tb)
         ]
         (if (nil? (:errCode flag))
             { 
@@ -126,8 +138,8 @@
     )
 )
 
-(defn get-table-inc-data [dbsetting qstr qnum]
-    (let [flag (check-meta dbsetting qstr)
+(defn get-table-inc-data [dbsetting db tb qnum]
+    (let [flag (check-meta dbsetting db tb)
         ]
         (if (nil? (:errCode flag))
             { 

@@ -41,13 +41,16 @@
 )
 
 (defn create-table [tn collist]
-    (let [ colsql (reduce #(str %1 "," %2) (map  get-column collist))
+    (println "tn and collist" tn "--" collist)
+    (let [coll (map  get-column collist)
+            t0 (println "coll" coll)
+            colsql (reduce #(str %1 "," %2) coll)
             mainSql (str 
                 " CREATE TABLE " tn 
                 " ( " colsql 
                 ") PARTITIONED BY (fs_agent STRING) " 
                 )
-            t1 (print "hive sql " mainSql)
+            t1 (println "hive sql " mainSql)
             res (qc/run-shark-query "" mainSql)
         ]
         res

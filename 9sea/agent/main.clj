@@ -58,7 +58,10 @@
         )
     )
     (cp/GET "/get-table-inc-data" {params :params}
-        (let [r (dba/get-table-inc-data @dbatom (:namespace params) (:keynum params))]
+        (let [r (dba/get-table-inc-data @dbatom 
+                    (:dbname params) (:tablename params) (:keynum params)
+                )
+            ]
             (println r)
             {:status 202
                 :headers {

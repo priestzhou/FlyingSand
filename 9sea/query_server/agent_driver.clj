@@ -17,6 +17,7 @@
 )
 
 (defn- runsql [sql]
+    (println "sql" sql)
                 (jdbc/with-connection qb/my-db
                     (jdbc/with-query-results res [sql]
                         (->>
@@ -59,6 +60,7 @@
 (defn- gen-table-list [accountid appname appversion dbsc]
     (let [
             dbname (:dbname dbsc)
+            t1 (println " dbsc " dbsc)
             tbl (:tables dbsc)
             tns (str accountid "." appname "." appversion "." dbname)
         ]
@@ -67,16 +69,20 @@
                 :namespace (str tns "." (:tablename %) )
                 :hiveName (str "tn_" (hash (str tns "." (:tablename %) )))
                 :dbname dbname
+                :tableset (get-in 
+                            dbsc 
+                            [(keyword dbname) (keyword(:tablename %))]
+                        )
             ) 
             tbl
         )
     )
 )
 
-(defn- add-table [& allcol] 
+(defn- add-record [table & allcol] 
     (let [collist (reduce  #(str  %1 "','" %2)  allcol )
             colstr (str "('" collist "')")
-            sql (str  "insert into TblMetaStore VALUES " colstr ";"
+            sql (str  "insert into " table " VALUES " colstr ";"
             )
             t1 (println sql)
             res (runupdate sql)
@@ -85,11 +91,40 @@
     )
 )
 
-(defn create-table [appname appversion dataset]
+(defn check-agent-table [agentid tns]
+    (let [sql (str 
+                "select * from TblSchema where namespace = '" 
+                tns "' and agentid ='" agentid "'"
+            )
+            res (runsql sql)
+            rcount (count   res)
+            t1 (println "res " res " rcount" rcount)
+        ]
+        (cond
+            (nil? res) true
+            (> 1 rcount) true
+            :else false
+        )
+    )
+)
+
+(defn create-table [agentid appname appversion dataset]
     (println dataset)
+    (when (check-agent-table agentid (:namespace dataset))
+        (add-record "TblSchema"
+            (:namespace dataset)
+            agentid
+            (if (:hasTimestamp (:tableset dataset))
+                1
+                0
+            )
+            0
+            (:timestampCol (:tableset dataset))
+        )
+    )
     (when (check-table (:namespace dataset))
         (do 
-            (add-table 
+            (add-record "TblMetaStore"
                 (:namespace dataset) 
                 appname 
                 appversion 
@@ -120,14 +155,58 @@
                     schema 
                 )
             )
+            t1 (println "datalist" datalist)
         ]
-        (map (partial create-table appname appversion) datalist )
+        (map (partial create-table agentid appname appversion ) datalist )
+    )
+)
+
+(defn- query-agent-schema [agentid]
+    (let [sql (str "select *  from TblSchema a  left join TblMetaStore b " 
+            " on a.Namespace = b.Namespace   where agentid ='" agentid "'")
+            res (runsql sql)
+        ]
+        (println res )
+    )
+)
+
+(defn- get-inc-data [agentid agenturl tableinfo]
+    (let [dbname (:dbname tableinfo)
+            tablename (:tablename tableinfo)
+            position (:timestampposition tableinfo)
+            res (httpget 
+                    agenturl 
+                    "/get-table-inc-data" 
+                    (str 
+                        "?dbname=" dbname 
+                        "&tablename=" tablename 
+                        "&keynum=" position
+                    )
+                )
+        ]
+        (println res)
+    )
+)
+
+(defn- get-table-data [agentid agenturl tableinfo]
+    (println tableinfo)
+    (if (:hastimestam tableinfo)
+        (get-inc-data agentid,agenturl tableinfo)
+    )
+)
+
+(defn get-agent-data [agentid agenturl]
+    (let [tablelist (query-agent-schema agentid)]
+        (map (partial get-table-data agentid, agenturl) tablelist)
     )
 )
 
 (defn -main []
-    (println (new-agent "11" "dfdsf" "http://192.168.1.101:8082" "user1"))
+    (println (new-agent "11" "dfdsf" "http://192.168.1.101:8082" "user1"))    
 )
 
+(comment println (get-agent-data "11" "http://192.168.1.101:8082"))
+
+(comment println (new-agent "11" "dfdsf" "http://192.168.1.101:8082" "user1"))
 
 
