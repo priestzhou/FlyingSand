@@ -588,7 +588,7 @@
     (:fact separated-list:single
         (->> "a"
             (prs/str->stream)
-            (prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.))
+            ((prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.)))
             (extract-result)
         )
         :is
@@ -597,7 +597,7 @@
     (:fact separated-list:multiple
         (->> "a.b"
             (prs/str->stream)
-            (prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.))
+            ((prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.)))
             (extract-result)
         )
         :is

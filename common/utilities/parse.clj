@@ -390,7 +390,7 @@
     (partial left-recursive-parser parser)
 )
 
-(defn separated-list [element-parser separator-parser stream]
+(defn- separated-list-parser [element-parser separator-parser stream]
     (let [
         [strm prsd] (->> stream
             ((chain
@@ -410,4 +410,8 @@
         ]
         [strm prsd]
     )
+)
+
+(defn separated-list [element-parser separator-parser]
+    (partial separated-list-parser element-parser separator-parser)
 )
