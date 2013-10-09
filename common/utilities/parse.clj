@@ -206,12 +206,12 @@
         (empty? args) (gen-ISE stream "no parser can be applied")
         (= 1 (count args)) [stream (first args)]
         :else (let [
-            [res parser & rest-args] args
-            [continue strm] (choice-parser' parser stream)
+            [res-fn parser & rest-args] args
+            [continue strm res] (choice-parser' parser stream)
             ]
             (if continue
                 (recur rest-args stream)
-                [strm res]
+                [strm (res-fn res)]
             )
         )
     )

@@ -302,7 +302,10 @@
     (:fact choice*:first
         (->> "a"
             (prs/str->stream)
-            ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b)))
+            ((prs/choice* 
+                {\a :a, \b :b} (prs/expect-char \a) 
+                {\a :a, \b :b} (prs/expect-char \b)
+            ))
             (extract-result)
         )
         :is
@@ -311,7 +314,10 @@
     (:fact choice*:second
         (->> "b"
             (prs/str->stream)
-            ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b)))
+            ((prs/choice* 
+                {\a :a, \b :b} (prs/expect-char \a) 
+                {\a :a, \b :b} (prs/expect-char \b)
+            ))
             (extract-result)
         )
         :is
@@ -320,7 +326,11 @@
     (:fact choice*:default
         (->> "c"
             (prs/str->stream)
-            ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b) :default))
+            ((prs/choice* 
+                {\a :a, \b :b} (prs/expect-char \a) 
+                {\a :a, \b :b} (prs/expect-char \b)
+                :default
+            ))
             (extract-result)
         )
         :is
@@ -330,7 +340,10 @@
         (fn []
             (->> "c"
                 (prs/str->stream)
-                ((prs/choice* :a (prs/expect-char \a) :b (prs/expect-char \b)))
+                ((prs/choice* 
+                    {\a :a, \b :b} (prs/expect-char \a) 
+                    {\a :a, \b :b} (prs/expect-char \b)
+                ))
             )
         )
         :throws InvalidSyntaxException
