@@ -182,10 +182,12 @@
       (doall rs)
       ))
   (catch Exception exception
-   (.printStackTrace exception)
+  (do
+  ; (.printStackTrace exception)
+    (update-result-map q-id "Failed" nil (.getMessage exception) nil)
+   (println q-id)
     ; we should seperate exception
-  ;  (update-result-map q-id "Failed" nil exception)
-    )))
+    ))))
 
 (defn submit-query
   [q-id query-str update-history-fn]
