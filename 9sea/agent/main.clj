@@ -6,6 +6,7 @@
     (:require
         [argparser.core :as arg]
         [ring.adapter.jetty :as rj]
+        [ring.util.response :as rp]
         [compojure.core :as cp]        
         [compojure.handler :as handler]
         [compojure.route :as route]
@@ -58,18 +59,20 @@
         )
     )
     (cp/GET "/get-table-inc-data" {params :params}
+        (println params)
         (let [r (dba/get-table-inc-data @dbatom 
                     (:dbname params) (:tablename params) (:keynum params)
                 )
             ]
-            (println r)
-            {:status 202
-                :headers {
-                    "Access-Control-Allow-Origin" "*"
-                    "content-type" "application/json"
-                }
-                :body (js/write-str r)
-            }
+            ;(println r)
+            (println (js/write-str r  ))
+                {:status 202
+                    :headers {
+                        "Access-Control-Allow-Origin" "*"
+                        "content-type" "application/json ; charset=UTF-8"
+                    }
+                    :body (js/write-str r )
+                }  
         )
     )    
     (route/not-found "Not Found")

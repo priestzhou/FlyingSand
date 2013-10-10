@@ -6,6 +6,7 @@
         [clojure.java.jdbc :as jdbc]
         [clojure.data.json :as js]
         [utilities.core :as uc]
+        [argparser.core :as arg]
     )
     (:gen-class)
 )
@@ -14,6 +15,7 @@
     {
         :get-setting "/get-setting"
         :get-schema "/get-schemas"
+        :get-table-inc-data "/get-table-inc-data"
     }
 )
 
@@ -127,7 +129,7 @@
         (add-record "TblSchema"
             (:namespace dataset)
             agentid
-            (if (:hasTimestamp (:tableset dataset))
+            (if (= "true" (:hasTimestamp (:tableset dataset)))
                 1
                 0
             )
@@ -179,17 +181,18 @@
             " on a.Namespace = b.Namespace   where agentid ='" agentid "'")
             res (runsql sql)
         ]
-        (println res )
+        res
     )
 )
 
 (defn- get-inc-data [agentid agenturl tableinfo]
+    (println "get-inc-data")
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
             res (httpget 
                     agenturl 
-                    "/get-table-inc-data" 
+                    :get-table-inc-data 
                     (str 
                         "?dbname=" dbname 
                         "&tablename=" tablename 
@@ -197,14 +200,15 @@
                     )
                 )
         ]
-        (println res)
+        (println (js/read-str (:body res)) )
     )
 )
 
 (defn- get-table-data [agentid agenturl tableinfo]
-    (println tableinfo)
-    (if (:hastimestam tableinfo)
+    (println " get-table-data " tableinfo)
+    (if (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
+        (println "hastimestamp" (:hastimestamp tableinfo) )
     )
 )
 
@@ -214,8 +218,48 @@
     )
 )
 
-(defn -main []
-    (println (new-agent "11" "dfdsf" "http://192.168.1.101:8082" "user1"))    
+(defn -main [& args]
+    (let [arg-spec 
+            {
+                :usage "Usage: [new-agent] [get-agent-data] [temp]"
+                :args [
+                    (arg/opt :help
+                        "-h|--help" "show this help"
+                    )
+                    (arg/opt :new-agent
+                        "-new-agent " "run new-agent test`"
+                    )
+                    (arg/opt :get-agent-data
+                        "-get-agent-data " 
+                        "run get-agent-data test"
+                    )
+                    (arg/opt :temp
+                        "-temp " 
+                        "run get-agent-data test"
+                    )
+                ]
+            }
+            opts (arg/transform->map (arg/parse arg-spec args))
+        ]
+        (when (:help opts)
+            (println (arg/default-doc arg-spec))
+            (System/exit 0)            
+        )
+        (when (:new-agent opts)
+            (println (new-agent "11" "dfdsf" "http://192.168.1.101:8082" "user1"))
+        )
+        (when (:get-agent-data opts)
+            (println (get-agent-data "11" "http://192.168.1.101:8082"))        
+        )
+        (when (:temp opts)
+            (println 
+                (ha/get-partition-location 
+                    "tn_58c0234ac5849eb286c51f648aaf6c47a6122c38"
+                    "fs_agent=\"test1\""
+                ) 
+            )        
+        )               
+    )
 )
 
 (comment println (get-agent-data "11" "http://192.168.1.101:8082"))
