@@ -5,6 +5,7 @@
         [query-server.hive-adapt :as ha]
         [clojure.java.jdbc :as jdbc]
         [clojure.data.json :as js]
+        [utilities.core :as uc]
     )
     (:gen-class)
 )
@@ -32,6 +33,18 @@
                 (jdbc/with-connection qb/my-db
                     (jdbc/execute! qb/my-db  [sql])
                 )
+)
+
+(defn- get-hash [type data]
+    (.digest (java.security.MessageDigest/getInstance type)  data )
+)
+ 
+(defn sha1-hash [data]
+    (uc/hexdigits 
+        (get-hash "sha1" 
+            (uc/str->bytes data) 
+        )
+    )
 )
 
 (defn- check-table [tns]
@@ -67,7 +80,7 @@
         (map 
             #(assoc % 
                 :namespace (str tns "." (:tablename %) )
-                :hiveName (str "tn_" (hash (str tns "." (:tablename %) )))
+                :hiveName (str "tn_" (sha1-hash (str tns "." (:tablename %) )))
                 :dbname dbname
                 :tableset (get-in 
                             dbsc 

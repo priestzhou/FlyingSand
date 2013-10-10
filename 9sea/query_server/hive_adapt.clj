@@ -36,7 +36,7 @@
             colType (:type colMap)
             hiveType (mysql-type-to-hive colType)
         ]
-        (str colname " " hiveType )
+        (str "`"colname "` " hiveType )
     )
 )
 
