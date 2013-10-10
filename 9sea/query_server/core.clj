@@ -6,7 +6,9 @@
   [clojure.data.json :as json]
   [clojure.java.io :as io]
   )
-(:import [com.mchange.v2.c3p0 ComboPooledDataSource DataSources PooledDataSource])
+(:import [com.mchange.v2.c3p0 ComboPooledDataSource DataSources PooledDataSource]
+         [java.io IOException]
+)
 ;; (:use [logging.core :only [deffloggers]])
 )
 
@@ -42,7 +44,7 @@
 
 (def ^:private result-map (atom {}))
 
-(def ^:private max-result-size 1024)
+(def ^:private max-result-size 400)
 (def ^:private result-file-dir "/home/admin/fancong/result")
 (def ^:private ret-result-size 100)
 
@@ -51,10 +53,10 @@
     (with-open [wrtr (io/writer filename)]
     (try
       (doseq [res result-set]
-        (println res)
+       ; (println res)
         (.write wrtr (format "%s\n" (str res)))
         )
-    (catch Exception e
+    (catch IOException e
       (println e))
     (finally 
       (.close wrtr)
@@ -68,13 +70,10 @@
 
   (let [r (first raw-result)
         titles (keys r)
-        values []
+        values (vec (for [r raw-result] 
+            (vec (for [t titles] (r t)))
+        ))
        ]
-
-    (doseq [row raw-result]
-
-      (conj values (vals row))
-    )
 
     {
       :titles titles
@@ -86,6 +85,7 @@
 
 (defn update-result-map
   [q-id stats ret-result error-message csv-filename]
+  (println "update status:" stats)
   (case stats
     "Running" (swap! result-map update-in [q-id] assoc 
              :status stats 
@@ -135,10 +135,12 @@
       (process-query q-id rs)
       ))
   (catch Exception exception
-   (.printStackTrace exception)
+  (do
+  ; (.printStackTrace exception)
+    (update-result-map q-id "Failed" nil (.getMessage exception) nil)
+   (println q-id)
     ; we should seperate exception
-  ;  (update-result-map q-id "Failed" nil exception)
-    )))
+    ))))
 
 (defn run-shark-query'
   [q-id query-str]
@@ -167,7 +169,7 @@
       
 (defn get-result
   [q-id]
-  (println (get @result-map q-id))
+ ; (println (get @result-map q-id))
   (get @result-map q-id)
 )
   
