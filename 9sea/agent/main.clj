@@ -47,12 +47,15 @@
         )
     )
     (cp/GET "/get-table-all-data" {params :params}
-        (let [r (dba/get-table-all-data @dbatom (:namespace params))]
+        (let [r (dba/get-table-all-data @dbatom 
+                     (:dbname params) (:tablename params) 
+                )
+            ]
             (println r)
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
-                    "content-type" "application/json"
+                    "content-type" "application/json ; charset=UTF-8"
                 }
                 :body (js/write-str r)
             }

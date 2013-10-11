@@ -17,6 +17,7 @@
         :get-setting "/get-setting"
         :get-schema "/get-schemas"
         :get-table-inc-data "/get-table-inc-data"
+        :get-table-all-data "/get-table-all-data"
     }
 )
 
@@ -215,9 +216,46 @@
     )
 )
 
+(defn- save-all-data [location inlist metalist]
+    (let [ts (System/currentTimeMillis)
+            filepath (str location "/" ts ".txt")
+            strList (map #(ha/build-hive-txt-row % metalist) inlist)
+        ]
+        (hc/delete (str location "/*"))
+        (dorun (hc/write-lines filepath  strList))
+    )
+)
+
+(defn- get-all-data [agentid agenturl tableinfo]
+    (let [dbname (:dbname tableinfo)
+            tablename (:tablename tableinfo)
+            position (:timestampposition tableinfo)
+            res (httpget 
+                    agenturl 
+                    :get-table-all-data 
+                    (str 
+                        "?dbname=" dbname 
+                        "&tablename=" tablename 
+                    )
+                )
+            resList (get (js/read-str (:body res)) "data")
+            hiveName (:hive_name tableinfo)
+            
+        ]
+        (when (not (ha/check-partition hiveName agentid))
+            (ha/add-partition hiveName agentid)
+        )
+        (save-all-data (ha/get-partition-location hiveName agentid) 
+            resList
+            (ha/get-hive-clos hiveName)
+        )
+    )
+)
+
 (defn- get-table-data [agentid agenturl tableinfo]
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
+        (get-all-data agentid,agenturl tableinfo)
     )
 )
 
