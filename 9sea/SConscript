@@ -72,6 +72,8 @@ env.install(env.compileAndJar('query_server.jar', 'query_server',
         env.File('$BUILD_DIR/argparser.jar'),
         env.File('$BUILD_DIR/logging.jar'),
         env.File('$EXTLIB/http-kit-2.1.10.jar'),
+        env.File('$EXTLIB/hdfs-clj-0.1.8.jar'),
+        env.File('$EXTLIB/hadoop-hdfs-2.0.0-cdh4.3.0.jar'),
     ],
     install={},
     standalone=True, manifest={'Main-Class': 'query_server.main'}))

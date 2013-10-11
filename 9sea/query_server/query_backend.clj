@@ -18,7 +18,7 @@
 (def my-db
   {:classname "com.mysql.jdbc.Driver"
    :subprotocol "mysql"
-   :subname "//localhost:3306/meta"
+   :subname "//192.168.1.101:3306/meta"
    :user "root"
    :password "fs123"})
 

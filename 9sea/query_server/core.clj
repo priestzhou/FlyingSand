@@ -140,6 +140,22 @@
   ;  (update-result-map q-id "Failed" nil exception)
     )))
 
+(defn run-shark-query'
+  [q-id query-str]
+  (try
+   (println (str "run-shark-query:" q-id))
+  ( sql/with-connection db
+    (sql/with-query-results rs [query-str]
+  ; (println (str rs))
+      
+      (doall rs)
+      ))
+  (catch Exception exception
+   (.printStackTrace exception)
+    ; we should seperate exception
+  ;  (update-result-map q-id "Failed" nil exception)
+    )))
+
 (defn submit-query
   [q-id query-str]
  ;; {:pre [not (str/blank? query-str)]}

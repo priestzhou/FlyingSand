@@ -7,6 +7,7 @@
         [clojure.data.json :as js]
         [utilities.core :as uc]
         [argparser.core :as arg]
+        [hdfs.core :as hc]
     )
     (:gen-class)
 )
@@ -33,7 +34,7 @@
 
 (defn- runupdate [sql]
                 (jdbc/with-connection qb/my-db
-                    (jdbc/execute! qb/my-db  [sql])
+                    (jdbc/do-commands sql)
                 )
 )
 
@@ -185,6 +186,17 @@
     )
 )
 
+(defn- save-inc-data [location inlist metalist]
+    (let [ts (System/currentTimeMillis)
+            filepath (str location "/" ts ".txt")
+            strList (map #(ha/build-hive-txt-row % metalist) inlist)
+            t0 (println "strList =start" )
+            t1 (dorun (map  println strList ))
+        ]
+        (dorun (hc/write-lines filepath  strList))
+    )
+)
+
 (defn- get-inc-data [agentid agenturl tableinfo]
     (println "get-inc-data")
     (let [dbname (:dbname tableinfo)
@@ -199,8 +211,17 @@
                         "&keynum=" position
                     )
                 )
+            resList (get (js/read-str (:body res)) "data")
+            hiveName (:hive_name tableinfo)
+            
         ]
-        (println (js/read-str (:body res)) )
+        (when (not (ha/check-partition hiveName agentid))
+            (ha/add-partition hiveName agentid)
+        )
+        (save-inc-data (ha/get-partition-location hiveName agentid) 
+            resList
+            (ha/get-hive-clos hiveName)
+        )
     )
 )
 
@@ -253,12 +274,12 @@
         )
         (when (:temp opts)
             (println 
-                (ha/get-partition-location 
+                (ha/get-hive-clos 
                     "tn_58c0234ac5849eb286c51f648aaf6c47a6122c38"
-                    "fs_agent=\"test1\""
-                ) 
-            )        
-        )               
+                    ;"fs_agent=\"test1\""
+                )
+            )
+        )
     )
 )
 

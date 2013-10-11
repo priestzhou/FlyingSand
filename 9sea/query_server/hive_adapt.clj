@@ -22,6 +22,10 @@
     }
 )
 
+(def ^:parivate partStr "fs_agent")
+
+(def ^:parivate splitStr "\t")
+
 (defn- mysql-type-to-hive [colType]
     (->>
         colType
@@ -48,11 +52,77 @@
             mainSql (str 
                 " CREATE TABLE " tn 
                 " ( " colsql 
-                ") PARTITIONED BY (fs_agent STRING) " 
+                ") PARTITIONED BY ("partStr" STRING) "
+                "ROW FORMAT DELIMITED FIELDS TERMINATED BY \"\\t\"" 
                 )
             t1 (println "hive sql " mainSql)
-            res (qc/run-shark-query "" mainSql)
+            res (qc/run-shark-query' "" mainSql)
         ]
         res
+    )
+)
+
+(defn check-partition [tn pn]
+    (let [mainSql (str "SHOW PARTITIONS " tn " PARTITION (" partStr "=" pn ")")
+            res (qc/run-shark-query' "" mainSql)
+        ]
+        (cond
+            (nil? res) false
+            (= 1 (count res)) true
+            :else false
+        )
+    )
+)
+
+(defn add-partition [tn pn]
+    (let [mainSql (str "alter table " tn " add PARTITION (" partStr "=" pn ")")
+            res (qc/run-shark-query' "" mainSql)
+        ]
+        res
+    )
+)
+
+(defn get-partition-location [tn pn]
+    (let [mainSql (str "show table extended like " 
+                    tn " PARTITION (" partStr "=" pn ")"
+                )
+            t1 (println "mainSql=" mainSql)
+            res (qc/run-shark-query' "" mainSql)
+            flist (filter 
+                    #(->>
+                    (re-find #"^location:" (:tab_name %))
+                    nil?
+                    not
+                ) 
+                res
+            )
+            location (->>
+                    flist
+                    first
+                    :tab_name
+                    (re-find #"(?<=^location:)[\S]+") 
+                )
+        ]
+        location
+    )
+)
+
+(defn get-hive-clos [tn]
+    (let [mainSql (str "DESCRIBE " tn )
+            res (qc/run-shark-query' "" mainSql)
+        ]
+        (->>
+            res
+            (map :col_name)
+            (filter #(not= % partStr))
+        )
+    )
+)
+
+(defn build-hive-txt-row [inmap cols]
+    (->>
+        cols
+        (map #(get inmap % ))
+        (reduce #(str %1 "\t" %2) )
     )
 )
