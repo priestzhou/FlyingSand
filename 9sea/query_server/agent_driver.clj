@@ -226,7 +226,6 @@
     (let [sql (str "update TblSchema set TimestampPosition=\"" maxkey "\""
                 " where NameSpace=\"" tns "\" and AgentID =\"" agentid "\"" 
             )
-            t1 (println sql)
             res (runupdate sql)
         ]
         res
