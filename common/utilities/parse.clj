@@ -176,21 +176,21 @@
 (defn- choice-parser' [p stream]
     (try
         (let [[strm res] (p stream)]
-            [false strm res]
+            [nil strm res]
         )
-    (catch InvalidSyntaxException _
-        [true nil nil]
+    (catch InvalidSyntaxException ex
+        [ex nil nil]
     ))
 )
 
-(defn- choice-parser [parsers stream]
+(defn- choice-parser [last-ise parsers stream]
     (if (empty? parsers)
-        (gen-ISE stream "no parser can be applied")
+        (throw last-ise)
         (let [[p & ps] parsers
-                [continue strm res] (choice-parser' p stream)
+                [ise strm res] (choice-parser' p stream)
             ]
-            (if continue
-                (recur ps stream)
+            (if ise
+                (recur ise ps stream)
                 [strm res]
             )
         )
@@ -198,19 +198,22 @@
 )
 
 (defn choice [& parsers]
-    (partial choice-parser parsers)
+{
+    :pre [(not (empty? parsers))]
+}
+    (partial choice-parser nil parsers)
 )
 
-(defn- choice*-parser [args stream]
+(defn- choice*-parser [last-ise args stream]
     (cond
-        (empty? args) (gen-ISE stream "no parser can be applied")
+        (empty? args) (throw last-ise)
         (= 1 (count args)) [stream (first args)]
         :else (let [
             [res-fn parser & rest-args] args
-            [continue strm res] (choice-parser' parser stream)
+            [ise strm res] (choice-parser' parser stream)
             ]
-            (if continue
-                (recur rest-args stream)
+            (if ise
+                (recur ise rest-args stream)
                 [strm (res-fn res)]
             )
         )
@@ -218,7 +221,10 @@
 )
 
 (defn choice* [& args]
-    (partial choice*-parser args)
+{
+    :pre [(not (empty? args))]
+}
+    (partial choice*-parser nil args)
 )
 
 (defn- optional-parser [parser stream]
