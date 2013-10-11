@@ -21,7 +21,6 @@
 )
 
 (defn- runsql [sql]
-    (println "sql" sql)
                 (jdbc/with-connection qb/my-db
                     (jdbc/with-query-results res [sql]
                         (->>
@@ -54,7 +53,6 @@
     (let [sql (str "select * from TblMetaStore where namespace = '" tns "'")
             res (runsql sql)
             rcount (count   res)
-            t1 (println "res " res " rcount" rcount)
         ]
         (cond
             (nil? res) true
@@ -76,7 +74,6 @@
 (defn- gen-table-list [accountid appname appversion dbsc]
     (let [
             dbname (:dbname dbsc)
-            t1 (println " dbsc " dbsc)
             tbl (:tables dbsc)
             tns (str accountid "." appname "." appversion "." dbname)
         ]
@@ -100,7 +97,6 @@
             colstr (str "('" collist "')")
             sql (str  "insert into " table " VALUES " colstr ";"
             )
-            t1 (println sql)
             res (runupdate sql)
         ]
         res
@@ -114,7 +110,6 @@
             )
             res (runsql sql)
             rcount (count   res)
-            t1 (println "res " res " rcount" rcount)
         ]
         (cond
             (nil? res) true
@@ -125,7 +120,6 @@
 )
 
 (defn create-table [agentid appname appversion dataset]
-    (println dataset)
     (when (check-agent-table agentid (:namespace dataset))
         (add-record "TblSchema"
             (:namespace dataset)
@@ -171,7 +165,6 @@
                     schema 
                 )
             )
-            t1 (println "datalist" datalist)
         ]
         (map (partial create-table agentid appname appversion ) datalist )
     )
@@ -190,15 +183,12 @@
     (let [ts (System/currentTimeMillis)
             filepath (str location "/" ts ".txt")
             strList (map #(ha/build-hive-txt-row % metalist) inlist)
-            t0 (println "strList =start" )
-            t1 (dorun (map  println strList ))
         ]
         (dorun (hc/write-lines filepath  strList))
     )
 )
 
 (defn- get-inc-data [agentid agenturl tableinfo]
-    (println "get-inc-data")
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -226,10 +216,8 @@
 )
 
 (defn- get-table-data [agentid agenturl tableinfo]
-    (println " get-table-data " tableinfo)
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
-        (println "hastimestamp" (:hastimestamp tableinfo) )
     )
 )
 

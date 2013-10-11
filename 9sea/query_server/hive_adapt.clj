@@ -45,9 +45,7 @@
 )
 
 (defn create-table [tn collist]
-    (println "tn and collist" tn "--" collist)
     (let [coll (map  get-column collist)
-            t0 (println "coll" coll)
             colsql (reduce #(str %1 "," %2) coll)
             mainSql (str 
                 " CREATE TABLE " tn 
@@ -55,7 +53,6 @@
                 ") PARTITIONED BY ("partStr" STRING) "
                 "ROW FORMAT DELIMITED FIELDS TERMINATED BY \"\\1\"" 
                 )
-            t1 (println "hive sql " mainSql)
             res (qc/run-shark-query' "" mainSql)
         ]
         res
@@ -86,7 +83,6 @@
     (let [mainSql (str "show table extended like " 
                     tn " PARTITION (" partStr "=" pn ")"
                 )
-            t1 (println "mainSql=" mainSql)
             res (qc/run-shark-query' "" mainSql)
             flist (filter 
                     #(->>
