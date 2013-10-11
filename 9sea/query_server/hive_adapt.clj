@@ -53,7 +53,7 @@
                 " CREATE TABLE " tn 
                 " ( " colsql 
                 ") PARTITIONED BY ("partStr" STRING) "
-                "ROW FORMAT DELIMITED FIELDS TERMINATED BY \"\\t\"" 
+                "ROW FORMAT DELIMITED FIELDS TERMINATED BY \"\\1\"" 
                 )
             t1 (println "hive sql " mainSql)
             res (qc/run-shark-query' "" mainSql)
@@ -123,6 +123,6 @@
     (->>
         cols
         (map #(get inmap % ))
-        (reduce #(str %1 "\t" %2) )
+        (reduce #(str %1 "\1" %2) )
     )
 )
