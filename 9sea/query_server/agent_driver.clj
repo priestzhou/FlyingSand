@@ -191,15 +191,45 @@
     )
 )
 
-(defn- )
+(defn- get-max-key [inlist tskey]
+    (if (empty? inlist)
+        nil
+        (let [keylist (map #(get % tskey ) inlist)]
+            (apply max keylist)
+        )
+    )
+)
+
+(defn- inc-data-filter [inlist tskey]
+    (if (empty? inlist)
+        inlist
+        (let [maxkey (get-max-key inlist tskey)]
+            (filter #(not= maxkey (get % tskey)) inlist)
+        )
+    )
+)
 
 (defn- save-inc-data [location inlist metalist]
     (let [ts (System/currentTimeMillis)
             filepath (str location "/" (get-group-time 3600000 ts) ".txt")
-            filecontext (hc/read-lines filepath)
+            filecontext (if (hc/exists? filepath)
+                (hc/read-lines filepath)
+                []
+            )
             strList (map #(ha/build-hive-txt-row % metalist) inlist)
         ]
         (dorun (hc/write-lines filepath  (concat filecontext strList) ))
+    )
+)
+
+(defn- updata-inc-key [maxkey tns agentid]
+    (let [sql (str "update TblSchema set TimestampPosition=\"" maxkey "\""
+                " where NameSpace=\"" tns "\" and AgentID =\"" agentid "\"" 
+            )
+            t1 (println sql)
+            res (runupdate sql)
+        ]
+        res
     )
 )
 
@@ -218,14 +248,23 @@
                 )
             resList (get (js/read-str (:body res)) "data")
             hiveName (:hive_name tableinfo)
-            
+            tskey (:timestampkey tableinfo)
+            filterList (inc-data-filter resList tskey)
+            maxkey (get-max-key filterList tskey)
         ]
         (when (not (ha/check-partition hiveName agentid))
             (ha/add-partition hiveName agentid)
         )
-        (save-inc-data (ha/get-partition-location hiveName agentid) 
-            resList
-            (ha/get-hive-clos hiveName)
+        (when (not (empty? filterList))
+            (save-inc-data (ha/get-partition-location hiveName agentid) 
+                filterList
+                (ha/get-hive-clos hiveName)
+            )            
+            (updata-inc-key
+                maxkey
+                (:namespace tableinfo)
+                agentid
+            )
         )
     )
 )
