@@ -12,6 +12,17 @@
     (:gen-class)
 )
 
+(defn- get-group-time [timeStep timeValue]
+    (let [modTime (mod timeValue timeStep)
+            groupTime (- timeValue modTime)
+        ]
+        (.format 
+            (java.text.SimpleDateFormat. "yyyy-MM-dd-HH_mm_ss") 
+            groupTime
+        )
+    )
+)
+
 (def ^:private urlmap
     {
         :get-setting "/get-setting"
@@ -180,12 +191,15 @@
     )
 )
 
+(defn- )
+
 (defn- save-inc-data [location inlist metalist]
     (let [ts (System/currentTimeMillis)
-            filepath (str location "/" ts ".txt")
+            filepath (str location "/" (get-group-time 3600000 ts) ".txt")
+            filecontext (hc/read-lines filepath)
             strList (map #(ha/build-hive-txt-row % metalist) inlist)
         ]
-        (dorun (hc/write-lines filepath  strList))
+        (dorun (hc/write-lines filepath  (concat filecontext strList) ))
     )
 )
 
