@@ -50,7 +50,10 @@
 )
 
 (defn- get-hash [type data]
-    (.digest (java.security.MessageDigest/getInstance type)  data )
+    (-> type
+        (java.security.MessageDigest/getInstance)
+        (.digest data)
+    )
 )
  
 (defn sha1-hash [data]
@@ -360,9 +363,3 @@
         )
     )
 )
-
-(comment println (get-agent-data "11" "http://192.168.1.101:8082"))
-
-(comment println (new-agent "11" "dfdsf" "http://192.168.1.101:8082" "user1"))
-
-

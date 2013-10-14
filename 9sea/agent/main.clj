@@ -28,7 +28,7 @@
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
-                    "content-type" "application/json"
+                    "Content-Type" "application/json"
                 }
                 :body (js/write-str (assoc @dbatom :hashcode h) )
             }
@@ -40,7 +40,7 @@
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
-                    "content-type" "application/json"
+                    "Content-Type" "application/json"
                 }
                 :body (js/write-str r)
             }
@@ -55,7 +55,7 @@
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
-                    "content-type" "application/json ; charset=UTF-8"
+                    "Content-Type" "application/json ; charset=UTF-8"
                 }
                 :body (js/write-str r)
             }
@@ -72,7 +72,7 @@
                 {:status 202
                     :headers {
                         "Access-Control-Allow-Origin" "*"
-                        "content-type" "application/json ; charset=UTF-8"
+                        "Content-Type" "application/json ; charset=UTF-8"
                     }
                     :body (js/write-str r )
                 }  

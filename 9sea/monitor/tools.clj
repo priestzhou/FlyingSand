@@ -39,9 +39,7 @@
                 )
             run (Runtime/getRuntime)
             ;p (apply (partial sh/execute " java ") bash)
-            t1 (println "t1 - "  (apply str cmd))
             p (.exec run cmd)
-            t2 (println "t2 - "  (now))
         ]
         p
     )
