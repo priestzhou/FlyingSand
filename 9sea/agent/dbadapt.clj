@@ -120,6 +120,7 @@
                     :db (first (get-in tbl [db table])) 
                     :table table
                     :key (:timestampCol (second (get-in tbl [db table])))
+                    :cols (:cols (second (get-in tbl [db table])))
                 }
         )
     )
@@ -131,7 +132,11 @@
         (if (nil? (:errCode flag))
             { 
                 :data 
-                ((:get-table-all-data *db-func-map*) (:db flag) (:table flag))
+                ((:get-table-all-data *db-func-map*) 
+                    (:db flag) 
+                    (:table flag)
+                    (:cols flag)
+                )
             }
             flag
         )
@@ -150,6 +155,7 @@
                     (:table flag) 
                     (:key flag)
                     qnum
+                    (:cols flag)
                 )
             }
             flag

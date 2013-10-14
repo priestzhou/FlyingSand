@@ -59,9 +59,9 @@
     )
 )
 
-(defn- get-table-all-data [db tn]
+(defn- get-table-all-data [db tn cstr]
     (let [mysqldb (get-db db)
-            sql (str "select * from `" tn "`")
+            sql (str "select "cstr" from `" tn "`")
         ]
         (try
             (jdbc/with-connection mysqldb
@@ -81,10 +81,10 @@
 
 )
 
-(defn- get-table-inc-data [db tn qkey qnum]
+(defn- get-table-inc-data [db tn qkey qnum cstr]
     (let [mysqldb (get-db db)
             sql (str 
-                    "select * from `" tn 
+                    "select "cstr" from `" tn 
                     "` where `" qkey "` > '" qnum "'"
                 )
         ]
