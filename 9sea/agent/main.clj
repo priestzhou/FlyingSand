@@ -24,17 +24,31 @@
 
 (cp/defroutes app-routes
     (cp/GET "/get-setting" {params :params} 
-        (let [h (hash @dbatom )]
-            {:status 202
-                :headers {
-                    "Access-Control-Allow-Origin" "*"
-                    "Content-Type" "application/json"
+        (if (map? @dbatom)
+            (let [h (hash @dbatom )]
+                {:status 202
+                    :headers {
+                        "Access-Control-Allow-Origin" "*"
+                        "Content-Type" "application/json"
+                    }
+                    :body (js/write-str (assoc @dbatom :hashcode h) )
                 }
-                :body (js/write-str (assoc @dbatom :hashcode h) )
-            }
+            )
+            {:status 503
+                    :headers {
+                        "Access-Control-Allow-Origin" "*"
+                        "Content-Type" "application/json"
+                    }
+                :body (js/write-str 
+                        {
+                            :errCode 1001
+                            :errStr @dbatom
+                        } 
+                    )
+            }            
         )
     )
-    (cp/GET "/get-schemas" {params :params} 
+    (cp/GET "/get-schemas" {params :params}
         (let [r (dba/get-schemas @dbatom)]
             (println r)
             {:status 202
@@ -62,7 +76,6 @@
         )
     )
     (cp/GET "/get-table-inc-data" {params :params}
-        (println params)
         (let [r (dba/get-table-inc-data @dbatom 
                     (:dbname params) (:tablename params) (:keynum params)
                 )
@@ -134,6 +147,9 @@
             (catch Exception e
                 (println e)
                 (println (.printStackTrace e) )
+                (reset! dbatom 
+                    (str  e) 
+                )
             )
         )
         (rj/run-jetty #'app 
