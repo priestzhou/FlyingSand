@@ -120,15 +120,21 @@
             (println (arg/default-doc arg-spec))
             (System/exit 0)            
         )
-        (let [dbsetting (->>
+        (try 
+            (let [dbsetting (->>
                             opts-with-default
                             :dbsetting
                             first
                             slurp
                             (#(js/read-str % :key-fn keyword))
-                )
-            ]
-        (reset! dbatom dbsetting)
+                    )
+                ]
+                (reset! dbatom dbsetting)
+            )
+            (catch Exception e
+                (println e)
+                (println (.printStackTrace e) )
+            )
         )
         (rj/run-jetty #'app 
             {
