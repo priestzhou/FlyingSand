@@ -40,7 +40,7 @@
 
 (defn- get-table-schema [db tn]
     (let [mysqldb (get-db db)
-            sql (str "desc '" tn "'' ;")
+            sql (str "desc `" tn "` ;")
         ]
         (try
             (jdbc/with-connection mysqldb
@@ -61,15 +61,15 @@
 
 (defn- get-table-all-data [db tn]
     (let [mysqldb (get-db db)
-            sql (str "select * from '" tn "'")
+            sql (str "select * from `" tn "`")
         ]
         (try
             (jdbc/with-connection mysqldb
                 (jdbc/with-query-results res [sql]
-                    ;(->>
+                    (->>
                         res
-                        ;doall
-                    ;)
+                        doall
+                    )
                 )
             )
             (catch SQLException e
@@ -83,15 +83,18 @@
 
 (defn- get-table-inc-data [db tn qkey qnum]
     (let [mysqldb (get-db db)
-            sql (str "select * from '" tn "' where " qkey " > '" qnum "'")
+            sql (str 
+                    "select * from `" tn 
+                    "` where `" qkey "` > '" qnum "'"
+                )
         ]
         (try
             (jdbc/with-connection mysqldb
                 (jdbc/with-query-results res [sql]
-                    ;(->>
+                    (->>
                         res
-                        ;doall
-                    ;)
+                        doall
+                    )
                 )
             )
             (catch SQLException e
