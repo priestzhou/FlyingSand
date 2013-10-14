@@ -3,6 +3,7 @@
         [utilities.core :as util]
         [argparser.core :as arg]
         [query-server.web-server :as web]
+        [query-server.agent-scheduler :as as]
     )
     (:gen-class)
 )
@@ -43,5 +44,17 @@
         )
         ]
         (web/start opts)
+        (future 
+            (as/new-agent-check)
+        )
+        (future 
+            (as/inc-data-check)
+        )
+        (future
+            (do
+                (Thread/sleep 60000)
+                (as/all-data-check)
+            )
+        )
     )
 )

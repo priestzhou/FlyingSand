@@ -64,6 +64,32 @@
     )
 )
 
+(def ^:private agent-stat-map
+    {
+        "new" 1
+        "normal" 2
+        "delete" 9
+    }
+)
+
+(defn- get-agent-list' [sstr]
+    (let [sql (str "select * from TblAgent where agentState='" sstr "'")]
+        (runsql sql)
+    )
+)
+
+(defn chage-agent-stat [id state]
+    (let [sstr (get agent-stat-map state)
+            sql (str "update TblAgent set agentState='" sstr "'")
+        ]
+        (runupdate sql)
+    )
+)
+
+(defn get-agent-list [state]
+    (get-agent-list' (get agent-stat-map state))
+)
+
 (defn- check-table [tns]
     (let [sql (str "select * from TblMetaStore where namespace = '" tns "'")
             res (runsql sql)
@@ -307,16 +333,36 @@
     )
 )
 
-(defn- get-table-data [agentid agenturl tableinfo]
+(defn- get-table-data-both [agentid agenturl tableinfo]
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
         (get-all-data agentid,agenturl tableinfo)
     )
 )
 
-(defn get-agent-data [agentid agenturl]
+(defn- get-table-data-inc [agentid agenturl tableinfo]
+    (when (:hastimestamp tableinfo)
+        (get-inc-data agentid,agenturl tableinfo)
+    )
+)
+
+(defn- get-table-data-all [agentid agenturl tableinfo]
+    (when (not (:hastimestamp tableinfo))
+        (get-inc-data agentid,agenturl tableinfo)
+    )
+)
+
+(defn get-agent-data [agentid agenturl type]
     (let [tablelist (query-agent-schema agentid)]
-        (map (partial get-table-data agentid, agenturl) tablelist)
+        (when (= type "both")
+            (map (partial get-table-data-both agentid, agenturl) tablelist)
+        )
+        (when (= type "inc")
+            (map (partial get-table-data-inc agentid, agenturl) tablelist)
+        )
+        (when (= type "all")
+            (map (partial get-table-data-all agentid, agenturl) tablelist)
+        )        
     )
 )
 
