@@ -13,13 +13,23 @@
         [clojure.data.json :as js]
         [agent.dbadapt :as dba]
         [agent.mysqladapt :as mysql]
-        [monitor.tools :as tool]        
+        [monitor.tools :as tool]    
     )
     (:gen-class)
 )
 
+(defloggers debug info warn error)
+
 (def ^:private dbatom
     (atom {})
+)
+
+(defn- set-parse [smap hc]
+    (let [db1 (:databse smap)
+            db2 (map #(dissoc % :dbuser :dbpassword) db1)
+        ]
+        (merge smap {:databse db2 :hashcode hc})
+    )
 )
 
 (cp/defroutes app-routes
@@ -31,7 +41,7 @@
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json"
                     }
-                    :body (js/write-str (assoc @dbatom :hashcode h) )
+                    :body (js/write-str (set-parse @dbatom h) )
                 }
             )
             {:status 503
@@ -49,8 +59,9 @@
         )
     )
     (cp/GET "/get-schemas" {params :params}
+        (info "into get schemas" params)
         (let [r (dba/get-schemas @dbatom)]
-            (println r)
+            (debug "schemas result" r)
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
@@ -61,11 +72,12 @@
         )
     )
     (cp/GET "/get-table-all-data" {params :params}
+        (info "into get all data" params)
         (let [r (dba/get-table-all-data @dbatom 
                      (:dbname params) (:tablename params) 
                 )
             ]
-            (println r)
+            (debug "all data result" r)
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
@@ -76,12 +88,13 @@
         )
     )
     (cp/GET "/get-table-inc-data" {params :params}
+        (info "into get inc data" params)
         (let [r (dba/get-table-inc-data @dbatom 
                     (:dbname params) (:tablename params) (:keynum params)
                 )
             ]
             ;(println r)
-            (println (js/write-str r  ))
+            (debug "all inc result" r)
                 {:status 202
                     :headers {
                         "Access-Control-Allow-Origin" "*"
@@ -145,8 +158,8 @@
                 (reset! dbatom dbsetting)
             )
             (catch Exception e
-                (println e)
-                (println (.printStackTrace e) )
+                (error e)
+                (error (.printStackTrace e) )
                 (reset! dbatom 
                     (str  e) 
                 )

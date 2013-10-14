@@ -1,4 +1,7 @@
 (ns agent.mysqladapt
+    (:use 
+        [logging.core :only [defloggers]]
+    )      
     (:require
         [clojure.java.jdbc :as jdbc]
         [clojure.java.jdbc.sql :as sql]
@@ -7,6 +10,8 @@
         [java.sql SQLException]
     )
 )
+
+(defloggers debug info warn error)
 
 (defn- get-db [db]
     (assoc db :subprotocol "mysql" :classname "com.mysql.jdbc.Driver")
@@ -31,8 +36,7 @@
                 )
             )
             (catch SQLException e
-                (println e)
-                (println (.printStackTrace e) )
+                (error (.printStackTrace e) )
             )
         )
     )
@@ -52,8 +56,7 @@
                 )
             )
             (catch SQLException e
-                (println e)
-                (println (.printStackTrace e) )
+                (error (.printStackTrace e) )
             )
         )
     )
@@ -73,8 +76,7 @@
                 )
             )
             (catch SQLException e
-                (println e)
-                (println (.printStackTrace e) )
+                (error (.printStackTrace e) )
             )
         )        
     )
@@ -99,8 +101,7 @@
                 )
             )
             (catch SQLException e
-                (println e)
-                (println (.printStackTrace e) )
+                (error (.printStackTrace e) )
             )
         )        
     )

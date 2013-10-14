@@ -1,8 +1,13 @@
 (ns agent.dbadapt
+    (:use 
+        [logging.core :only [defloggers]]
+    )        
     (:require
         [agent.mysqladapt :as mysql]
     )
 )
+
+(defloggers debug info warn error)
 
 (def ^:dynamic *db-func-map* mysql/mysql-map)
 
@@ -100,8 +105,7 @@
                 )
                 dblist
             )
-            t1 (println "dblist" dbList)
-            t2 (println "table list" (db-table-list dbsetting))
+            _ (debug "dblist" dbList)
             res1 (map #(merge (get-schema-db %) (get-db-table-list'' %)) dbList)
             res (map get-schema-db dbList)
         ]
