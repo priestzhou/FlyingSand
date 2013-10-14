@@ -85,7 +85,8 @@
     (let [mysqldb (get-db db)
             sql (str 
                     "select "cstr" from `" tn 
-                    "` where `" qkey "` > '" qnum "'"
+                    "` where `" qkey "` > '" qnum "' "
+                    "ORDER BY `" qkey "` LIMIT 2000 "
                 )
         ]
         (try
