@@ -80,7 +80,9 @@
 
 (defn chage-agent-stat [id state]
     (let [sstr (get agent-stat-map state)
-            sql (str "update TblAgent set agentState='" sstr "'")
+            sql (str "update TblAgent set agentState='" sstr "'"
+                    " where id ='" id "'"
+                )
         ]
         (runupdate sql)
     )
@@ -348,7 +350,7 @@
 
 (defn- get-table-data-all [agentid agenturl tableinfo]
     (when (not (:hastimestamp tableinfo))
-        (get-inc-data agentid,agenturl tableinfo)
+        (get-all-data agentid,agenturl tableinfo)
     )
 )
 
