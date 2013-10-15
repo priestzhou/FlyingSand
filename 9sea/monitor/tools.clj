@@ -5,6 +5,9 @@
     (:require
         [utilities.shutil :as sh]
     )
+    (:import 
+        [java.nio.file Files LinkOption]
+    )
 )
 
 (defn check-process [tag]
@@ -54,4 +57,20 @@
         )
     )
     (recur tag bash sleeptime)
+)
+
+(defn fileList [p]
+    (try
+        (with-open [files (Files/newDirectoryStream (sh/getPath p))]
+            (->> files
+                (filter #(Files/isRegularFile % (into-array LinkOption [])))
+                (reduce #(str %1 "\n" %2))
+                doall
+            )
+        )
+        (catch Exception e 
+            e
+        )
+    )
+
 )
