@@ -35,19 +35,24 @@
                     :body   r 
                 }
             )            
-        )
-
-         
-        
+        )    
     )
-    (cp/GET "/file/down" {params :params}
-            {:status 202
+    (cp/GET "/file/get" {params :params}
+            (let [tp (merge {:from "0",:inc "2000"} params)
+                    r (tool/get-file-lines 
+                        (:file tp)
+                        (read-string (:from tp))
+                        (read-string (:inc tp))
+                    )
+                ]
+                {:status 202
                     :headers {
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json"
                     }
-                    :body  (str "sdfsdf") 
+                    :body   r 
                 }
+            )            
     )
     (route/not-found "Not Found")
 )

@@ -69,8 +69,33 @@
             )
         )
         (catch Exception e 
-            e
+            (str e)
         )
     )
+)
 
+(defn- lazy-file-lines [file]
+    (letfn [(helper [rdr]
+                  (lazy-seq
+                    (if-let [line (.readLine rdr)]
+                      (cons line (helper rdr))
+                      (do (.close rdr) nil))))]
+         (helper (clojure.java.io/reader file))
+    )
+)
+
+(defn get-file-lines [file from incline]
+    (println "get file " file)
+    (try
+        (->>
+            file 
+            lazy-file-lines
+            (drop from)
+            (take incline)
+            (reduce #(str %1 "\n" %2))
+        )
+        (catch Exception e 
+            (str e)
+        )
+    )    
 )
