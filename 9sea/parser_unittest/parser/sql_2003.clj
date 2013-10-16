@@ -1929,6 +1929,48 @@
         :is
         [[:eof] {:type :asterisk, :refer ["tbl"]}]
     )
+    (:fact expr:case
+        (->> "CASE WHEN TRUE THEN 1 END"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :case
+            :when [
+                [{:type :boolean-literal, :value "TRUE"} {:type :numeric-literal, :value "1"}]
+            ]
+        }]
+    )
+    (:fact expr:case:else
+        (->> "CASE WHEN FALSE THEN 1 ELSE 2 END"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :case
+            :when [
+                [{:type :boolean-literal, :value "FALSE"} {:type :numeric-literal, :value "1"}]
+            ]
+            :else {:type :numeric-literal, :value "2"}
+        }]
+    )
+    (:fact expr:case:value
+        (->> "CASE 1 WHEN 1 THEN TRUE WHEN 0 THEN FALSE END"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :case
+            :value {:type :numeric-literal, :value "1"}
+            :when [
+                [{:type :numeric-literal, :value "1"} {:type :boolean-literal, :value "TRUE"}]
+                [{:type :numeric-literal, :value "0"} {:type :boolean-literal, :value "FALSE"}]
+            ]
+        }]
+    )
 )
 
 (suite "functions"

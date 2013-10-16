@@ -664,6 +664,26 @@
                 (->> r (name) (str/upper-case))
             )
         )
+        :case (let [
+            v (:value dfg)
+            ww (:when dfg)
+            ww (str/join " "
+                (for [[x y] ww]
+                    (format "WHEN %s THEN %s"
+                        (dump-hive:value-subexpr context x)
+                        (dump-hive:value-subexpr context y)
+                    )
+                )
+            )
+            else (:else dfg)
+            res "CASE"
+            res (if-not v res (format "%s %s" res (dump-hive:value-subexpr context v)))
+            res (format "%s %s" res ww)
+            res (if-not else res (format "%s ELSE %s" res (dump-hive:value-subexpr context else)))
+            res (format "%s END" res)
+            ]
+            res
+        )
     )
 )
 

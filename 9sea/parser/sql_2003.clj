@@ -1337,6 +1337,55 @@
     )
 )
 
+(defn- case-operator [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "CASE")
+                blank+
+                (prs/choice*
+                    first (prs/chain
+                        value-expr
+                        blank+
+                    )
+                    nil
+                )
+                (prs/many1
+                    (prs/chain
+                        (expect-string-ignore-case "WHEN")
+                        blank+
+                        value-expr
+                        blank+
+                        (expect-string-ignore-case "THEN")
+                        blank+
+                        value-expr
+                        blank+
+                    )
+                )
+                (prs/choice*
+                    #(nth % 2) (prs/chain
+                        (expect-string-ignore-case "ELSE")
+                        blank+
+                        value-expr
+                        blank+
+                    )
+                    nil
+                )
+                (expect-string-ignore-case "END")
+            ))
+        )
+        v (nth prsd 2)
+        ww (nth prsd 3)
+        ww (for [[_ _ x _ _ _ y] ww] [x y])
+        else (nth prsd 4)
+        res {:type :case, :when ww}
+        res (if-not v res (assoc res :value v))
+        res (if-not else res (assoc res :else else))
+        ]
+        [strm res]
+    )
+)
+
 (defn- simple-expr:term [stream]
     (->> stream
         ((prs/choice
@@ -1344,6 +1393,7 @@
             binary-operator
             exists-operator
             cast-operator
+            case-operator
             literal
             asterisked-identifier
             dotted-identifier

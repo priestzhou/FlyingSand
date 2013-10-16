@@ -474,5 +474,20 @@
         :is
         "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS BINARY) = 1"
     )
+    (:fact to-hive:where:case
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE case when TRUE then FALSE end")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CASE WHEN TRUE THEN FALSE END"
+    )
+    (:fact to-hive:where:case:else
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE case when 1 then 2 else 3 end")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CASE WHEN 1 THEN 2 ELSE 3 END"
+    )
+    (:fact to-hive:where:case:value
+        (trans/sql-2003->hive context "SELECT col FROM tbl WHERE case col when 1 then TRUE when 0 then FALSE end")
+        :is
+        "SELECT col FROM `com.app.ver.tbl` tbl WHERE CASE col WHEN 1 THEN TRUE WHEN 0 THEN FALSE END"
+    )
 )
 
