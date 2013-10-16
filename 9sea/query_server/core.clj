@@ -171,24 +171,6 @@
     ))
 )
 
-(defn run-shark-query'
-  [q-id query-str]
-  (try
-   (println (str "run-shark-query:" q-id))
-  ( sql/with-connection db
-    (sql/with-query-results rs [query-str]
-  ; (println (str rs))
-      
-      (doall rs)
-      ))
-  (catch Exception exception
-  (do
-  ; (.printStackTrace exception)
-    (update-result-map q-id "Failed" nil (.getMessage exception) nil)
-   (println q-id)
-    ; we should seperate exception
-    ))))
-
 (defn submit-query
   [q-id query-str update-history-fn]
  ;; {:pre [not (str/blank? query-str)]}
