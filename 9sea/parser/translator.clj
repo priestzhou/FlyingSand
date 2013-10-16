@@ -473,6 +473,90 @@
         :>= (dump-hive:binary context dfg)
         :<> (dump-hive:binary context dfg)
         := (dump-hive:binary context dfg)
+        :in-array (let [
+            l (:left dfg)
+            r (:right dfg)
+            ]
+            (format "%s IN (%s)" 
+                (dump-hive:value-subexpr context l)
+                (str/join ", "
+                    (for [x r]
+                        (dump-hive:value-expr context x)
+                    )
+                )
+            )
+        )
+        :not-in-array (let [
+            l (:left dfg)
+            r (:right dfg)
+            ]
+            (format "%s NOT IN (%s)" 
+                (dump-hive:value-subexpr context l)
+                (str/join ", "
+                    (for [x r]
+                        (dump-hive:value-expr context x)
+                    )
+                )
+            )
+        )
+        :like (let [
+            l (:left dfg)
+            r (:right dfg)
+            ]
+            (format "%s LIKE %s"
+                (dump-hive:value-subexpr context l)
+                (dump-hive:value-subexpr context r)
+            )
+        )
+        :not-like (let [
+            l (:left dfg)
+            r (:right dfg)
+            ]
+            (format "%s NOT LIKE %s"
+                (dump-hive:value-subexpr context l)
+                (dump-hive:value-subexpr context r)
+            )
+        )
+        :reglike (let [
+            l (:left dfg)
+            r (:right dfg)
+            ]
+            (format "%s REGEXP %s"
+                (dump-hive:value-subexpr context l)
+                (dump-hive:value-subexpr context r)
+            )
+        )
+        :not-reglike (let [
+            l (:left dfg)
+            r (:right dfg)
+            ]
+            (format "%s NOT REGEXP %s"
+                (dump-hive:value-subexpr context l)
+                (dump-hive:value-subexpr context r)
+            )
+        )
+        :between (let [
+            l (:left dfg)
+            m (:middle dfg)
+            r (:right dfg)
+            ]
+            (format "%s BETWEEN %s AND %s"
+                (dump-hive:value-subexpr context l)
+                (dump-hive:value-subexpr context m)
+                (dump-hive:value-subexpr context r)
+            )
+        )
+        :not-between (let [
+            l (:left dfg)
+            m (:middle dfg)
+            r (:right dfg)
+            ]
+            (format "%s NOT BETWEEN %s AND %s"
+                (dump-hive:value-subexpr context l)
+                (dump-hive:value-subexpr context m)
+                (dump-hive:value-subexpr context r)
+            )
+        )
         :select (->> dfg
             (dump-hive:select context)
         )

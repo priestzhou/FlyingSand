@@ -316,5 +316,45 @@
         :is
         "SELECT * FROM `com.app.ver.tbl` tbl WHERE - 1"
     )
+    (:fact to-hive:where:predicate:in-array
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 1 IN (1, 2)")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 1 IN (1, 2)"
+    )
+    (:fact to-hive:where:predicate:in-array:not
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 3 NOT IN (1, 2)")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 3 NOT IN (1, 2)"
+    )
+    (:fact to-hive:where:predicate:between
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 2 BETWEEN 1 AND 3")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 2 BETWEEN 1 AND 3"
+    )
+    (:fact to-hive:where:predicate:between:not
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 0 NOT BETWEEN 1 AND 3")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 0 NOT BETWEEN 1 AND 3"
+    )
+    (:fact to-hive:where:predicate:like
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 'a' LIKE 'a'")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 'a' LIKE 'a'"
+    )
+    (:fact to-hive:where:predicate:like:not
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 'a' NOT LIKE 'a'")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 'a' NOT LIKE 'a'"
+    )
+    (:fact to-hive:where:predicate:reglike
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 'a' REGEXP 'a'")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 'a' REGEXP 'a'"
+    )
+    (:fact to-hive:where:predicate:reglike:not
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 'a' NOT REGEXP 'b'")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE 'a' NOT REGEXP 'b'"
+    )
 )
 
