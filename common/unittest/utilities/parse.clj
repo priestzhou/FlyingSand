@@ -298,6 +298,58 @@
     )
 )
 
+(suite "choice*"
+    (:fact choice*:first
+        (->> "a"
+            (prs/str->stream)
+            ((prs/choice* 
+                {\a :a, \b :b} (prs/expect-char \a) 
+                {\a :a, \b :b} (prs/expect-char \b)
+            ))
+            (extract-result)
+        )
+        :is
+        [[:eof] :a]
+    )
+    (:fact choice*:second
+        (->> "b"
+            (prs/str->stream)
+            ((prs/choice* 
+                {\a :a, \b :b} (prs/expect-char \a) 
+                {\a :a, \b :b} (prs/expect-char \b)
+            ))
+            (extract-result)
+        )
+        :is
+        [[:eof] :b]
+    )
+    (:fact choice*:default
+        (->> "c"
+            (prs/str->stream)
+            ((prs/choice* 
+                {\a :a, \b :b} (prs/expect-char \a) 
+                {\a :a, \b :b} (prs/expect-char \b)
+                :default
+            ))
+            (extract-result)
+        )
+        :is
+        [[\c :eof] :default]
+    )
+    (:fact choice*:unmatch
+        (fn []
+            (->> "c"
+                (prs/str->stream)
+                ((prs/choice* 
+                    {\a :a, \b :b} (prs/expect-char \a) 
+                    {\a :a, \b :b} (prs/expect-char \b)
+                ))
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+)
+
 (suite "optional"
     (:fact optional-match
         (->> "ab"
@@ -536,7 +588,7 @@
     (:fact separated-list:single
         (->> "a"
             (prs/str->stream)
-            (prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.))
+            ((prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.)))
             (extract-result)
         )
         :is
@@ -545,7 +597,7 @@
     (:fact separated-list:multiple
         (->> "a.b"
             (prs/str->stream)
-            (prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.))
+            ((prs/separated-list (prs/expect-char-if prs/letter) (prs/expect-char \.)))
             (extract-result)
         )
         :is
