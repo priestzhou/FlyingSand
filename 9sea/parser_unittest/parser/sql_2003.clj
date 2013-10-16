@@ -1096,7 +1096,8 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :select, :select-list :asterisk,
+        [[:eof] {:type :select, 
+            :select-list [{:type :derived-column, :value {:type :asterisk}}],
             :from-clause [{:type :table, :refer ["tbl"]}]
         }]
     )
@@ -1107,7 +1108,8 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :select, :set-quantifier :distinct, :select-list :asterisk,
+        [[:eof] {:type :select, :set-quantifier :distinct
+            :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
         }]
     )
@@ -1118,7 +1120,8 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :select, :set-quantifier :all, :select-list :asterisk,
+        [[:eof] {:type :select, :set-quantifier :all
+            :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
         }]
     )
@@ -1131,38 +1134,25 @@
         :is
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [{:type :qualified-asterisk, :refer ["ns" "tbl"]}]
+            :select-list [{:type :derived-column, :value {:type :asterisk, :refer ["ns" "tbl"]}}]
         }]
     )
-    (:fact select:all-fields-reference
-        (->> "SELECT 1.* FROM ns.tbl"
+    (:fact select:asterisked-identifier-chain:as
+        (->> "SELECT tbl.* AS (a) FROM tbl"
             (prs/str->stream)
             (sql/query)
             (extract-result)
         )
         :is
         [[:eof] {:type :select
-            :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [
-                {:type :all-fields-reference, :value {:type :numeric-literal, :value "1"}}
-            ]
-        }]
-    )
-    (:fact select:all-fields-reference:as
-        (->> "SELECT 1.* AS (a) FROM ns.tbl"
-            (prs/str->stream)
-            (sql/query)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :select
-            :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [
-                {
-                    :type :all-fields-reference, :names ["a"],
-                    :value {:type :numeric-literal, :value "1"}
-                }
-            ]
+            :from-clause [{:type :table, :refer ["tbl"]}]
+            :select-list [{
+                :type :derived-column, 
+                :value {:type :asterisk, :refer ["tbl"]}
+                :name [
+                    {:type :identifier, :value "a"}
+                ]
+            }]
         }]
     )
     (:fact select:derived-column
@@ -1190,16 +1180,15 @@
         :is
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [
-                {
-                    :type :derived-column, :name "a",
-                    :value {:type :numeric-literal, :value "1"}
-                }
-            ]
+            :select-list [{
+                :type :derived-column
+                :name {:type :identifier, :value "a"}
+                :value {:type :numeric-literal, :value "1"}
+            }]
         }]
     )
     (:fact select:derived-column:as:no-as
-        (->> "SELECT 1 AS a FROM ns.tbl"
+        (->> "SELECT 1 a FROM ns.tbl"
             (prs/str->stream)
             (sql/query)
             (extract-result)
@@ -1207,12 +1196,11 @@
         :is
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [
-                {
-                    :type :derived-column, :name "a",
-                    :value {:type :numeric-literal, :value "1"}
-                }
-            ]
+            :select-list [{
+                :type :derived-column
+                :name {:type :identifier, :value "a"}
+                :value {:type :numeric-literal, :value "1"}
+            }]
         }]
     )
     (:fact select:direct-column
@@ -1240,7 +1228,7 @@
         )
         :is
         [[:eof] {:type :select
-            :select-list :asterisk
+            :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
             :where {:type :<
                 :left {:type :dotted-identifier, :value ["col"]}
@@ -1256,7 +1244,7 @@
         )
         :is
         [[:eof] {:type :select
-            :select-list :asterisk
+            :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
             :group-by [
                 {:type :identifier, :value "col"}
@@ -1272,7 +1260,7 @@
         )
         :is
         [[:eof] {:type :select
-            :select-list :asterisk
+            :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
             :order-by [
                 {:ordering nil, :value {:type :identifier, :value "col"}}
@@ -1289,7 +1277,7 @@
         )
         :is
         [[:eof] {:type :select
-            :select-list :asterisk
+            :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
             :limit {:type :numeric-literal, :value "1"}
         }]
@@ -1304,11 +1292,11 @@
         [[:eof] {:type :union, :qualifier :all,
             :selects [{
                 :type :select
-                :select-list :asterisk
+                :select-list [{:type :derived-column, :value {:type :asterisk}}]
                 :from-clause [{:type :table, :refer ["tbl"]}]
             } {
                 :type :select
-                :select-list :asterisk
+                :select-list [{:type :derived-column, :value {:type :asterisk}}]
                 :from-clause [{:type :table, :refer ["tbl"]}]
             }]
         }]
@@ -1323,11 +1311,11 @@
         [[:eof] {:type :union, :qualifier :all,
             :selects [{
                 :type :select
-                :select-list :asterisk
+                :select-list [{:type :derived-column, :value {:type :asterisk}}]
                 :from-clause [{:type :table, :refer ["tbl"]}]
             } {
                 :type :select
-                :select-list :asterisk
+                :select-list [{:type :derived-column, :value {:type :asterisk}}]
                 :from-clause [{:type :table, :refer ["tbl"]}]
             }]
         }]
@@ -1878,6 +1866,17 @@
             :value {:type :numeric-literal, :value "1"}
         }]
     )
+    (:fact expr:binary
+        (->> "BINARY 'a'"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :binary
+            :value {:type :character-string-literal, :value "'a'"}
+        }]
+    )
     (:fact expr:subquery
         (->> "(SELECT * FROM tbl)"
             (prs/str->stream)
@@ -1885,9 +1884,23 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :select, :select-list :asterisk,
+        [[:eof] {:type :select
+            :select-list [{:type :derived-column, :value {:type :asterisk}}],
             :from-clause [{:type :table, :refer ["tbl"]}]
         }]
+    )
+    (:fact expr:exists
+        (->> "EXISTS (SELECT * FROM tbl)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :exists, :value {
+            :type :select
+            :select-list [{:type :derived-column, :value {:type :asterisk}}],
+            :from-clause [{:type :table, :refer ["tbl"]}]
+        }}]
     )
     (:fact expr:identifier
         (->> "tbl.col"
@@ -1897,5 +1910,23 @@
         )
         :is
         [[:eof] {:type :dotted-identifier, :value ["tbl" "col"]}]
+    )
+    (:fact expr:identifier:asterisk
+        (->> "*"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :asterisk}]
+    )
+    (:fact expr:identifier:asterisk:table
+        (->> "tbl.*"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :asterisk, :refer ["tbl"]}]
     )
 )

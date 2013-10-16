@@ -968,48 +968,6 @@
     )
 )
 
-(defn- asterisked-identifier-chain [stream]
-    (let [
-        [strm prsd] (->> stream
-            ((prs/chain
-                dotted-identifier
-                (prs/expect-char \.)
-                (prs/expect-char \*)
-            ))
-        )
-        res (first prsd)
-        ]
-        [strm {:type :qualified-asterisk, :refer (:value res)}]
-    )
-)
-
-(defn- all-fields-reference [stream]
-    (let [
-        [strm prsd] (->> stream
-            ((prs/chain
-                value-expr
-                (prs/expect-char \.)
-                (prs/expect-char \*)
-                (prs/choice*
-                    last (prs/chain
-                        blank+
-                        (expect-string-ignore-case "AS")
-                        blank*
-                        paren-column-list
-                    )
-                    nil
-                )
-            ))
-        )
-        v (first prsd)
-        nm (last prsd)
-        res {:type :all-fields-reference, :value v}
-        res (if nm (assoc res :names (:value nm)) res)
-        ]
-        [strm res]
-    )
-)
-
 (defn- derived-column [stream]
     (let [
         [strm prsd] (->> stream
@@ -1025,16 +983,27 @@
                             )
                             blank+
                         )
-                        identifier
+                        (prs/choice
+                            identifier
+                            (paren
+                                (prs/separated-list
+                                    identifier
+                                    (prs/chain
+                                        blank*
+                                        (prs/expect-char \,)
+                                        blank*
+                                    )
+                                )
+                            )
+                        )
                     )
                     nil
                 )
             ))
         )
-        v (first prsd)
-        n (last prsd)
+        [v n] prsd
         res {:type :derived-column, :value v}
-        res (if-not n res (assoc res :name (:value n)))
+        res (if-not n res (assoc res :name n))
         ]
         [strm res]
     )
@@ -1043,19 +1012,12 @@
 (defn- select-list [stream]
     (let [
         [strm prsd] (->> stream
-            ((prs/choice*
-                (constantly :asterisk) (prs/expect-char \*)
-                identity (prs/separated-list 
-                    (prs/choice
-                        asterisked-identifier-chain
-                        all-fields-reference
-                        derived-column
-                    )
-                    (prs/chain
-                        blank*
-                        (prs/expect-char \,)
-                        blank*
-                    )
+            ((prs/separated-list
+                derived-column
+                (prs/chain
+                    blank*
+                    (prs/expect-char \,)
+                    blank*
                 )
             ))
         )
@@ -1284,11 +1246,68 @@
     )
 )
 
+(defn- asterisked-identifier [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (prs/choice*
+                    first (prs/chain
+                        dotted-identifier
+                        (prs/expect-char \.)
+                    )
+                    nil
+                )
+                (prs/expect-char \*)
+            ))
+        )
+        res (first prsd)
+        res (if-not res 
+            {:type :asterisk}
+            {:type :asterisk, :refer (:value res)}
+        )
+        ]
+        [strm res]
+    )
+)
+
+(defn- binary-operator [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "BINARY")
+                blank+
+                simple-expr
+            ))
+        )
+        res (last prsd)
+        ]
+        [strm {:type :binary, :value res}]
+    )
+)
+
+(defn- exists-operator [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "EXISTS")
+                blank*
+                (paren query)
+            ))
+        )
+        res (last prsd)
+        ]
+        [strm {:type :exists, :value res}]
+    )
+)
+
 (defn- simple-expr:term [stream]
     (->> stream
         ((prs/choice
             (paren query)
+            binary-operator
+            exists-operator
             literal
+            asterisked-identifier
             dotted-identifier
         ))
     )

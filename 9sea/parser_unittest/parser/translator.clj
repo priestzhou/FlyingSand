@@ -12,12 +12,6 @@
     )
 )
 
-(defn name-conversion [nm]
-    (format "`%s`"
-        (str/join "." nm)
-    )
-)
-
 (def context {
     :ns [{
         :type "namespace"
@@ -31,6 +25,7 @@
                 :children [{
                     :type "table"
                     :name "tbl"
+                    :hive-name "`com.app.ver.tbl`"
                     :children [
                         {
                             :name "col"
@@ -42,7 +37,6 @@
         }]
     }]
     :default-ns ["com" "app" "ver"]
-    :name-conversion name-conversion
 })
 
 (suite "quoted"
@@ -65,19 +59,28 @@
 
 (suite "normalize-table"
     (:fact normalize-table:only-table
-        (trans/normalize-table context ["tbl"])
+        (->> ["tbl"]
+            (trans/normalize-table context)
+            (:hive-name)
+        )
         :is
-        ["com" "app" "ver" "tbl"]
+        "`com.app.ver.tbl`"
     )
     (:fact normalize-table:namespaced-table
-        (trans/normalize-table context ["ver" "tbl"])
+        (->> ["ver" "tbl"]
+            (trans/normalize-table context)
+            (:hive-name)
+        )
         :is
-        ["com" "app" "ver" "tbl"]
+        "`com.app.ver.tbl`"
     )
     (:fact normalize-table:absolute
-        (trans/normalize-table context ["com" "app" "ver" "tbl"])
+        (->> ["com" "app" "ver" "tbl"]
+            (trans/normalize-table context)
+            (:hive-name)
+        )
         :is
-        ["com" "app" "ver" "tbl"]
+        "`com.app.ver.tbl`"
     )
     (:fact normalize-table:unmatch
         (fn []
@@ -93,7 +96,47 @@
         :is
         "SELECT * FROM `com.app.ver.tbl` tbl"
     )
-    (:fact to-hive:as
+    (:fact to-hive:select:subquery
+        (trans/sql-2003->hive context "SELECT (SELECT * FROM tbl) (col) FROM tbl")
+        :is
+        "SELECT (SELECT * FROM `com.app.ver.tbl` tbl) (col) FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:all
+        (trans/sql-2003->hive context "SELECT ALL * FROM tbl")
+        :is
+        "SELECT ALL * FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:distinct
+        (trans/sql-2003->hive context "SELECT DISTINCT * FROM tbl")
+        :is
+        "SELECT DISTINCT * FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:asterisk:table
+        (trans/sql-2003->hive context "SELECT tbl.* FROM tbl")
+        :is
+        "SELECT tbl.* FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:asterisk:ns
+        (trans/sql-2003->hive context "SELECT ver.tbl.* FROM ver.tbl")
+        :is
+        "SELECT `com.app.ver.tbl`.* FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:column:as
+        (trans/sql-2003->hive context "SELECT col a FROM tbl")
+        :is
+        "SELECT col a FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:asterisk:as
+        (trans/sql-2003->hive context "SELECT * a FROM tbl")
+        :is
+        "SELECT * a FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:asterisk:as:paren
+        (trans/sql-2003->hive context "SELECT * (a) FROM tbl")
+        :is
+        "SELECT * (a) FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:table:as
         (trans/sql-2003->hive context "SELECT * FROM (SELECT * FROM tbl) AS t")
         :is
         "SELECT * FROM (SELECT * FROM `com.app.ver.tbl` tbl) t"
@@ -355,6 +398,16 @@
         (trans/sql-2003->hive context "SELECT * FROM tbl WHERE 'a' NOT REGEXP 'b'")
         :is
         "SELECT * FROM `com.app.ver.tbl` tbl WHERE 'a' NOT REGEXP 'b'"
+    )
+    (:fact to-hive:where:simple-expr:binary
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE BINARY 'a' <> 'A'")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE (BINARY 'a') <> 'A'"
+    )
+    (:fact to-hive:where:simple-expr:exists
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE EXISTS (SELECT * FROM tbl)")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE EXISTS (SELECT * FROM `com.app.ver.tbl` tbl)"
     )
 )
 
