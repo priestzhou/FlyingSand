@@ -14,9 +14,11 @@
     (:use
         [compojure.core :only (defroutes GET PUT POST DELETE HEAD ANY)]
         [ring.adapter.jetty :only (run-jetty)]
-        [korma.db :only (defdb sqlite3)]
+        [korma.db]
+        [korma.core]
         [logging.core :only [defloggers]]
-        [clj-time.coerce :only (to-long)]
+        [clj-time.coerce]
+        [clj-time.format]
         [slingshot.slingshot :only (try+ throw+)]
     )
     (:import
@@ -30,7 +32,7 @@
 (defloggers debug info warn error)
 
 (defdb flying-sand 
-    (sqlite3 {:db "flyingsand.db"})
+   (sqlite3 {:db "flyingsand.db"})
 )
 
 (db/defentity users
@@ -149,7 +151,7 @@
     )
 )
 
-(defn do-query [qid query]
+(defn do-hql-query [qid query]
     (let [progress-stages (inc (rand-int 10))]
         (try
             (let [result (db/exec-raw [query] :results)]
@@ -181,8 +183,7 @@
             (-> res (first) (:account_id))
         )
     )
-    )
-
+)
 
 (defn submit-query [params cookies]
     (let [
@@ -193,7 +194,7 @@
          ; find account by user id
          (let [account-id (get-account-id user-id)]
 
-            (let [qid (backend/submit-query account-id app version db query)]
+            (let [qid (backend/submit-query user-id app version db query)]
                (println (str "qid is:" qid))
 
             {
@@ -205,14 +206,10 @@
             }
 
             )
-
         )
          
     )
 )
-      
-      
-      
       
 (defn get-result [qid]
     (let [
@@ -221,40 +218,65 @@
         result (backend/get-query-result qid)
          ]
         (println result)
-        {
-            :status 200
-            :headers {"Content-Type" "application/json"}
-            :body (json/write-str result)
-        }
-    )
-) 
-
-(defn get-meta [cookies]
-    (let [user-id (extract-user-id cookies)]
-        (println "GET meta" (pr-str {:user_id user-id}))
-        {
-            :status 200
-            :headers {"Content-Type" "application/json"}
-            :body (json/write-str
-                [
-                    {
-            
-                    }
-                ]
+        (if (nil? result) 
+          {
+            :status 404
+          }
+          (do
+            (if-let [csv-url (get result :url)]
+              (do
+                (prn "csv-url" csv-url)
+                (dosync
+                  (let [filename (format "result/%d_%d_result.csv" 
+                                       qid (get result :submit-time))
+                      _ (println "csv filename:" filename)
+                     ]
+                    (alter csv assoc qid filename )
+                  )
+                )
+              )
             )
-        }
+            {
+              :status 200
+              :headers {"Content-Type" "application/json"}
+              :body (json/write-str result)
+            }
+          )
+        )
+    )
+)
+ 
+(defn get-meta [cookies]
+    (let [user-id (extract-user-id cookies)
+          account-id (get-account-id user-id)
+          _ (println "account-id: " account-id)
+          meta-tree (backend/get-metastore-tree account-id)
+          ]
+      (if (nil? meta-tree) (println "get meta error!")
+        (do
+         (println "GET meta" (pr-str {:user_id user-id}))
+         {
+            :status 200
+            :headers {"Content-Type" "application/json"}
+            :body (json/write-str meta-tree) 
+         }
+        )
+      )
     )
 )
 
 (def saved-queries (ref {}))
 
 (defn get-saved-queries [cookies]
-    (let [user-id (extract-user-id cookies)]
+    (authenticate cookies)
+    (let [user-id (extract-user-id cookies)
+          res (backend/select-saved-queries user-id)
+        ]
         (println (format "GET saved/ %s" (pr-str {:user_id user-id})))
         {
             :status 200
             :headers {"Content-Type" "application/json"}
-            :body (json/write-str @saved-queries)
+            :body (json/write-str res)
         }
     )
 )
@@ -265,42 +287,40 @@
         {:keys [name app version db query]} params
         qname name
         _ (println (format "POST saved/?name=%s&app=%s&version=%s&db=%s&query=%s %s" app version db qname query (pr-str {:user_id user-id})))
-        r (dosync
-            (let [qid (for [
-                    [id {:keys [name]}] @saved-queries
-                    :when (= name qname)
-                    ] 
-                    id
-                )
-                ]
-                (if (empty? qid)
-                    (let [new-id (rand-int 1000)]
-                        (alter saved-queries assoc new-id {
-                            :name qname 
-                            :app app
-                            :version version
-                            :db db
-                            :query query
-                        })
-                        new-id
-                    )
-                    nil
-                )
+        r-qid (backend/check-query-name qname)
+        s-time (unparse (formatters :date-hour-minute-second) (from-long (System/currentTimeMillis)))
+        ]
+        (prn "qname:" qname)
+        (prn "r-qid:" r-qid)
+        (authenticate cookies)
+        (if (not (nil? r-qid)) 
+            {
+                :status 409
+                :headers {"Content-Type" "text/plain"}
+                :body (format "%d" r-qid)
+            }
+            (do
+                (try
+                  (prn "date-time: " s-time)
+                  (backend/save-query qname app version db query s-time user-id)
+                  {
+                    :status 201
+                    :headers {"Content-Type" "text/plain"}
+                  }
+
+                (catch SQLException ex
+                    {
+                        :status 400
+                        :headers {"Content-Type" "text/plain"}
+                        :body qname
+                    }
+
+                ))
+
+
             )
         )
-        ]
-        (if r
-            {
-                :status 201
-                :headers {"Content-Type" "text/plain"}
-                :body (format "%d" r)
-            }
-            {
-                :status 400
-                :headers {"Content-Type" "text/plain"}
-                :body qname
-            }
-        )
+
     )
 )
 
@@ -309,22 +329,31 @@
         user-id (extract-user-id cookies)
         id (->> params (:qid) (Long/parseLong))
         _ (println (format "DELETE saved/%d/ %s" id (pr-str {:user_id user-id})))
-        r (dosync
-            (if-let [q (@saved-queries id)]
-                (do
-                    (alter saved-queries dissoc id)
-                    id
-                )
-            )
-        )
         ]
-        (if r
+        (authenticate cookies)
+        (try
+            (let [ownership (backend/check-query-ownership id user-id)
+                ]
+                (if (nil? ownership)
+                {
+                    :status 404
+                }
+                (do
+                  (backend/delete-saved-query id)
+                  {
+                     :status 200
+                  }
+
+                )
+                )
+
+            )
+        (catch SQLException ex
             {
-                :status 200
+                :status 500
+
             }
-            {
-                :status 404
-            }
+        )
         )
     )
 )
@@ -332,6 +361,8 @@
 (defn download [qid]
     (println (format "GET queries/%d/csv" qid))
     (if-let [r (@csv qid)]
+      (do
+      (prn "download csv: " r)
         {
             :status 200
             :headers {"Content-Type" "text/csv"}
@@ -340,6 +371,7 @@
         {
             :status 404
         }
+      )
     )
 )
 
@@ -363,29 +395,12 @@
     (let [
         user-id (extract-user-id cookies)
         _ (println "GET queries/" (pr-str {:user_id user-id}))
-        r (dosync
-            (let [ks (keys @results)]
-                (into {}
-                    (for [
-                        k ks
-                        :let [v (@results k)]
-                        :let [{:keys [query status url submit-time duration]} v]
-                        ]
-                        [k (merge 
-                                {:query query :status status :submit-time submit-time}
-                                (if duration {:duration duration} {})
-                                (if url {:url url} {})
-                            )
-                        ]
-                    )
-                )
-            )
-        )
+        res (backend/select-history-queries)
         ]
         {
             :status 200
             :headers {"Content-Type" "application/json"}
-            :body (json/write-str r)
+            :body (json/write-str res)
         }
     )
 )
