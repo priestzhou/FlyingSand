@@ -79,27 +79,30 @@
     )
 )
 
-(defn table? [nss refered]
+(defn search-table [nss refered]
     (if (= 1 (count refered))
         (let [tbl (search-name-in-ns nss (first refered))]
-            (= (:type tbl) "table")
+            tbl
         )
         (let [[x & xs] refered]
             (if-let [nz (search-name-in-ns nss x)]
                 (if (= (:type nz) "namespace")
                     (recur (:children nz) xs)
-                    false
+                    nil
                 )
-                false
+                nil
             )
         )
     )
 )
 
 (defn normalize-table' [nss nz refered]
-    (let [x (concat nz refered)]
-        (if (table? nss x)
-            x
+    (let [
+        x (concat nz refered)
+        r (search-table nss x)
+        ]
+        (if r
+            r
             (if (empty? nz)
                 (throw (InvalidSyntaxException. 
                     (format "unknown table: %s" (pr-str refered))
@@ -115,13 +118,26 @@
 )
 
 (declare translate-table)
+(declare analyze-sql:value-expr)
+
+(defn translate:select-list [context sl]
+{
+    :pre [(= (:type sl) :derived-column)]
+}
+    (let [
+        v (:value sl)
+        new-v (analyze-sql:value-expr context v)
+        ]
+        (assoc sl :value new-v)
+    )
+)
 
 (defn translate-raw-table [context tbl]
     (let [
-        refer-tbl (->> tbl (:refer) (normalize-table context))
+        ext-tbl (->> tbl (:refer) (normalize-table context))
         ]
         (-> tbl
-            (assoc :type :external-table, :refer refer-tbl)
+            (assoc :type :external-table, :refer ext-tbl)
         )
     )
 
@@ -160,13 +176,31 @@
     )
 )
 
+(defn translate:where-clause [context ast]
+    (when ast
+        (analyze-sql:value-expr context ast)
+    )
+)
+
 (defn analyze-sql:select [context ast]
     (let [
+        select-list (->> ast
+            (:select-list)
+            (map #(translate:select-list context %))
+        )
         from-clause (->> ast
             (:from-clause)
             (translate-from-clause context)
         )
-        dfg (assoc ast :from-clause from-clause)
+        where-clause (->> ast
+            (:where)
+            (translate:where-clause context)
+        )
+        dfg (assoc ast 
+            :select-list select-list
+            :from-clause from-clause
+        )
+        dfg (if-not where-clause dfg (assoc dfg :where where-clause))
         ]
         dfg
     )
@@ -184,6 +218,24 @@
     (case (:type ast)
         :select (analyze-sql:select context ast)
         :union (analyze-sql:union context ast)
+        :asterisk (let [
+            r (:refer ast)
+            ]
+            (cond
+                (nil? r) ast
+                (= (count r) 1) ast
+                :else (assoc ast :refer
+                    {:type :external-table, :refer (normalize-table context r)}
+                )
+            )
+        )
+        :exists (let [
+            v (:value ast)
+            v (analyze-sql:value-expr context v)
+            ]
+            (assoc ast :value v)
+        )
+        ast
     )
 )
 
@@ -197,21 +249,27 @@
 
 (defn dump-hive:select-list [context dfg]
     (let [select-list (:select-list dfg)]
-        (cond
-            (= select-list :asterisk) "*"
-            :else (str/join ", "
-                (for [s select-list]
-                    (case (:type s)
-                        :derived-column (let [
-                            v (:value s)
-                            ]
-                            (case (:type v)
-                                :dotted-identifier (->> v
-                                    (:value)
-                                    (map (partial quoted \`))
-                                    (str/join ".")
+        (str/join ", "
+            (for [s select-list]
+                (let [
+                    _ (assert (= (:type s) :derived-column))
+                    v (:value s)
+                    n (:name s)
+                    col (dump-hive:value-subexpr context v)
+                    ]
+                    (cond
+                        (nil? n) col
+                        :else (let [
+                            nm (cond
+                                (sequential? n) (format "(%s)"
+                                    (str/join ", "
+                                        (map (partial dump-hive:value-expr context) n)
+                                    )
                                 )
+                                :else (dump-hive:value-expr context n)
                             )
+                            ]
+                            (format "%s %s" col nm)
                         )
                     )
                 )
@@ -257,16 +315,16 @@
             (format "%s %s" exp (quoted \` nm))
         )
         :external-table (let [
-            nm (:name dfg)
             tbl (->> dfg
                 (:refer)
-                ((:name-conversion context))
+                (:hive-name)
             )
+            nm (:name dfg)
             nm (if nm 
                 nm
                 (->> dfg
                     (:refer)
-                    (last)
+                    (:name)
                 )
             )
             ]
@@ -340,7 +398,11 @@
         group-by (dump-hive:group-by context dfg)
         order-by (dump-hive:order-by context dfg)
         limit (dump-hive:limit context dfg)
-        hive (format "SELECT %s FROM %s" select-list from-clause)
+        hive (case (:set-quantifier dfg)
+            :all (format "SELECT ALL %s FROM %s" select-list from-clause)
+            :distinct (format "SELECT DISTINCT %s FROM %s" select-list from-clause)
+            (format "SELECT %s FROM %s" select-list from-clause)
+        )
         hive (if-not where hive (format "%s WHERE %s" hive where))
         hive (if-not group-by hive (format "%s GROUP BY %s" hive group-by))
         hive (if-not order-by hive (format "%s ORDER BY %s" hive order-by))
@@ -363,23 +425,6 @@
     )
 )
 
-(defn dump-hive:value-subexpr [context dfg]
-    (let [res (dump-hive:value-expr context dfg)]
-        (if (contains? 
-                #{
-                :numeric-literal :hex-string-literal :date-literal
-                :interval-literal :national-string-literal :character-string-literal
-                :boolean-literal :identifier :dotted-identifier
-                :null-literal
-                }
-                (:type dfg)
-            )
-            res
-            (format "(%s)" res)
-        )
-    )
-)
-
 (defn dump-hive:binary [context dfg]
     (let [
         left (dump-hive:value-subexpr context (:left dfg))
@@ -391,6 +436,23 @@
         )
         ]
         (format "%s %s %s" left connective right)
+    )
+)
+
+(defn dump-hive:value-subexpr [context dfg]
+    (let [res (dump-hive:value-expr context dfg)]
+        (if (contains? 
+                #{
+                :numeric-literal :hex-string-literal :date-literal
+                :interval-literal :national-string-literal :character-string-literal
+                :boolean-literal :identifier :dotted-identifier
+                :null-literal :asterisk
+                }
+                (:type dfg)
+            )
+            res
+            (format "(%s)" res)
+        )
     )
 )
 
@@ -565,6 +627,33 @@
             (str/join " UNION ALL "
                 (map (partial dump-hive:value-subexpr context) (:selects dfg))
             )
+        )
+        :asterisk (let [
+            r (:refer dfg)
+            ]
+            (cond
+                (nil? r) "*"
+                (= (:type r) :external-table) (->> r
+                    (:refer)
+                    (:hive-name)
+                    (format "%s.*")
+                )
+                :else (->> r
+                    (map (partial quoted \`))
+                    (str/join ".")
+                    (format "%s.*")
+                )
+            )
+        )
+        :binary (let [
+            v (:value dfg)
+            ]
+            (format "BINARY %s" (dump-hive:value-subexpr context v))
+        )
+        :exists (let [
+            v (:value dfg)
+            ]
+            (format "EXISTS %s" (dump-hive:value-subexpr context v))
         )
     )
 )
