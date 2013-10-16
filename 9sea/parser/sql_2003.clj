@@ -1271,6 +1271,19 @@
 (declare simple-expr)
 (declare simple-expr:term)
 
+(defn- value-expr-list [stream]
+    (->> stream
+        ((prs/separated-list
+            value-expr
+            (prs/chain
+                blank*
+                (prs/expect-char \,)
+                blank*
+            )
+        ))
+    )
+)
+
 (defn- simple-expr:term [stream]
     (->> stream
         ((prs/choice
@@ -1363,8 +1376,95 @@
     )
 )
 
+(defn- extend-predicate [left stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/optional
+                (prs/chain
+                    (prs/choice*
+                        (constantly true) (prs/chain
+                            blank+
+                            (expect-string-ignore-case "NOT")
+                        )
+                        false
+                    )
+                    (prs/choice*
+                        (fn [x] {:type :in-array, :right (last x)}) (prs/chain
+                            blank+
+                            (expect-string-ignore-case "IN")
+                            blank+
+                            (prs/choice*
+                                #(map remove-paren-if-possible %)
+                                (paren value-expr-list)
+                            )
+                        )
+                        (fn [x] {:type :between, :middle (nth x 3), :right (last x)}) 
+                        (prs/chain
+                            blank+
+                            (expect-string-ignore-case "BETWEEN")
+                            blank+
+                            (prs/choice*
+                                #(remove-paren-if-possible %) bit-expr
+                            )
+                            blank+
+                            (expect-string-ignore-case "AND")
+                            blank+
+                            (prs/choice*
+                                #(remove-paren-if-possible %) predicate
+                            )
+                        )
+                        (fn [x] {:type :like, :right (last x)}) (prs/chain
+                            blank+
+                            (expect-string-ignore-case "LIKE")
+                            blank+
+                            (prs/choice*
+                                #(remove-paren-if-possible %)
+                                simple-expr
+                            )
+                        )
+                        (fn [x] {:type :reglike, :right (last x)}) (prs/chain
+                            blank+
+                            (expect-string-ignore-case "REGEXP")
+                            blank+
+                            (prs/choice*
+                                #(remove-paren-if-possible %)
+                                bit-expr
+                            )
+                        )
+                    )
+                )
+            ))
+        )
+        ]
+        (if-not prsd
+            [stream left]
+            (let [
+                [not? res] prsd
+                res (assoc res :left (remove-paren-if-possible left))
+                res (if-not not? res
+                    (assoc res :type
+                        (case (:type res)
+                            :in-array :not-in-array
+                            :between :not-between
+                            :like :not-like
+                            :reglike :not-reglike
+                        )
+                    )
+                )
+                ]
+                [strm res]
+            )
+        )
+    )
+)
+
 (defn- predicate [stream]
-    (bit-expr stream)
+    (let [
+        [strm1 prsd1] (bit-expr stream)
+        [strm2 prsd2] (extend-predicate prsd1 strm1)
+        ]
+        [strm2 prsd2]
+    )
 )
 
 (defn- boolean-primary:recur [left stream]

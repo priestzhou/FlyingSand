@@ -1611,6 +1611,110 @@
             :right {:type :numeric-literal, :value "2"}
         }]
     )
+    (:fact expr:predicate:in-array
+        (->> "1 IN (1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :in-array
+            :left {:type :numeric-literal, :value "1"}
+            :right [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact expr:predicate:in-array:not
+        (->> "3 NOT IN (1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :not-in-array
+            :left {:type :numeric-literal, :value "3"}
+            :right [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact expr:predicate:between
+        (->> "2 BETWEEN 1 AND 3"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :between
+            :left {:type :numeric-literal, :value "2"}
+            :middle {:type :numeric-literal, :value "1"}
+            :right {:type :numeric-literal, :value "3"}
+        }]
+    )
+    (:fact expr:predicate:between:not
+        (->> "0 NOT BETWEEN 1 AND 3"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :not-between
+            :left {:type :numeric-literal, :value "0"}
+            :middle {:type :numeric-literal, :value "1"}
+            :right {:type :numeric-literal, :value "3"}
+        }]
+    )
+    (:fact expr:predicate:like
+        (->> "'a' LIKE 'a'"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :like
+            :left {:type :character-string-literal, :value "'a'"}
+            :right {:type :character-string-literal, :value "'a'"}
+        }]
+    )
+    (:fact expr:predicate:like:not
+        (->> "'a' NOT LIKE 'b'"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :not-like
+            :left {:type :character-string-literal, :value "'a'"}
+            :right {:type :character-string-literal, :value "'b'"}
+        }]
+    )
+    (:fact expr:predicate:reglike
+        (->> "'a' REGEXP 'a'"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :reglike
+            :left {:type :character-string-literal, :value "'a'"}
+            :right {:type :character-string-literal, :value "'a'"}
+        }]
+    )
+    (:fact expr:predicate:reglike:not
+        (->> "'a' NOT REGEXP 'b'"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :not-reglike
+            :left {:type :character-string-literal, :value "'a'"}
+            :right {:type :character-string-literal, :value "'b'"}
+        }]
+    )
     (:fact expr:bit:|
         (->> "1|2"
             (prs/str->stream)
