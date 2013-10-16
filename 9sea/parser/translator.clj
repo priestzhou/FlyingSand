@@ -446,7 +446,7 @@
                 :numeric-literal :hex-string-literal :date-literal
                 :interval-literal :national-string-literal :character-string-literal
                 :boolean-literal :identifier :dotted-identifier
-                :null-literal :asterisk
+                :null-literal :asterisk :binary :cast
                 }
                 (:type dfg)
             )
@@ -648,12 +648,21 @@
         :binary (let [
             v (:value dfg)
             ]
-            (format "BINARY %s" (dump-hive:value-subexpr context v))
+            (format "BINARY(%s)" (dump-hive:value-expr context v))
         )
         :exists (let [
             v (:value dfg)
             ]
             (format "EXISTS %s" (dump-hive:value-subexpr context v))
+        )
+        :cast (let [
+            l (:left dfg)
+            r (:right dfg)
+            ]
+            (format "CAST(%s AS %s)"
+                (dump-hive:value-subexpr context l)
+                (->> r (name) (str/upper-case))
+            )
         )
     )
 )

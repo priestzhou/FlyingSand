@@ -402,12 +402,77 @@
     (:fact to-hive:where:simple-expr:binary
         (trans/sql-2003->hive context "SELECT * FROM tbl WHERE BINARY 'a' <> 'A'")
         :is
-        "SELECT * FROM `com.app.ver.tbl` tbl WHERE (BINARY 'a') <> 'A'"
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE BINARY('a') <> 'A'"
     )
     (:fact to-hive:where:simple-expr:exists
         (trans/sql-2003->hive context "SELECT * FROM tbl WHERE EXISTS (SELECT * FROM tbl)")
         :is
         "SELECT * FROM `com.app.ver.tbl` tbl WHERE EXISTS (SELECT * FROM `com.app.ver.tbl` tbl)"
+    )
+    (:fact to-hive:where:cast:int
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as int)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS INT) = 1"
+    )
+    (:fact to-hive:where:cast:tinyint
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as tinyint)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS TINYINT) = 1"
+    )
+    (:fact to-hive:where:cast:smallint
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as smallint)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS SMALLINT) = 1"
+    )
+    (:fact to-hive:where:cast:bigint
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as bigint)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS BIGINT) = 1"
+    )
+    (:fact to-hive:where:cast:float
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as float)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS FLOAT) = 1"
+    )
+    (:fact to-hive:where:cast:double
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as double)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS DOUBLE) = 1"
+    )
+    (:fact to-hive:where:cast:decimal
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as decimal)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS DECIMAL) = 1"
+    )
+    (:fact to-hive:where:cast:timestamp
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as timestamp)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS TIMESTAMP) = 1"
+    )
+    (:fact to-hive:where:cast:date
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as date)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS DATE) = 1"
+    )
+    (:fact to-hive:where:cast:string
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as string)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS STRING) = 1"
+    )
+    (:fact to-hive:where:cast:varchar
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as varchar)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS VARCHAR) = 1"
+    )
+    (:fact to-hive:where:cast:boolean
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as boolean)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS BOOLEAN) = 1"
+    )
+    (:fact to-hive:where:cast:binary
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cast('1' as binary)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CAST('1' AS BINARY) = 1"
     )
 )
 

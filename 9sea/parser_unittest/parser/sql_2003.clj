@@ -1930,3 +1930,162 @@
         [[:eof] {:type :asterisk, :refer ["tbl"]}]
     )
 )
+
+(suite "functions"
+    (:fact func:cast:int
+        (->> "CAST('1' AS INT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :int
+        }]
+    )
+    (:fact func:cast:tinyint
+        (->> "CAST('1' AS TINYINT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :tinyint
+        }]
+    )
+    (:fact func:cast:smallint
+        (->> "CAST('1' AS SMALLINT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :smallint
+        }]
+    )
+    (:fact func:cast:bigint
+        (->> "CAST('1' AS BIGINT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :bigint
+        }]
+    )
+    (:fact func:cast:float
+        (->> "CAST('1' AS FLOAT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :float
+        }]
+    )
+    (:fact func:cast:double
+        (->> "CAST('1' AS DOUBLE)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :double
+        }]
+    )
+    (:fact func:cast:decimal
+        (->> "CAST('1' AS DECIMAL)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :decimal
+        }]
+    )
+    (:fact func:cast:timestamp
+        (->> "CAST('1' AS TIMESTAMP)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :timestamp
+        }]
+    )
+    (:fact func:cast:date
+        (->> "CAST('1' AS DATE)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :date
+        }]
+    )
+    (:fact func:cast:string
+        (->> "CAST('1' AS STRING)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :string
+        }]
+    )
+    (:fact func:cast:varchar
+        (->> "CAST('1' AS varchar)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :varchar
+        }]
+    )
+    (:fact func:cast:boolean
+        (->> "CAST('1' AS BOOLEAN)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :boolean
+        }]
+    )
+    (:fact func:cast:binary
+        (->> "CAST('1' AS BINARY)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :binary
+        }]
+    )
+)

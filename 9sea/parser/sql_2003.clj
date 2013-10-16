@@ -1300,12 +1300,50 @@
     )
 )
 
+(defn- cast-operator [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "CAST")
+                blank*
+                (paren (prs/chain
+                    value-expr
+                    blank+
+                    (expect-string-ignore-case "AS")
+                    blank+
+                    (prs/choice*
+                        (constantly :int) (expect-string-ignore-case "INT")
+                        (constantly :tinyint) (expect-string-ignore-case "TINYINT")
+                        (constantly :smallint) (expect-string-ignore-case "SMALLINT")
+                        (constantly :bigint) (expect-string-ignore-case "BIGINT")
+                        (constantly :decimal) (expect-string-ignore-case "DECIMAL")
+                        (constantly :float) (expect-string-ignore-case "FLOAT")
+                        (constantly :double) (expect-string-ignore-case "DOUBLE")
+                        (constantly :timestamp) (expect-string-ignore-case "TIMESTAMP")
+                        (constantly :date) (expect-string-ignore-case "DATE")
+                        (constantly :string) (expect-string-ignore-case "STRING")
+                        (constantly :varchar) (expect-string-ignore-case "VARCHAR")
+                        (constantly :boolean) (expect-string-ignore-case "BOOLEAN")
+                        (constantly :binary) (expect-string-ignore-case "BINARY")
+                    )
+                ))
+            ))
+        )
+        prsd (last prsd)
+        v (first prsd)
+        t (last prsd)
+        ]
+        [strm {:type :cast, :left v, :right t}]
+    )
+)
+
 (defn- simple-expr:term [stream]
     (->> stream
         ((prs/choice
             (paren query)
             binary-operator
             exists-operator
+            cast-operator
             literal
             asterisked-identifier
             dotted-identifier
