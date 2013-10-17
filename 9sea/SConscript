@@ -28,11 +28,13 @@ env.install(env.compileAndJar('agent.jar', 'agent',
 parser = env.compileAndJar('parser.jar', 'parser',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/argparser.jar'),
     ])
 env.install(env.compileAndJar('parser_unittest.jar', 'parser_unittest', 
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/testing.jar'),
         env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/argparser.jar'),
         parser, 
     ], 
     standalone=True, manifest={'Main-Class': 'parser_unittest.main'}))
