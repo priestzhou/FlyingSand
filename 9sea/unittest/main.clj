@@ -1,5 +1,7 @@
 (ns unittest.main
-    (:use testing.core)
+    (:use testing.core
+        unittest.agent.main
+    )
     (:gen-class)
 )
 
