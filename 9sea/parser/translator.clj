@@ -446,7 +446,8 @@
                 :numeric-literal :hex-string-literal :date-literal
                 :interval-literal :national-string-literal :character-string-literal
                 :boolean-literal :identifier :dotted-identifier
-                :null-literal :asterisk :binary :cast
+                :null-literal :asterisk :binary :cast :distinct-count
+                :func-call
                 }
                 (:type dfg)
             )
@@ -683,6 +684,28 @@
             res (format "%s END" res)
             ]
             res
+        )
+        :distinct-count (let [
+            args (str/join ", "
+                (for [x (:args dfg)]
+                    (dump-hive:value-subexpr context x)
+                )
+            )
+            ]
+            (format "COUNT(DISTINCT %s)" args)
+        )
+        :func-call (let [
+            f (:func dfg)
+            args (:args dfg)
+            ]
+            (format "%s(%s)"
+                (case f
+                    :power "POWER"
+                )
+                (str/join ", "
+                    (map (partial dump-hive:value-subexpr context) args)
+                )
+            )
         )
     )
 )

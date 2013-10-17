@@ -2130,4 +2130,83 @@
             :right :binary
         }]
     )
+    (:fact func:distinct-count:1
+        (->> "COUNT(DISTINCT 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :distinct-count
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:distinct-count:2
+        (->> "COUNT(DISTINCT 0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :distinct-count
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:distinct-count:0
+        (fn []
+            (->> "COUNT(DISTINCT)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:distinct-count:3
+        (fn []
+            (->> "COUNT(DISTINCT 0,1,2)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:math:pow:2
+        (->> "POW(0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :power
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:pow:1
+        (fn []
+            (->> "POW(0)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+                (extract-result)
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:math:pow:3
+        (fn []
+            (->> "POW(0, 1, 2)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+                (extract-result)
+            )
+        )
+        :throws InvalidSyntaxException
+    )
 )

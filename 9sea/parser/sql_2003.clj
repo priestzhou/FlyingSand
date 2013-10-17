@@ -1386,6 +1386,65 @@
     )
 )
 
+(defn- distinct-count [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "COUNT")
+                blank*
+                (paren (prs/chain
+                    blank*
+                    (expect-string-ignore-case "DISTINCT")
+                    blank+
+                    (prs/separated-list
+                        value-expr
+                        (prs/chain
+                            blank*
+                            (prs/expect-char \,)
+                            blank*
+                        )
+                    )
+                ))
+            ))
+        )
+        args (->> prsd (last) (last))
+        ]
+        (if-not (<= 1 (count args) 2)
+            (prs/gen-ISE stream "COUNT(DISTINCT accepts 1 or 2 args")
+        )
+        [strm {:type :distinct-count, :args args}]
+    )
+)
+
+(defn- function-call [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (prs/choice*
+                    (constantly :power) (expect-string-ignore-case "POW")
+                )
+                blank*
+                (paren
+                    (prs/separated-list
+                        value-expr
+                        (prs/chain
+                            blank*
+                            (prs/expect-char \,)
+                            blank*
+                        )
+                    )
+                )
+            ))
+        )
+        [f _ args] prsd
+        ]
+        (if-not (= 2 (count args))
+            (prs/gen-ISE stream "POW requires 2 arguments")
+        )
+        [strm {:type :func-call, :func f, :args args}]
+    )
+)
+
 (defn- simple-expr:term [stream]
     (->> stream
         ((prs/choice
@@ -1394,6 +1453,8 @@
             exists-operator
             cast-operator
             case-operator
+            distinct-count
+            function-call
             literal
             asterisked-identifier
             dotted-identifier

@@ -489,5 +489,20 @@
         :is
         "SELECT col FROM `com.app.ver.tbl` tbl WHERE CASE col WHEN 1 THEN TRUE WHEN 0 THEN FALSE END"
     )
+    (:fact to-hive:select:distinct-count:1
+        (trans/sql-2003->hive context "SELECT count(distinct 0) FROM tbl")
+        :is
+        "SELECT COUNT(DISTINCT 0) FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:select:distinct-count:2
+        (trans/sql-2003->hive context "SELECT count(distinct 0, 1) FROM tbl")
+        :is
+        "SELECT COUNT(DISTINCT 0, 1) FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:where:pow
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE pow(1, 0)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE POWER(1, 0) = 1"
+    )
 )
 
