@@ -7,6 +7,7 @@
   [query-server.core :as shark]
   [clojure.data.json :as json]
   [clj-time.core :as time]
+  [query-server.mysql-connector :as mysql]
   )
 (:use 
   [korma.db]
@@ -21,46 +22,9 @@
 
 (defloggers debug info warn error)
 
-
-(def db {:classname "com.mysql.jdbc.Driver"
-         :subprotocol "mysql"
-         :subname "192.168.1.101:3306/meta"
-         :user "root"
-         :password "fs123"}
-)
-
-(defdb korma-db (mysql {:host "192.168.1.101" :port 3306 :db "meta" :user "root" :password "fs123"}))
-(set-delimiters "`")
-
-(orm/defentity TblApplication
-    (orm/pk :application_id)
-    (orm/database korma-db)
-)
-
-(orm/defentity TblMetaStore
-  (orm/pk :NameSpace)
-  (orm/database korma-db)
-)
-
-(orm/defentity TblHistoryQuery 
-  (orm/pk :QueryId)
-  (orm/entity-fields :ExecutionStatus)
-  (orm/database korma-db)
-)
-
-(orm/defentity TblSavedQuery 
-  (orm/pk :QueryId)
-  (orm/database korma-db)
-)
-
-(orm/defentity TblApplication
-  (orm/pk :ApplicationId)
-  (orm/database korma-db)
-)
-
 (defn check-query-name
    [query-name]
- (let [res (orm/select TblSavedQuery (orm/fields :QueryId) (orm/where {:QueryName query-name}))]
+ (let [res (orm/select mysql/TblSavedQuery (orm/fields :QueryId) (orm/where {:QueryName query-name}))]
    (if (empty? res) 
     (do
     	(info "no duplicate name found")
@@ -70,16 +34,9 @@
  )
 )
  
-(def query-status ["submitted" "running" "successed" "failed"])  
-
-(defn status-convert
-   [stat]
-   (.indexOf query-status stat)
-)
-
 (defn check-query-ownership
   [qid user-id]
-  (let [res (orm/select TblSavedQuery (orm/fields :QueryId) 
+  (let [res (orm/select mysql/TblSavedQuery (orm/fields :QueryId) 
             (orm/where {:QueryId qid :CreateUserId user-id}))
        ]
   (if (empty? res)
@@ -90,37 +47,39 @@
 
 (defn delete-saved-query
   [qid]
-  (orm/delete TblSavedQuery (orm/where {:QueryId qid}))
+  (orm/delete mysql/TblSavedQuery (orm/where {:QueryId qid}))
 )
 
 (defn update-query-status
    [query-id stat]
  ;   (sql/with-connection db
- ;     (sql/update-values :TblHistoryQuery ["QueryId=?" query-id] {:ExecutionStatus (status-convert stat)})
+ ;     (sql/update-values :mysq/TblHistoryQuery ["QueryId=?" query-id] {:ExecutionStatus (status-convert stat)})
  ;   )
-  ;   TblHistoryQuery
-  (let [sql-str (str " update TblHistoryQuery set ExecutionStatus=" (status-convert stat)" where QueryId="query-id)]
-   (orm/exec-raw korma-db sql-str)
+  ;   mysq/TblHistoryQuery
+  (let [sql-str (str " update TblHistoryQuery set ExecutionStatus=" (mysql/status-convert stat)" where QueryId="query-id)]
+   (orm/exec-raw mysql/korma-db sql-str)
   )
 )
 
 (defn update-history-query
   [q-id stats error url end-time duration]
-  (prn "update-history-query" q-id stats error url end-time duration)
-  (orm/exec-raw korma-db ["update TblHistoryQuery set ExecutionStatus=?, Error=?, Url=?, EndTime=?, Duration=?" 
-                 [(status-convert stats) 
-                  error 
-                  url 
-                  (unparse (formatters :date-hour-minute-second) (from-long end-time))
-                  duration]
-                ])
-
+  (let [sql-str (format "update TblHistoryQuery set ExecutionStatus=%d, Error=%s, Url=\"%s\", EndTime=\"%s\", Duration=%d where QueryId=%d"
+                        (mysql/status-convert stats) 
+                        error 
+                        url
+                        (unparse (formatters :date-hour-minute-second) (from-long end-time))
+                        duration
+                        q-id
+                )] 
+    (prn "update-history-query" sql-str)
+    (orm/exec-raw mysql/korma-db sql-str)
+  )
 )
 
 (defn select-saved-queries
   [user-id]
   (
-   orm/select TblSavedQuery (orm/fields :QueryId :QueryName :AppName :AppVersion :DBName :QueryString)
+   orm/select mysql/TblSavedQuery (orm/fields :QueryId :QueryName :AppName :AppVersion :DBName :QueryString)
     (orm/where {:CreateUserId user-id})
   )
 )
@@ -135,7 +94,7 @@
   (
    info (format "save query: name %s; string %s;submit-time %s; user-id %s" query-name query-str submit-time user-id)
    )
-  	   (orm/insert TblSavedQuery
+  	   (orm/insert mysql/TblSavedQuery
               (orm/values [{:QueryName query-name 
 			    :AppName app-name
 			    :AppVersion app-ver
@@ -148,11 +107,11 @@
 (defn log-query
 ;save the submited query into db
   [query-str user-id submit-time]
- (let [res (orm/insert TblHistoryQuery
+ (let [res (orm/insert mysql/TblHistoryQuery
              (orm/values [{:QueryString query-str
                            :SubmitUserId user-id
                            :SubmitTime submit-time
-			   :ExecutionStatus (status-convert "submitted")}]
+			   :ExecutionStatus (mysql/status-convert "submitted")}]
              ))]
    (let [q-id (re-seq #"[0-9]+" (str res))]
     (Integer/parseInt (first q-id))
@@ -162,7 +121,7 @@
   
 (defn get-application
   [account-id]
-  (let [app (orm/select TblApplication
+  (let [app (orm/select mysql/TblApplication
           (orm/where {:AccountId account-id}))]
     (if (empty? app)
       (println "application not found!"
@@ -199,7 +158,7 @@
 
 (defn get-applications
   [account-id]
-  (let [ res (orm/select TblApplication (orm/fields :ApplicationName) (orm/where {:AccountId account-id}))]
+  (let [ res (orm/select mysql/TblApplication (orm/fields :ApplicationName) (orm/where {:AccountId account-id}))]
    ( if(empty? res)
     nil
     (vals res)
@@ -208,7 +167,7 @@
 
 (defn get-all-tables-in-app
   [app-name]
-  (let [res (orm/select TblMetaStore (orm/where {:AppName app-name}))]
+  (let [res (orm/select mysql/TblMetaStore (orm/where {:AppName app-name}))]
     (if(empty? res)
       nil
       res
@@ -246,6 +205,7 @@
     {
      :type "table"
      :name table-name
+     :hive-name hive-table
      :children (into [] cols)
     }
   )
@@ -290,7 +250,7 @@
 
 (defn select-meta
   [app-name]
-  (let [res (orm/select TblMetaStore (orm/where {:AppName app-name}))]
+  (let [res (orm/select mysql/TblMetaStore (orm/where {:AppName app-name}))]
     (prn "meta ret:" res)
     (if(empty? res)
       nil

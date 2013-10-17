@@ -4,10 +4,22 @@
   [clojure.string :as str]
   [query-server.conf :as conf]
   [clojure.data.json :as json]
+  [korma.core :as orm ]
   [clojure.java.io :as io]
+  [query-server.mysql-connector :as mysql]
+  [clj-time.core :as time]
   )
 (:import [com.mchange.v2.c3p0 ComboPooledDataSource DataSources PooledDataSource]
          [java.io IOException]
+)
+
+(:use
+  [korma.db]
+  [korma.config]
+  [logging.core :only [defloggers]]
+  [clj-time.coerce]
+  [clojure.set]
+  [clj-time.format]
 )
 ;; (:use [logging.core :only [deffloggers]])
 )
@@ -42,7 +54,7 @@
 
 ;(def pooled-db (pooled-spec db))
 
-(defn fetch-results [db-spec query]
+(defn run-sql-query [db-spec query]
    (sql/with-connection db-spec
       (sql/with-query-results res query
          (doall res))))
@@ -58,7 +70,6 @@
     (with-open [wrtr (io/writer filename)]
     (try
       (doseq [res result-set]
-       ; (println res)
         (.write wrtr (format "%s\n" (str res)))
         )
     (catch IOException e
@@ -67,6 +78,22 @@
       (.close wrtr)
     )
     )
+  )
+)
+
+(defn update-history-query
+  [q-id stats error url end-time duration]
+  (let [sql-str (format "update TblHistoryQuery set ExecutionStatus=%d, Error=%s, Url=\"%s\", EndTime=\"%s\", Duration=%d where QueryId=%d"
+                        (mysql/status-convert stats)
+                        error
+                        url
+                        (unparse (formatters :date-hour-minute-second) (from-long end-time))
+                        duration
+                        q-id
+                )]
+    (prn "update-history-query" sql-str)
+    (run-sql-query mysql/db sql-str)
+   ; (orm/exec-raw mysql/korma-db sql-str)
   )
 )
 
@@ -89,7 +116,7 @@
 
 (defn update-result-map
   [q-id stats ret-result error-message csv-filename update-history-fn]
-  (println "update status:" stats ret-result)
+  (println "update status:" q-id stats)
   (println "error:" error-message)
   (let [start-time (:submit-time (@result-map q-id))
         cur-time (System/currentTimeMillis)
@@ -119,7 +146,8 @@
              :error error-message
              :result ret-result)
     )
-    (apply update-history-fn [q-id stats error-message url cur-time duration])
+   ; (apply update-history-fn [q-id stats error-message url cur-time duration])
+     (update-history-query q-id stats error-message url cur-time duration)
   )
 )
       
