@@ -65,10 +65,10 @@
 
 (defn -main [& args]
     (println "start monitor" (now))
-    (comment future 
+    (future 
         (tool/check 
             "agent.main" 
-            " nohup java -cp .:agent.jar agent.main 2>&1 >>agent.log & " 
+            "./start_agent.sh" 
             5000
         )
     )

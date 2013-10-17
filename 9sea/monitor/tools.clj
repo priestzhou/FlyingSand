@@ -36,8 +36,8 @@
 (defn restart-process [bash]
     (let [
             cmd  (into-array 
-                    ["/bin/sh" "-c" 
-                        bash ";"
+                    ["sh"
+                        bash 
                     ]
                 )
             run (Runtime/getRuntime)
@@ -49,11 +49,19 @@
 )
 
 (defn check [tag bash sleeptime]
+    (println "start check")
     (Thread/sleep sleeptime)
     (let [flag (check-process tag)
         ]
+        (println "check flag" flag)
         (if (nil? flag)
-            (restart-process bash)
+            (try
+                (restart-process bash)
+                (catch Exception e
+                    (println e)
+                )
+            )
+            
         )
     )
     (recur tag bash sleeptime)

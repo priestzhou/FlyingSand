@@ -13,7 +13,7 @@
         [clojure.data.json :as js]
         [agent.dbadapt :as dba]
         [agent.mysqladapt :as mysql]
-        [monitor.tools :as tool]    
+        [monitor.tools :as tool] 
     )
     (:gen-class)
 )
@@ -172,10 +172,10 @@
                 :join? false
             }
         )
-        (comment future 
+        (future 
             (tool/check 
                 "\" monitor.main\""  
-                " nohup java -cp .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
+                "./start_monitor.sh"  
                 5000
             )
         )
