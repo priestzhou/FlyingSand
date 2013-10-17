@@ -10,6 +10,9 @@
         [utilities.shutil :as sh]
         [clj-time.core :as time]
         [query-server.query-backend :as backend]
+        [parser.translator :as trans]
+        [utilities.parse :as prs]
+        
     )
     (:use
         [compojure.core :only (defroutes GET PUT POST DELETE HEAD ANY)]
@@ -26,6 +29,7 @@
         [java.nio.charset StandardCharsets]
         [java.nio.file Path]
         [java.sql SQLException]
+        [utilities.parse InvalidSyntaxException]
     )
 )
 
@@ -87,6 +91,7 @@
 
 (def results (ref {}))
 (def csv (ref {}))
+(def meta-tree (ref {}))
 
 (defn progress [qid result total-stages current-stage]
     (if (< current-stage total-stages)
@@ -185,6 +190,15 @@
     )
 )
 
+(defn gen-context
+  [account-id app version db]
+
+  (let [meta-info (backend/get-metastore-tree account-id)]
+    
+    {:ns meta-info :default-ns ["appname" "appversion" "test"]}
+  )
+)
+
 (defn submit-query [params cookies]
     (let [
         user-id (extract-user-id cookies)
@@ -192,23 +206,34 @@
          ]
 
          ; find account by user id
-         (let [account-id (get-account-id user-id)]
+         (let [account-id (get-account-id user-id)
+               context (gen-context account-id app version db)
+               ]
+           (prn "query context" context)
+           (try
+             (let [hive-query (trans/sql-2003->hive context query)]
+               (prn "hive-query:" hive-query)
 
-            (let [qid (backend/submit-query user-id app version db query)]
-               (println (str "qid is:" qid))
+               (let [qid (backend/submit-query user-id app version db hive-query)]
+                 (println (str "qid is:" qid))
 
-            {
-                :status 201
-                :headers {
-                    "Content-Type" "application/json"
+                 {
+                   :status 201
+                   :headers {
+                       "Content-Type" "application/json"
+                   }
+                  :body (json/write-str {:id qid})
                 }
-                :body (json/write-str {:id qid})
-            }
 
+              )
             )
+          (catch InvalidSyntaxException ex
+            (prn (.getMessage ex))
+            (prn (.getStackTrace ex))
+          )
         )
-         
-    )
+      )
+  )
 )
       
 (defn get-result [qid]
