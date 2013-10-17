@@ -49,11 +49,9 @@
 )
 
 (defn check [tag bash sleeptime]
-    (println "start check")
     (Thread/sleep sleeptime)
     (let [flag (check-process tag)
         ]
-        (println "check flag" flag)
         (if (nil? flag)
             (try
                 (restart-process bash)
