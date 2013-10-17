@@ -1419,6 +1419,32 @@
     )
 )
 
+(def build-in-functions {
+    :power {:min 2, :max 2, :name "POWER/POW"}
+})
+
+(defn- check-arity [opt args stream]
+{
+    :pre [(not (nil? opt))]
+}
+    (let [
+        arity (count args)
+        l (:min opt)
+        u (:max opt)
+        ]
+        (when (and l (< arity l))
+            (prs/gen-ISE stream 
+                (format "%s requires at least %d argument(s)" (:name opt) l)
+            )
+        )
+        (when (and u (> arity u))
+            (prs/gen-ISE stream 
+                (format "%s requires at most %d argument(s)" (:name opt) u)
+            )
+        )
+    )
+)
+
 (defn- function-call [stream]
     (let [
         [strm prsd] (->> stream
@@ -1441,9 +1467,7 @@
         )
         [f _ args] prsd
         ]
-        (if-not (= 2 (count args))
-            (prs/gen-ISE stream "POW requires 2 arguments")
-        )
+        (check-arity (build-in-functions f) args stream)
         [strm {:type :func-call, :func f, :args args}]
     )
 )
