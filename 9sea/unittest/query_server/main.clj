@@ -7,6 +7,8 @@
     )
     (:require 
         [query-server.query-backend :as qs]
+        [query-server.mysql-connector :as mysql]
+        [query-server.core :as shark]
         [clj-time.core]
         [korma.core :as orm]
     )
@@ -22,7 +24,7 @@
         )
        (:fact test-update-history-queries
               (
-               qs/update-history-query 110 nil nil nil nil 10
+               shark/update-history-query 110 nil nil nil nil 10
                )
               :is
               []
@@ -100,7 +102,7 @@
     )
 
     (:fact test-status-fetch
-	(qs/status-convert "submitted")
+	(mysql/status-convert "submitted")
 	:is
 	0
     )

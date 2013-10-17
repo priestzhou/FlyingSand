@@ -8,6 +8,7 @@
         [utilities.core :as uc]
         [argparser.core :as arg]
         [hdfs.core :as hc]
+        [query-server.mysql-connector :as mysql]
     )
     (:gen-class)
 )
@@ -33,7 +34,7 @@
 )
 
 (defn- runsql [sql]
-                (jdbc/with-connection qb/my-db
+                (jdbc/with-connection mysql/db
                     (jdbc/with-query-results res [sql]
                         (->>
                             res
@@ -44,7 +45,7 @@
 )
 
 (defn- runupdate [sql]
-                (jdbc/with-connection qb/my-db
+                (jdbc/with-connection mysql/db
                     (jdbc/do-commands sql)
                 )
 )
