@@ -6,31 +6,104 @@
     (:require
         [argparser.core :as arg]
         [ring.adapter.jetty :as rj]
+        [ring.util.response :as rp]
         [compojure.core :as cp]        
         [compojure.handler :as handler]
         [compojure.route :as route]
         [clojure.data.json :as js]
         [agent.dbadapt :as dba]
         [agent.mysqladapt :as mysql]
-        [monitor.tools :as tool]        
+        [monitor.tools :as tool] 
     )
     (:gen-class)
 )
 
-[]
+(defloggers debug info warn error)
 
 (def ^:private dbatom
     (atom {})
 )
 
-(def db-table-list 
-    (memoize dba/get-db-table-list )
+(defn- set-parse [smap hc]
+    (let [db1 (:databse smap)
+            db2 (map #(dissoc % :dbuser :dbpassword) db1)
+        ]
+        (merge smap {:databse db2 :hashcode hc})
+    )
 )
 
 (cp/defroutes app-routes
-    (cp/GET "/test" {params :params} 
-        (dba/get-schemas @dbatom)
+    (cp/GET "/get-setting" {params :params} 
+        (if (map? @dbatom)
+            (let [h (hash @dbatom )]
+                {:status 202
+                    :headers {
+                        "Access-Control-Allow-Origin" "*"
+                        "Content-Type" "application/json"
+                    }
+                    :body (js/write-str (set-parse @dbatom h) )
+                }
+            )
+            {:status 503
+                    :headers {
+                        "Access-Control-Allow-Origin" "*"
+                        "Content-Type" "application/json"
+                    }
+                :body (js/write-str 
+                        {
+                            :errCode 1001
+                            :errStr @dbatom
+                        } 
+                    )
+            }            
+        )
     )
+    (cp/GET "/get-schemas" {params :params}
+        (info "into get schemas" params)
+        (let [r (dba/get-schemas @dbatom)]
+            (debug "schemas result" r)
+            {:status 202
+                :headers {
+                    "Access-Control-Allow-Origin" "*"
+                    "Content-Type" "application/json"
+                }
+                :body (js/write-str r)
+            }
+        )
+    )
+    (cp/GET "/get-table-all-data" {params :params}
+        (info "into get all data" params)
+        (let [r (dba/get-table-all-data @dbatom 
+                     (:dbname params) (:tablename params) 
+                )
+            ]
+            (debug "all data result" r)
+            {:status 202
+                :headers {
+                    "Access-Control-Allow-Origin" "*"
+                    "Content-Type" "application/json ; charset=UTF-8"
+                }
+                :body (js/write-str r)
+            }
+        )
+    )
+    (cp/GET "/get-table-inc-data" {params :params}
+        (info "into get inc data" params)
+        (let [r (dba/get-table-inc-data @dbatom 
+                    (:dbname params) (:tablename params) (:keynum params)
+                )
+            ]
+            ;(println r)
+            (debug "all inc result" r)
+                {:status 202
+                    :headers {
+                        "Access-Control-Allow-Origin" "*"
+                        "Content-Type" "application/json ; charset=UTF-8"
+                    }
+                    :body (js/write-str r )
+                }  
+        )
+    )    
     (route/not-found "Not Found")
 )
 
@@ -73,15 +146,24 @@
             (println (arg/default-doc arg-spec))
             (System/exit 0)            
         )
-        (let [dbsetting (->>
+        (try 
+            (let [dbsetting (->>
                             opts-with-default
                             :dbsetting
                             first
                             slurp
                             (#(js/read-str % :key-fn keyword))
+                    )
+                ]
+                (reset! dbatom dbsetting)
+            )
+            (catch Exception e
+                (error e)
+                (error (.printStackTrace e) )
+                (reset! dbatom 
+                    (str  e) 
                 )
-            ]
-            (reset! dbatom dbsetting)
+            )
         )
         (rj/run-jetty #'app 
             {
@@ -90,13 +172,12 @@
                 :join? false
             }
         )
-        (println  (db-table-list @dbatom)   )
-        (println (get-in (db-table-list @dbatom) ["test" "test1"])  )
-        (println (get-in (db-table-list @dbatom) ["test" "test"])  )
-        (tool/check 
-            "monitor.main"  
-            " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & "  
-            10000
+        (future 
+            (tool/check 
+                "\" monitor.main\""  
+                "./start_monitor.sh"  
+                5000
+            )
         )
     )
 )

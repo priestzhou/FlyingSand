@@ -1,0 +1,18 @@
+{
+    "version":"0.1",
+    "app":"倚天屠龙记",
+    "appversion":"第一回",
+    "database":[
+        {
+            "dbconnstr":"\/\/localhost:3306\/test?characterEncoding=utf8",
+            "dbuser":"root",
+            "dbpassword":"fs123",
+            "tables":[
+            {"tablename":"test1","hasTimestamp":"true","timestampCol":"id","cols":"id"},
+            {"tablename":"acter_statistics_new","hasTimestamp":"false","cols":"*"},
+            {"tablename":"acter","hasTimestamp":"true","timestampCol":"id","cols":"*"},
+            {"tablename":"user","hasTimestamp":"true","timestampCol":"id","cols":"*"}
+            ]
+        }
+    ]
+}

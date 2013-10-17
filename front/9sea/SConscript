@@ -1,0 +1,26 @@
+Import('env')
+
+env.install(env.compileJs('query_server.js', 'query_server',
+    libs=[
+    env.File('$EXTLIB/domina-1.0.2-SNAPSHOT.jar'),
+    env.File('$EXTLIB/cljs-ajax-0.2.0.jar'),
+    env.File('$BUILD_DIR/jsutilities.jar'),
+    ],
+    options={":optimizations": ":simple", ":pretty-print": True,
+        ":externs": ["\"%s\"" % (env.File('resources/js/goog.extern.js').abspath),
+        ],
+    }
+))
+
+env.install(env.compileJs('collector_admin.js', 'collector_admin',
+    libs=[
+    env.File('$EXTLIB/domina-1.0.2-SNAPSHOT.jar'),
+    env.File('$EXTLIB/cljs-ajax-0.2.0.jar'),
+    env.File('$BUILD_DIR/jsutilities.jar'),
+    ],
+    options={":optimizations": ":simple", ":pretty-print": True,
+        ":externs": ["\"%s\"" % (env.File('resources/js/goog.extern.js').abspath),
+        ],
+    }
+))
+
