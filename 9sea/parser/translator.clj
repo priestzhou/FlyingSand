@@ -446,8 +446,8 @@
                 :numeric-literal :hex-string-literal :date-literal
                 :interval-literal :national-string-literal :character-string-literal
                 :boolean-literal :identifier :dotted-identifier
-                :null-literal :asterisk :binary :cast :distinct-count
-                :func-call
+                :null-literal :asterisk :binary :cast :func-call
+                :distinct-count :distinct-sum :distinct-avg
                 }
                 (:type dfg)
             )
@@ -694,14 +694,30 @@
             ]
             (format "COUNT(DISTINCT %s)" args)
         )
+        :distinct-sum (let [
+            args (str/join ", "
+                (for [x (:args dfg)]
+                    (dump-hive:value-subexpr context x)
+                )
+            )
+            ]
+            (format "SUM(DISTINCT %s)" args)
+        )
+        :distinct-avg (let [
+            args (str/join ", "
+                (for [x (:args dfg)]
+                    (dump-hive:value-subexpr context x)
+                )
+            )
+            ]
+            (format "AVG(DISTINCT %s)" args)
+        )
         :func-call (let [
             f (:func dfg)
             args (:args dfg)
             ]
             (format "%s(%s)"
-                (case f
-                    :power "POWER"
-                )
+                (-> f (name) (str/upper-case))
                 (str/join ", "
                     (map (partial dump-hive:value-subexpr context) args)
                 )

@@ -499,10 +499,204 @@
         :is
         "SELECT COUNT(DISTINCT 0, 1) FROM `com.app.ver.tbl` tbl"
     )
+    (:fact to-hive:select:distinct-sum:1
+        (trans/sql-2003->hive context "SELECT sum(distinct col) FROM tbl")
+        :is
+        "SELECT SUM(DISTINCT col) FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:select:distinct-avg:1
+        (trans/sql-2003->hive context "SELECT avg(distinct col) FROM tbl")
+        :is
+        "SELECT AVG(DISTINCT col) FROM `com.app.ver.tbl` tbl"
+    )
     (:fact to-hive:where:pow
         (trans/sql-2003->hive context "SELECT * FROM tbl WHERE pow(1, 0)=1")
         :is
         "SELECT * FROM `com.app.ver.tbl` tbl WHERE POWER(1, 0) = 1"
     )
+    (:fact to-hive:where:power
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE power(1, 0)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE POWER(1, 0) = 1"
+    )
+    (:fact to-hive:where:round:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE round(1)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE ROUND(1) = 1"
+    )
+    (:fact to-hive:where:round:2
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE round(1, 0)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE ROUND(1, 0) = 1"
+    )
+    (:fact to-hive:where:floor:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE floor(1)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE FLOOR(1) = 1"
+    )
+    (:fact to-hive:where:ceil:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE ceil(1)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CEIL(1) = 1"
+    )
+    (:fact to-hive:where:ceiling:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE ceiling(1)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CEIL(1) = 1"
+    )
+    (:fact to-hive:where:rand:0
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE rand()=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE RAND() = 1"
+    )
+    (:fact to-hive:where:rand:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE rand(0)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE RAND(0) = 1"
+    )
+    (:fact to-hive:where:exp:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE exp(0)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE EXP(0) = 1"
+    )
+    (:fact to-hive:where:ln:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE ln(1)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE LN(1) = 0"
+    )
+    (:fact to-hive:where:log10:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE log10(1)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE LOG10(1) = 0"
+    )
+    (:fact to-hive:where:log2:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE log2(1)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE LOG2(1) = 0"
+    )
+    (:fact to-hive:where:log:2
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE log(1, 2)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE LOG(1, 2) = 0"
+    )
+    (:fact to-hive:where:sqrt:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE sqrt(1)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE SQRT(1) = 1"
+    )
+    (:fact to-hive:where:bin:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE bin(1)='1'")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE BIN(1) = '1'"
+    )
+    (:fact to-hive:where:hex:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE hex(1)='1'")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE HEX(1) = '1'"
+    )
+    (:fact to-hive:where:unhex:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE unhex('1')=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE UNHEX('1') = 1"
+    )
+    (:fact to-hive:where:conv:3
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE conv(1,2,3)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE CONV(1, 2, 3) = 1"
+    )
+    (:fact to-hive:where:abs:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE abs(1)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE ABS(1) = 1"
+    )
+    (:fact to-hive:where:pmod:2
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE pmod(1,2)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE PMOD(1, 2) = 1"
+    )
+    (:fact to-hive:where:sin:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE sin(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE SIN(0) = 0"
+    )
+    (:fact to-hive:where:asin:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE asin(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE ASIN(0) = 0"
+    )
+    (:fact to-hive:where:cos:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE cos(0)=1")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE COS(0) = 1"
+    )
+    (:fact to-hive:where:acos:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE acos(1)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE ACOS(1) = 0"
+    )
+    (:fact to-hive:where:tan:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE tan(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE TAN(0) = 0"
+    )
+    (:fact to-hive:where:atan:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE atan(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE ATAN(0) = 0"
+    )
+    (:fact to-hive:where:degrees:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE degrees(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE DEGREES(0) = 0"
+    )
+    (:fact to-hive:where:radians:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE radians(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE RADIANS(0) = 0"
+    )
+    (:fact to-hive:where:positive:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE positive(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE POSITIVE(0) = 0"
+    )
+    (:fact to-hive:where:negative:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE negative(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE NEGATIVE(0) = 0"
+    )
+    (:fact to-hive:where:sign:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE sign(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE SIGN(0) = 0"
+    )
+    (:fact to-hive:where:e:0
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE e()<>0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE E() <> 0"
+    )
+    (:fact to-hive:where:pi:0
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE pi()<>0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE PI() <> 0"
+    )
+    (:fact to-hive:where:binary:1
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE binary(0)=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE BINARY(0) = 0"
+    )
+    (:fact to-hive:select:from_unixtime:1
+        (trans/sql-2003->hive context "SELECT from_unixtime(col) FROM tbl")
+        :is
+        "SELECT FROM_UNIXTIME(col) FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:select:from_unixtime:2
+        (trans/sql-2003->hive context "SELECT from_unixtime(col, 'YYYY') FROM tbl")
+        :is
+        "SELECT FROM_UNIXTIME(col, 'YYYY') FROM `com.app.ver.tbl` tbl"
+    )
+    (:fact to-hive:where:unix_timestamp:0
+        (trans/sql-2003->hive context "SELECT * FROM tbl WHERE unix_timestamp()=0")
+        :is
+        "SELECT * FROM `com.app.ver.tbl` tbl WHERE UNIX_TIMESTAMP() = 0"
+    )
 )
-
