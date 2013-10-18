@@ -94,7 +94,7 @@
 )
 
 (defn- check-table [tns]
-    (let [sql (str "select * from TblMetaStore where namespace = '" tns "'")
+    (let [sql (str "select * from TblMetaStore where namespace = \"" tns "\"")
             res (runsql sql)
             rcount (count   res)
         ]
@@ -108,9 +108,11 @@
 
 (defn- httpget 
     ([agenturl op params]
+        (println  "httpget" (str agenturl (op urlmap) params))
         @(client/get (str agenturl (op urlmap) params))
     )
     ([agenturl op]
+        (println  "httpget" (str agenturl (op urlmap) ))
         @(client/get (str agenturl (op urlmap) ))
     )
 )
@@ -137,8 +139,8 @@
 )
 
 (defn- add-record [table & allcol] 
-    (let [collist (reduce  #(str  %1 "','" %2)  allcol )
-            colstr (str "('" collist "')")
+    (let [collist (reduce  #(str  %1 "\",\"" %2)  allcol )
+            colstr (str "( \"" collist "\")")
             sql (str  "insert into " table " VALUES " colstr ";"
             )
             res (runupdate sql)
@@ -149,8 +151,8 @@
 
 (defn check-agent-table [agentid tns]
     (let [sql (str 
-                "select * from TblSchema where namespace = '" 
-                tns "' and agentid ='" agentid "'"
+                "select * from TblSchema where namespace = \"" 
+                tns "\" and agentid ='" agentid "'"
             )
             res (runsql sql)
             rcount (count   res)
@@ -164,6 +166,7 @@
 )
 
 (defn create-table [agentid appname appversion dataset]
+    (println agentid "-" appname "-" appversion "-" dataset)
     (when (check-agent-table agentid (:namespace dataset))
         (add-record "TblSchema"
             (:namespace dataset)
@@ -192,6 +195,7 @@
 )
 
 (defn new-agent [agentid, agentname,agenturl,accountid]
+    (println "new-agent" agentid "-" agentname "-" agenturl "-" accountid)
     (let [setting (js/read-str 
                 (:body (httpget agenturl :get-setting))
                 :key-fn keyword
@@ -209,8 +213,11 @@
                     schema 
                 )
             )
+            _ (println "datalist" datalist)
         ]
-        (map (partial create-table agentid appname appversion ) datalist )
+        (doall 
+            (map (partial create-table agentid appname appversion ) datalist )
+        )
     )
 )
 

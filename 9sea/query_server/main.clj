@@ -73,5 +73,6 @@
                 (as/all-data-check)
             )
         )
+        (web/start opts)
     )
 )
