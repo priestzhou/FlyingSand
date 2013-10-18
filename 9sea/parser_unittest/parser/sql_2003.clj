@@ -350,7 +350,10 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :timestamp-literal, :value "TIMESTAMP'2013-10-01 14:40:30+08:00'"}]
+        [[:eof] {
+            :type :timestamp-literal
+            :value "TIMESTAMP'2013-10-01 14:40:30+08:00'"
+        }]
     )
 )
 
@@ -613,7 +616,8 @@
 )
 
 (suite "character string literal"
-    ; this is not completely compliant to SQL-92 for lack of leading charactor set spec
+    ; this is not completely compliant to SQL standards 
+    ; for lack of leading charactor set spec
     (:fact character-string-literal:one-segment
         (->> "'a'"
             (prs/str->stream)
@@ -914,9 +918,12 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :table, :name "a", :refer ["catalog" "tbl"], :column-list ["b"]}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :table
+            :name "a"
+            :refer ["catalog" "tbl"]
+            :column-list ["b"]
+        }]}]
     )
     (:fact from-clause:table-name:multiple
         (->> "FROM tbl1, tbl2"
@@ -937,9 +944,11 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :cross-join, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :cross-join
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:cross-join:on
         (->> "FROM tbl1 CROSS JOIN tbl2 ON tbl1.col=tbl2.col"
@@ -967,9 +976,11 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :join, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :left {:type :table, :refer ["tbl1"]}, 
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:inner-join:on
         (->> "FROM tbl1 JOIN tbl2 ON TRUE"
@@ -978,9 +989,12 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :join, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:left
         (->> "FROM tbl1 LEFT JOIN tbl2 ON TRUE"
@@ -989,9 +1003,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :left, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :left
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:left-outer
         (->> "FROM tbl1 LEFT JOIN tbl2 ON TRUE"
@@ -1000,9 +1018,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :left, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :left
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:right
         (->> "FROM tbl1 RIGHT JOIN tbl2 ON TRUE"
@@ -1011,9 +1033,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :right, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :right
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:right-outer
         (->> "FROM tbl1 RIGHT JOIN tbl2 ON TRUE"
@@ -1022,9 +1048,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :right, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :right
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:full
         (->> "FROM tbl1 FULL JOIN tbl2 ON TRUE"
@@ -1033,9 +1063,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :full, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :full
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:full-outer
         (->> "FROM tbl1 FULL OUTER JOIN tbl2 ON TRUE"
@@ -1044,9 +1078,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :full, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :full
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:join-after-join
         (->> "FROM tbl1 JOIN tbl2 ON TRUE JOIN tbl3 ON FALSE"
@@ -1055,25 +1093,17 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :on {:type :boolean-literal, :value "FALSE"}
+            :left {
                 :type :join
-                :on {:type :boolean-literal, :value "FALSE"}
-                :left {
-                    :type :join
-                    :on {:type :boolean-literal, :value "TRUE"}
-                    :left {
-                        :type :table, :refer ["tbl1"]
-                    }
-                    :right {
-                        :type :table, :refer ["tbl2"]
-                    }
-                }
-                :right {
-                    :type :table, :refer ["tbl3"]
-                }
+                :on {:type :boolean-literal, :value "TRUE"}
+                :left {:type :table, :refer ["tbl1"]}
+                :right {:type :table, :refer ["tbl2"]}
             }
-        ]}]
+            :right {:type :table, :refer ["tbl3"]}
+        }]}]
     )
     (:fact from-clause:join:paren
         (->> "FROM (tbl1 JOIN tbl2)"
@@ -1082,9 +1112,11 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :join, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
 )
 
@@ -1134,7 +1166,10 @@
         :is
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [{:type :derived-column, :value {:type :asterisk, :refer ["ns" "tbl"]}}]
+            :select-list [{
+                :type :derived-column
+                :value {:type :asterisk, :refer ["ns" "tbl"]}
+            }]
         }]
     )
     (:fact select:asterisked-identifier-chain:as
@@ -1164,11 +1199,10 @@
         :is
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [
-                {
-                    :type :derived-column, :value {:type :numeric-literal, :value "1"}
-                }
-            ]
+            :select-list [{
+                :type :derived-column
+                :value {:type :numeric-literal, :value "1"}
+            }]
         }]
     )
     (:fact select:derived-column:as
@@ -1937,9 +1971,10 @@
         )
         :is
         [[:eof] {:type :case
-            :when [
-                [{:type :boolean-literal, :value "TRUE"} {:type :numeric-literal, :value "1"}]
-            ]
+            :when [[
+                {:type :boolean-literal, :value "TRUE"}
+                {:type :numeric-literal, :value "1"}
+            ]]
         }]
     )
     (:fact expr:case:else
@@ -1950,9 +1985,10 @@
         )
         :is
         [[:eof] {:type :case
-            :when [
-                [{:type :boolean-literal, :value "FALSE"} {:type :numeric-literal, :value "1"}]
-            ]
+            :when [[
+                {:type :boolean-literal, :value "FALSE"}
+                {:type :numeric-literal, :value "1"}
+            ]]
             :else {:type :numeric-literal, :value "2"}
         }]
     )
@@ -1965,10 +2001,13 @@
         :is
         [[:eof] {:type :case
             :value {:type :numeric-literal, :value "1"}
-            :when [
-                [{:type :numeric-literal, :value "1"} {:type :boolean-literal, :value "TRUE"}]
-                [{:type :numeric-literal, :value "0"} {:type :boolean-literal, :value "FALSE"}]
-            ]
+            :when [[
+                {:type :numeric-literal, :value "1"}
+                {:type :boolean-literal, :value "TRUE"}
+            ] [
+                {:type :numeric-literal, :value "0"}
+                {:type :boolean-literal, :value "FALSE"}
+            ]]
         }]
     )
 )
@@ -3106,7 +3145,7 @@
         }]
     )
     (:fact func:str:get_json_object:2
-        (->> "GET_JSON_OBJECT('{\"key\": \"value\"}', 'key')"
+        (->> "GET_JSON_OBJECT('{\"k\": \"v\"}', 'k')"
             (prs/str->stream)
             (sql/value-expr)
             (extract-result)
@@ -3114,8 +3153,8 @@
         :is
         [[:eof] {:type :func-call, :func :get_json_object
             :args [
-                {:type :character-string-literal, :value "'{\"key\": \"value\"}'"}
-                {:type :character-string-literal, :value "'key'"}
+                {:type :character-string-literal, :value "'{\"k\": \"v\"}'"}
+                {:type :character-string-literal, :value "'k'"}
             ]
         }]
     )

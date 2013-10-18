@@ -6,11 +6,14 @@
     )
     (:use
         [clojure.set :only (union)]
+        [logging.core :only (defloggers)]
     )
     (:import 
         utilities.parse.InvalidSyntaxException
     )
 )
+
+(defloggers debug info warn error)
 
 (defn regular-identifier? [stream]
     (let [
@@ -65,8 +68,6 @@
         )
     )
 )
-
-(declare analyze-sql:value-expr)
 
 (defn search-name-in-ns [nss nm]
     (first 
@@ -731,6 +732,7 @@
 )
 
 (defn sql-2003->hive [context sql-text]
+    (info "start parsing" :sql sql-text :context context)
     (let [
         [_ ast] (->> sql-text
             (prs/str->stream)
@@ -744,12 +746,12 @@
                 )
             ))
         )
-        _ (prn :ast ast)
+        _ (debug "parsed" :ast ast)
         dfg (analyze-sql context ast)
-        _ (prn :dfg dfg)
+        _ (debug "analyzed" :dfg dfg)
         hive (dump-hive context dfg)
         ]
-        (prn :hive hive)
+        (info "translated" :hive hive)
         hive
     )
 )
