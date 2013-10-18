@@ -272,6 +272,7 @@
 )
 
 (defn- get-inc-data [agentid agenturl tableinfo]
+    (println agentid "-" agenturl "-" tableinfo)
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -318,6 +319,7 @@
 )
 
 (defn- get-all-data [agentid agenturl tableinfo]
+    (println agentid "-" agenturl "-" tableinfo)
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -344,6 +346,7 @@
 )
 
 (defn- get-table-data-both [agentid agenturl tableinfo]
+    (println "both=" agentid "-" agenturl "-" tableinfo)
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
         (get-all-data agentid,agenturl tableinfo)
@@ -351,28 +354,37 @@
 )
 
 (defn- get-table-data-inc [agentid agenturl tableinfo]
+    (println "inc=" agentid "-" agenturl "-" tableinfo)
     (when (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
     )
 )
 
 (defn- get-table-data-all [agentid agenturl tableinfo]
+    (println "all=" agentid "-" agenturl "-" tableinfo)
     (when (not (:hastimestamp tableinfo))
         (get-all-data agentid,agenturl tableinfo)
     )
 )
 
 (defn get-agent-data [agentid agenturl type]
+    (println "get-agent-data=" agentid "-" agenturl "-" type)    
     (let [tablelist (query-agent-schema agentid)]
-        (when (= type "both")
-            (map (partial get-table-data-both agentid, agenturl) tablelist)
-        )
-        (when (= type "inc")
-            (map (partial get-table-data-inc agentid, agenturl) tablelist)
-        )
-        (when (= type "all")
-            (map (partial get-table-data-all agentid, agenturl) tablelist)
-        )        
+            (when (= type "both")
+                (doall
+                    (map (partial get-table-data-both agentid, agenturl) tablelist)
+                )
+            )
+            (when (= type "inc")
+                (doall
+                    (map (partial get-table-data-inc agentid, agenturl) tablelist)
+                )
+            )
+            (when (= type "all")
+                (doall
+                    (map (partial get-table-data-all agentid, agenturl) tablelist)
+                )
+            )        
     )
 )
 

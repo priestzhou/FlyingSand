@@ -50,14 +50,14 @@
 (defn inc-data-check []
     (println "inc-data-check")
     (let [agent-list (ad/get-agent-list "normal")]
-        (map  
+        (doall (map  
             #(ad/get-agent-data 
                 (:id %)
-                (:AgentUrl %)
+                (:agenturl %)
                 "inc"
             )
             agent-list
-        )
+        ))
     )
     (Thread/sleep 300000)
     (recur)
@@ -66,14 +66,14 @@
 (defn all-data-check []
     (println "all-data-check")
     (let [agent-list (ad/get-agent-list "normal")]
-        (map  
+        (doall (map  
             #(ad/get-agent-data 
                 (:id %)
-                (:AgentUrl %)
+                (:agenturl %)
                 "all"
             )
             agent-list
-        )
+        ))
     )
     (Thread/sleep 86400000)
     (recur)
