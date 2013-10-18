@@ -60,7 +60,7 @@
         )
     )
     (cp/GET "/get-schemas" {params :params}
-        (info "into get schemas" params)
+        (info "into get schemas" )
         (let [r (dba/get-schemas @dbatom)]
             (debug "schemas result" (js/write-str r))
             {:status 202
@@ -73,12 +73,12 @@
         )
     )
     (cp/GET "/get-table-all-data" {params :params}
-        (info "into get all data" params)
+        (info "into get all data" (js/write-str params))
         (let [r (dba/get-table-all-data @dbatom 
                      (:dbname params) (:tablename params) 
                 )
             ]
-            (debug "all data result" r)
+            (debug "all data result" (js/write-str r))
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
