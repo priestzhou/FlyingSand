@@ -89,13 +89,13 @@
         )
     )
     (cp/GET "/get-table-inc-data" {params :params}
-        (info "into get inc data" params)
+        (info "into get inc data" (js/write-str params))
         (let [r (dba/get-table-inc-data @dbatom 
                     (:dbname params) (:tablename params) (:keynum params)
                 )
             ]
             ;(println r)
-            (debug "all inc result" r)
+            (debug "all inc result" (js/write-str r) )
                 {:status 202
                     :headers {
                         "Access-Control-Allow-Origin" "*"
