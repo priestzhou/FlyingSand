@@ -34,6 +34,7 @@
 
 (cp/defroutes app-routes
     (cp/GET "/get-setting" {params :params} 
+        (info "get-setting")
         (if (map? @dbatom)
             (let [h (hash @dbatom )]
                 {:status 202
@@ -61,7 +62,7 @@
     (cp/GET "/get-schemas" {params :params}
         (info "into get schemas" params)
         (let [r (dba/get-schemas @dbatom)]
-            (debug "schemas result" r)
+            (debug "schemas result" (js/write-str r))
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"

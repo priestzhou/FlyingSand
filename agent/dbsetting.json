@@ -8,10 +8,9 @@
             "dbuser":"root",
             "dbpassword":"fs123",
             "tables":[
-            {"tablename":"test1","hasTimestamp":"true","timestampCol":"id","cols":"id"},
-            {"tablename":"acter_statistics_new","hasTimestamp":"false","cols":"*"},
-            {"tablename":"acter","hasTimestamp":"true","timestampCol":"id","cols":"*"},
-            {"tablename":"user","hasTimestamp":"true","timestampCol":"id","cols":"*"}
+            {"tablename":"acter_statistics_new","hasTimestamp":"false","selcols":"*"},
+            {"tablename":"acter","hasTimestamp":"true","timestampCol":"id","selcols":"*"},
+            {"tablename":"user","hasTimestamp":"true","timestampCol":"id","selcols":"*"}
             ]
         }
     ]

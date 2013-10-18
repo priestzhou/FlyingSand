@@ -91,6 +91,7 @@
 
 (defn get-schemas [dbsetting]
     (let [dblist (:database dbsetting)
+            _ (debug "dblist1" dblist)
             dbList (map 
                 (fn [db]
                     {:db 
@@ -105,7 +106,7 @@
                 )
                 dblist
             )
-            _ (debug "dblist" dbList)
+            ;_ (debug "dblist2" dbList)
             res1 (map #(merge (get-schema-db %) (get-db-table-list'' %)) dbList)
             res (map get-schema-db dbList)
         ]
@@ -124,7 +125,7 @@
                     :db (first (get-in tbl [db table])) 
                     :table table
                     :key (:timestampCol (second (get-in tbl [db table])))
-                    :cols (:cols (second (get-in tbl [db table])))
+                    :selcols (:selcols (second (get-in tbl [db table])))
                 }
         )
     )
@@ -139,7 +140,7 @@
                 ((:get-table-all-data *db-func-map*) 
                     (:db flag) 
                     (:table flag)
-                    (:cols flag)
+                    (:selcols flag)
                 )
             }
             flag
@@ -159,7 +160,7 @@
                     (:table flag) 
                     (:key flag)
                     qnum
-                    (:cols flag)
+                    (:selcols flag)
                 )
             }
             flag
