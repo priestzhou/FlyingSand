@@ -350,7 +350,10 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :timestamp-literal, :value "TIMESTAMP'2013-10-01 14:40:30+08:00'"}]
+        [[:eof] {
+            :type :timestamp-literal
+            :value "TIMESTAMP'2013-10-01 14:40:30+08:00'"
+        }]
     )
 )
 
@@ -613,7 +616,8 @@
 )
 
 (suite "character string literal"
-    ; this is not completely compliant to SQL-92 for lack of leading charactor set spec
+    ; this is not completely compliant to SQL standards 
+    ; for lack of leading charactor set spec
     (:fact character-string-literal:one-segment
         (->> "'a'"
             (prs/str->stream)
@@ -833,32 +837,20 @@
     (:fact correlation:as
         (->> "AS tbl"
             (prs/str->stream)
-            (sql/table-correlation)
+            (sql/correlation)
             (extract-result)
         )
         :is
-        [[:eof] {:type :table-correlation, :name "tbl"}]
+        [[:eof] {:type :correlation, :name "tbl"}]
     )
     (:fact correlation:no-as
         (->> "tbl"
             (prs/str->stream)
-            (sql/table-correlation)
+            (sql/correlation)
             (extract-result)
         )
         :is
-        [[:eof] {:type :table-correlation, :name "tbl"}]
-    )
-)
-
-(suite "table correlation"
-    (:fact table-correlation:column-list
-        (->> "AS tbl(a, b)"
-            (prs/str->stream)
-            (sql/table-correlation)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :table-correlation, :name "tbl", :column-list ["a" "b"]}]
+        [[:eof] {:type :correlation, :name "tbl"}]
     )
 )
 
@@ -907,17 +899,6 @@
             {:type :table, :name "a", :refer ["catalog" "tbl"]}
         ]}]
     )
-    (:fact from-clause:table-name:as:column-list
-        (->> "FROM catalog.tbl AS a(b)"
-            (prs/str->stream)
-            (sql/from-clause)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :table, :name "a", :refer ["catalog" "tbl"], :column-list ["b"]}
-        ]}]
-    )
     (:fact from-clause:table-name:multiple
         (->> "FROM tbl1, tbl2"
             (prs/str->stream)
@@ -937,9 +918,11 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :cross-join, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :cross-join
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:cross-join:on
         (->> "FROM tbl1 CROSS JOIN tbl2 ON tbl1.col=tbl2.col"
@@ -967,9 +950,11 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :join, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :left {:type :table, :refer ["tbl1"]}, 
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:inner-join:on
         (->> "FROM tbl1 JOIN tbl2 ON TRUE"
@@ -978,9 +963,12 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :join, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:left
         (->> "FROM tbl1 LEFT JOIN tbl2 ON TRUE"
@@ -989,9 +977,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :left, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :left
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:left-outer
         (->> "FROM tbl1 LEFT JOIN tbl2 ON TRUE"
@@ -1000,9 +992,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :left, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :left
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:right
         (->> "FROM tbl1 RIGHT JOIN tbl2 ON TRUE"
@@ -1011,9 +1007,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :right, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :right
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:right-outer
         (->> "FROM tbl1 RIGHT JOIN tbl2 ON TRUE"
@@ -1022,9 +1022,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :right, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :right
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:full
         (->> "FROM tbl1 FULL JOIN tbl2 ON TRUE"
@@ -1033,9 +1037,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :full, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :full
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:outer-join:full-outer
         (->> "FROM tbl1 FULL OUTER JOIN tbl2 ON TRUE"
@@ -1044,9 +1052,13 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :outer-join, :join-type :full, :on {:type :boolean-literal, :value "TRUE"}, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :outer-join
+            :join-type :full
+            :on {:type :boolean-literal, :value "TRUE"}
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
     (:fact from-clause:join-after-join
         (->> "FROM tbl1 JOIN tbl2 ON TRUE JOIN tbl3 ON FALSE"
@@ -1055,25 +1067,17 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :on {:type :boolean-literal, :value "FALSE"}
+            :left {
                 :type :join
-                :on {:type :boolean-literal, :value "FALSE"}
-                :left {
-                    :type :join
-                    :on {:type :boolean-literal, :value "TRUE"}
-                    :left {
-                        :type :table, :refer ["tbl1"]
-                    }
-                    :right {
-                        :type :table, :refer ["tbl2"]
-                    }
-                }
-                :right {
-                    :type :table, :refer ["tbl3"]
-                }
+                :on {:type :boolean-literal, :value "TRUE"}
+                :left {:type :table, :refer ["tbl1"]}
+                :right {:type :table, :refer ["tbl2"]}
             }
-        ]}]
+            :right {:type :table, :refer ["tbl3"]}
+        }]}]
     )
     (:fact from-clause:join:paren
         (->> "FROM (tbl1 JOIN tbl2)"
@@ -1082,9 +1086,11 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :from-clause, :tables [
-            {:type :join, :left {:type :table, :refer ["tbl1"]}, :right {:type :table, :refer ["tbl2"]}}
-        ]}]
+        [[:eof] {:type :from-clause, :tables [{
+            :type :join
+            :left {:type :table, :refer ["tbl1"]}
+            :right {:type :table, :refer ["tbl2"]}
+        }]}]
     )
 )
 
@@ -1125,6 +1131,26 @@
             :from-clause [{:type :table, :refer ["tbl"]}]
         }]
     )
+    (:fact select:subquery
+        (->> "SELECT * FROM (SELECT * FROM tbl) t"
+            (prs/str->stream)
+            (sql/query)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :select
+            :select-list [{:type :derived-column, :value {:type :asterisk}}],
+            :from-clause [{:type :derived-table
+                :name "t"
+                :value {:type :select, 
+                    :select-list [
+                        {:type :derived-column, :value {:type :asterisk}}
+                    ],
+                    :from-clause [{:type :table, :refer ["tbl"]}]
+                }
+            }]
+        }]
+    )
     (:fact select:asterisked-identifier-chain
         (->> "SELECT ns.tbl.* FROM ns.tbl"
             (prs/str->stream)
@@ -1134,7 +1160,10 @@
         :is
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [{:type :derived-column, :value {:type :asterisk, :refer ["ns" "tbl"]}}]
+            :select-list [{
+                :type :derived-column
+                :value {:type :asterisk, :refer ["ns" "tbl"]}
+            }]
         }]
     )
     (:fact select:asterisked-identifier-chain:as
@@ -1164,11 +1193,10 @@
         :is
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["ns" "tbl"]}]
-            :select-list [
-                {
-                    :type :derived-column, :value {:type :numeric-literal, :value "1"}
-                }
-            ]
+            :select-list [{
+                :type :derived-column
+                :value {:type :numeric-literal, :value "1"}
+            }]
         }]
     )
     (:fact select:derived-column:as
@@ -1928,5 +1956,1803 @@
         )
         :is
         [[:eof] {:type :asterisk, :refer ["tbl"]}]
+    )
+    (:fact expr:case
+        (->> "CASE WHEN TRUE THEN 1 END"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :case
+            :when [[
+                {:type :boolean-literal, :value "TRUE"}
+                {:type :numeric-literal, :value "1"}
+            ]]
+        }]
+    )
+    (:fact expr:case:else
+        (->> "CASE WHEN FALSE THEN 1 ELSE 2 END"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :case
+            :when [[
+                {:type :boolean-literal, :value "FALSE"}
+                {:type :numeric-literal, :value "1"}
+            ]]
+            :else {:type :numeric-literal, :value "2"}
+        }]
+    )
+    (:fact expr:case:value
+        (->> "CASE 1 WHEN 1 THEN TRUE WHEN 0 THEN FALSE END"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :case
+            :value {:type :numeric-literal, :value "1"}
+            :when [[
+                {:type :numeric-literal, :value "1"}
+                {:type :boolean-literal, :value "TRUE"}
+            ] [
+                {:type :numeric-literal, :value "0"}
+                {:type :boolean-literal, :value "FALSE"}
+            ]]
+        }]
+    )
+)
+
+(suite "functions"
+    (:fact func:cast:int
+        (->> "CAST('1' AS INT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :int
+        }]
+    )
+    (:fact func:cast:tinyint
+        (->> "CAST('1' AS TINYINT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :tinyint
+        }]
+    )
+    (:fact func:cast:smallint
+        (->> "CAST('1' AS SMALLINT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :smallint
+        }]
+    )
+    (:fact func:cast:bigint
+        (->> "CAST('1' AS BIGINT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :bigint
+        }]
+    )
+    (:fact func:cast:float
+        (->> "CAST('1' AS FLOAT)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :float
+        }]
+    )
+    (:fact func:cast:double
+        (->> "CAST('1' AS DOUBLE)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :double
+        }]
+    )
+    (:fact func:cast:decimal
+        (->> "CAST('1' AS DECIMAL)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :decimal
+        }]
+    )
+    (:fact func:cast:timestamp
+        (->> "CAST('1' AS TIMESTAMP)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :timestamp
+        }]
+    )
+    (:fact func:cast:date
+        (->> "CAST('1' AS DATE)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :date
+        }]
+    )
+    (:fact func:cast:string
+        (->> "CAST('1' AS STRING)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :string
+        }]
+    )
+    (:fact func:cast:varchar
+        (->> "CAST('1' AS varchar)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :varchar
+        }]
+    )
+    (:fact func:cast:boolean
+        (->> "CAST('1' AS BOOLEAN)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :boolean
+        }]
+    )
+    (:fact func:cast:binary
+        (->> "CAST('1' AS BINARY)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :cast
+            :left {:type :character-string-literal, :value "'1'"}
+            :right :binary
+        }]
+    )
+    (:fact func:aggregate:distinct-count:1
+        (->> "COUNT(DISTINCT 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :distinct-count
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:distinct-count:2
+        (->> "COUNT(DISTINCT 0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :distinct-count
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:distinct-count:0
+        (fn []
+            (->> "COUNT(DISTINCT)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:aggregate:distinct-count:3
+        (fn []
+            (->> "COUNT(DISTINCT 0,1,2)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:aggregate:distinct-sum:1
+        (->> "SUM(DISTINCT 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :distinct-sum
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:distinct-avg:1
+        (->> "AVG(DISTINCT 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :distinct-avg
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:pow:2
+        (->> "POW(0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :power
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:pow:1
+        (fn []
+            (->> "POW(0)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+                (extract-result)
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:math:pow:3
+        (fn []
+            (->> "POW(0, 1, 2)"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+                (extract-result)
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:math:power
+        (->> "POWER(0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :power
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:round:1
+        (->> "ROUND(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :round
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:round:2
+        (->> "ROUND(0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :round
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:floor:1
+        (->> "FLOOR(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :floor
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:ceil:1
+        (->> "CEIL(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :ceil
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:ceiling:1
+        (->> "CEILING(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :ceil
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:rand:0
+        (->> "RAND()"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :rand
+            :args [
+            ]
+        }]
+    )
+    (:fact func:math:rand:1
+        (->> "RAND(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :rand
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:exp:1
+        (->> "EXP(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :exp
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:ln:1
+        (->> "LN(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :ln
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:log10:1
+        (->> "LOG10(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :log10
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:log2:1
+        (->> "LOG2(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :log2
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:log:2
+        (->> "LOG(1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :log
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact func:math:sqrt:1
+        (->> "SQRT(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :sqrt
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:bin:1
+        (->> "BIN(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :bin
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:hex:1
+        (->> "HEX(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :hex
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:unhex:1
+        (->> "UNHEX('1')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :unhex
+            :args [
+                {:type :character-string-literal, :value "'1'"}
+            ]
+        }]
+    )
+    (:fact func:math:conv:3
+        (->> "CONV(1, 2, 3)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :conv
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+                {:type :numeric-literal, :value "3"}
+            ]
+        }]
+    )
+    (:fact func:math:abs:1
+        (->> "ABS(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :abs
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:pmod:2
+        (->> "PMOD(1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :pmod
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact func:math:sin:1
+        (->> "SIN(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :sin
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:asin:1
+        (->> "ASIN(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :asin
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:cos:1
+        (->> "COS(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :cos
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:acos:1
+        (->> "ACOS(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :acos
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:math:tan:1
+        (->> "TAN(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :tan
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:atan:1
+        (->> "ATAN(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :atan
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:degrees:1
+        (->> "DEGREES(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :degrees
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:radians:1
+        (->> "RADIANS(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :radians
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:positive:1
+        (->> "POSITIVE(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :positive
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:negative:1
+        (->> "NEGATIVE(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :negative
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:sign:1
+        (->> "SIGN(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :sign
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:math:e:0
+        (->> "E()"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :e
+            :args [
+            ]
+        }]
+    )
+    (:fact func:math:pi:0
+        (->> "PI()"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :pi
+            :args [
+            ]
+        }]
+    )
+    (:fact func:conversion:binary:1
+        (->> "BINARY(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :binary
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:date:from_unixtime:1
+        (->> "FROM_UNIXTIME(0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :from_unixtime
+            :args [
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:date:from_unixtime:2
+        (->> "FROM_UNIXTIME(0, 'YYYY')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :from_unixtime
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :character-string-literal, :value "'YYYY'"}
+            ]
+        }]
+    )
+    (:fact func:date:unix_timestamp:0
+        (->> "UNIX_TIMESTAMP()"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :unix_timestamp
+            :args [
+            ]
+        }]
+    )
+    (:fact func:date:unix_timestamp:1
+        (->> "UNIX_TIMESTAMP('2013')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :unix_timestamp
+            :args [
+                {:type :character-string-literal, :value "'2013'"}
+            ]
+        }]
+    )
+    (:fact func:date:unix_timestamp:2
+        (->> "UNIX_TIMESTAMP('2013', 'YYYY')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :unix_timestamp
+            :args [
+                {:type :character-string-literal, :value "'2013'"}
+                {:type :character-string-literal, :value "'YYYY'"}
+            ]
+        }]
+    )
+    (:fact func:date:to_date:1
+        (->> "TO_DATE('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :to_date
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:year:1
+        (->> "YEAR('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :year
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:month:1
+        (->> "MONTH('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :month
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:day:1
+        (->> "DAY('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :day
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:dayofmonth:1
+        (->> "DAYOFMONTH('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :day
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:hour:1
+        (->> "HOUR('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :hour
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:minute:1
+        (->> "MINUTE('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :minute
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:second:1
+        (->> "SECOND('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :second
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:weekofyear:1
+        (->> "WEEKOFYEAR('1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :weekofyear
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:datediff:2
+        (->> "DATEDIFF('1970-01-02', '1970-01-01')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :datediff
+            :args [
+                {:type :character-string-literal, :value "'1970-01-02'"}
+                {:type :character-string-literal, :value "'1970-01-01'"}
+            ]
+        }]
+    )
+    (:fact func:date:date_add:2
+        (->> "DATE_ADD('1970-01-01', 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :date_add
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:date:date_sub:2
+        (->> "DATE_SUB('1970-01-01', 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :date_sub
+            :args [
+                {:type :character-string-literal, :value "'1970-01-01'"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:date:from_utc_timestamp:2
+        (->> "FROM_UTC_TIMESTAMP(0, 'CST')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :from_utc_timestamp
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :character-string-literal, :value "'CST'"}
+            ]
+        }]
+    )
+    (:fact func:date:to_utc_timestamp:2
+        (->> "TO_UTC_TIMESTAMP(0, 'CST')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :to_utc_timestamp
+            :args [
+                {:type :numeric-literal, :value "0"}
+                {:type :character-string-literal, :value "'CST'"}
+            ]
+        }]
+    )
+    (:fact func:condition:if:3
+        (->> "IF(TRUE, 1, 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :if
+            :args [
+                {:type :boolean-literal, :value "TRUE"}
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:str:ascii:1
+        (->> "ASCII('0')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :ascii
+            :args [
+                {:type :character-string-literal, :value "'0'"}
+            ]
+        }]
+    )
+    (:fact func:str:base64:1
+        (->> "BASE64('0')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :base64
+            :args [
+                {:type :character-string-literal, :value "'0'"}
+            ]
+        }]
+    )
+    (:fact func:str:concat:0
+        (->> "CONCAT()"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :concat
+            :args [
+            ]
+        }]
+    )
+    (:fact func:str:concat:1
+        (->> "CONCAT('a')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :concat
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+            ]
+        }]
+    )
+    (:fact func:str:concat:2
+        (->> "CONCAT('a', 'b')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :concat
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :character-string-literal, :value "'b'"}
+            ]
+        }]
+    )
+    (:fact func:str:concat_ws:0
+        (fn []
+            (->> "CONCAT_WS()"
+                (prs/str->stream)
+                ((prs/chain sql/value-expr (prs/expect-eof)))
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact func:str:concat_ws:1
+        (->> "CONCAT_WS('sep')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :concat_ws
+            :args [
+                {:type :character-string-literal, :value "'sep'"}
+            ]
+        }]
+    )
+    (:fact func:str:concat_ws:2
+        (->> "CONCAT_WS('sep', 'a')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :concat_ws
+            :args [
+                {:type :character-string-literal, :value "'sep'"}
+                {:type :character-string-literal, :value "'a'"}
+            ]
+        }]
+    )
+    (:fact func:str:decode:2
+        (->> "DECODE('a', 'UTF-8')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :decode
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :character-string-literal, :value "'UTF-8'"}
+            ]
+        }]
+    )
+    (:fact func:str:encode:2
+        (->> "ENCODE('a', 'UTF-8')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :encode
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :character-string-literal, :value "'UTF-8'"}
+            ]
+        }]
+    )
+    (:fact func:str:find_in_set:2
+        (->> "FIND_IN_SET('a', 'a,b')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :find_in_set
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :character-string-literal, :value "'a,b'"}
+            ]
+        }]
+    )
+    (:fact func:str:format_number:2
+        (->> "FORMAT_NUMBER(10, 16)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :format_number
+            :args [
+                {:type :numeric-literal, :value "10"}
+                {:type :numeric-literal, :value "16"}
+            ]
+        }]
+    )
+    (:fact func:str:get_json_object:2
+        (->> "GET_JSON_OBJECT('{\"k\": \"v\"}', 'k')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :get_json_object
+            :args [
+                {:type :character-string-literal, :value "'{\"k\": \"v\"}'"}
+                {:type :character-string-literal, :value "'k'"}
+            ]
+        }]
+    )
+    (:fact func:str:in_file:2
+        (->> "IN_FILE('a', 'fn')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :in_file
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :character-string-literal, :value "'fn'"}
+            ]
+        }]
+    )
+    (:fact func:str:instr:2
+        (->> "INSTR('abcd', 'bc')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :instr
+            :args [
+                {:type :character-string-literal, :value "'abcd'"}
+                {:type :character-string-literal, :value "'bc'"}
+            ]
+        }]
+    )
+    (:fact func:str:length:1
+        (->> "LENGTH('abcd')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :length
+            :args [
+                {:type :character-string-literal, :value "'abcd'"}
+            ]
+        }]
+    )
+    (:fact func:str:locate:2
+        (->> "LOCATE('bc', 'abcd')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :locate
+            :args [
+                {:type :character-string-literal, :value "'bc'"}
+                {:type :character-string-literal, :value "'abcd'"}
+            ]
+        }]
+    )
+    (:fact func:str:locate:3
+        (->> "LOCATE('bc', 'abcd', 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :locate
+            :args [
+                {:type :character-string-literal, :value "'bc'"}
+                {:type :character-string-literal, :value "'abcd'"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:str:lower:1
+        (->> "LOWER('bc')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :lower
+            :args [
+                {:type :character-string-literal, :value "'bc'"}
+            ]
+        }]
+    )
+    (:fact func:str:lcase:1
+        (->> "LCASE('bc')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :lower
+            :args [
+                {:type :character-string-literal, :value "'bc'"}
+            ]
+        }]
+    )
+    (:fact func:str:lpad:3
+        (->> "LPAD('0', 3, '1')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :lpad
+            :args [
+                {:type :character-string-literal, :value "'0'"}
+                {:type :numeric-literal, :value "3"}
+                {:type :character-string-literal, :value "'1'"}
+            ]
+        }]
+    )
+    (:fact func:str:ltrim:1
+        (->> "ltrim('0')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :ltrim
+            :args [
+                {:type :character-string-literal, :value "'0'"}
+            ]
+        }]
+    )
+    (:fact func:str:parse_url:2
+        (->> "PARSE_URL('url', 'QUERY')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :parse_url
+            :args [
+                {:type :character-string-literal, :value "'url'"}
+                {:type :character-string-literal, :value "'QUERY'"}
+            ]
+        }]
+    )
+    (:fact func:str:parse_url:3
+        (->> "PARSE_URL('url', 'QUERY', 'key')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :parse_url
+            :args [
+                {:type :character-string-literal, :value "'url'"}
+                {:type :character-string-literal, :value "'QUERY'"}
+                {:type :character-string-literal, :value "'key'"}
+            ]
+        }]
+    )
+    (:fact func:str:printf:1
+        (->> "PRINTF('a')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :printf
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+            ]
+        }]
+    )
+    (:fact func:str:printf:2
+        (->> "PRINTF('a%s', 'b')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :printf
+            :args [
+                {:type :character-string-literal, :value "'a%s'"}
+                {:type :character-string-literal, :value "'b'"}
+            ]
+        }]
+    )
+    (:fact func:str:regexp_extract:3
+        (->> "REGEXP_EXTRACT('ab', 'b', 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :regexp_extract
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+                {:type :character-string-literal, :value "'b'"}
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:str:regexp_replace:3
+        (->> "REGEXP_REPLACE('ab', 'b', 'c')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :regexp_replace
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+                {:type :character-string-literal, :value "'b'"}
+                {:type :character-string-literal, :value "'c'"}
+            ]
+        }]
+    )
+    (:fact func:str:repeat:2
+        (->> "REPEAT('ab', 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :repeat
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact func:str:reverse:1
+        (->> "REVERSE('ab')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :reverse
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+            ]
+        }]
+    )
+    (:fact func:str:rpad:3
+        (->> "RPAD('1', 2, '0')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :rpad
+            :args [
+                {:type :character-string-literal, :value "'1'"}
+                {:type :numeric-literal, :value "2"}
+                {:type :character-string-literal, :value "'0'"}
+            ]
+        }]
+    )
+    (:fact func:str:rtrim:1
+        (->> "RTRIM('1')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :rtrim
+            :args [
+                {:type :character-string-literal, :value "'1'"}
+            ]
+        }]
+    )
+    (:fact func:str:space:1
+        (->> "SPACE(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :space
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:str:substr:2
+        (->> "SUBSTR('a', 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :substring
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:str:substr:3
+        (->> "SUBSTR('a', 0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :substring
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:str:substring:2
+        (->> "SUBSTRING('a', 0)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :substring
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :numeric-literal, :value "0"}
+            ]
+        }]
+    )
+    (:fact func:str:substring:3
+        (->> "SUBSTRING('a', 0, 1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :substring
+            :args [
+                {:type :character-string-literal, :value "'a'"}
+                {:type :numeric-literal, :value "0"}
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:str:translate:3
+        (->> "TRANSLATE('ab', 'b', 'c')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :translate
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+                {:type :character-string-literal, :value "'b'"}
+                {:type :character-string-literal, :value "'c'"}
+            ]
+        }]
+    )
+    (:fact func:str:trim:1
+        (->> "TRIM('ab')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :trim
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+            ]
+        }]
+    )
+    (:fact func:str:unbase64:1
+        (->> "UNBASE64('ab')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :unbase64
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+            ]
+        }]
+    )
+    (:fact func:str:upper:1
+        (->> "UPPER('ab')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :upper
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+            ]
+        }]
+    )
+    (:fact func:str:ucase:1
+        (->> "UCASE('ab')"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :upper
+            :args [
+                {:type :character-string-literal, :value "'ab'"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:count:1
+        (->> "COUNT(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :count
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:sum:1
+        (->> "SUM(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :sum
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:avg:1
+        (->> "AVG(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :avg
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:min:1
+        (->> "MIN(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :min
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:max:1
+        (->> "MAX(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :max
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:variance:1
+        (->> "VARIANCE(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :var_pop
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:var_pop:1
+        (->> "VAR_POP(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :var_pop
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:var_samp:1
+        (->> "VAR_SAMP(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :var_samp
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:stddev_pop:1
+        (->> "STDDEV_POP(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :stddev_pop
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:stddev_samp:1
+        (->> "STDDEV_SAMP(1)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :stddev_samp
+            :args [
+                {:type :numeric-literal, :value "1"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:covar_pop:1
+        (->> "COVAR_POP(1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :covar_pop
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:covar_samp:1
+        (->> "COVAR_SAMP(1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :covar_samp
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:corr:1
+        (->> "CORR(1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :corr
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:percentile:1
+        (->> "PERCENTILE(1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :percentile
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
+    )
+    (:fact func:aggregate:percentile_approx:1
+        (->> "PERCENTILE_APPROX(1, 2)"
+            (prs/str->stream)
+            (sql/value-expr)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :func-call, :func :percentile_approx
+            :args [
+                {:type :numeric-literal, :value "1"}
+                {:type :numeric-literal, :value "2"}
+            ]
+        }]
     )
 )

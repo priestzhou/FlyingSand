@@ -509,71 +509,74 @@
     )
 )
 
-(def ^:private reserved-keywords #{
-    "ADD" "ALL" "ALLOCATE" "ALTER" "AND" "ANY" "ARE" "ARRAY" "AS"
-    "ASENSITIVE" "ASYMMETRIC" "AT" "ATOMIC" "AUTHORIZATION"
+(def ^:private reserved-keywords #{ 
+; MySQL-5.5 compliant, many differences with SQL standards
+    "ACCESSIBLE" "ADD" "ALL" "ALTER" "ANALYZE" "AND" "AS" "ASC" "ASENSITIVE"
 
-    "BEGIN" "BETWEEN" "BIGINT" "BINARY" "BLOB" "BOOLEAN" "BOTH" "BY"
+    "BEFORE" "BETWEEN" "BIGINT" "BINARY" "BLOB" "BOTH" "BY"
 
-    "CALL" "CALLED" "CASCADED" "CASE" "CAST" "CHAR" "CHARACTER" "CHECK" "CLOB"
-    "CLOSE" "COLLATE" "COLUMN" "COMMIT" "CONNECT" "CONSTRAINT" "CONTINUE"
-    "CORRESPONDING" "CREATE" "CROSS" "CUBE" "CURRENT" "CURRENT_DATE"
-    "CURRENT_DEFAULT_TRANSFORM_GROUP" "CURRENT_PATH" "CURRENT_ROLE" "CURRENT_TIME"
-    "CURRENT_TIMESTAMP" "CURRENT_TRANSFORM_GROUP_FOR_TYPE" "CURRENT_USER"
-    "CURSOR" "CYCLE"
+    "CALL" "CASCADE" "CASE" "CHANGE" "CHAR" "CHARACTER" "CHECK" "COLLATE"
+    "COLUMN" "CONDITION" "CONSTRAINT" "CONTINUE" "CONVERT" "CREATE" "CROSS"
+    "CURRENT_DATE" "CURRENT_TIME" "CURRENT_TIMESTAMP" "CURRENT_USER" "CURSOR"
 
-    "DATE" "DAY" "DEALLOCATE" "DEC" "DECIMAL" "DECLARE" "DEFAULT" "DELETE"
-    "DEREF" "DESCRIBE" "DETERMINISTIC" "DISCONNECT" "DISTINCT" "DOUBLE" "DROP"
-    "DYNAMIC"
+    "DATABASE" "DATABASES" "DAY_HOUR" "DAY_MICROSECOND" "DAY_MINUTE" "DAY_SECOND"
+    "DEC" "DECIMAL" "DECLARE" "DEFAULT" "DELAYED" "DELETE" "DESC" "DESCRIBE"
+    "DETERMINISTIC" "DISTINCT" "DISTINCTROW" "DIV" "DOUBLE" "DROP" "DUAL"
 
-    "EACH" "ELEMENT" "ELSE" "END" "END-EXEC" "ESCAPE" "EXCEPT" "EXEC" "EXECUTE"
-    "EXISTS" "EXTERNAL"
+    "EACH" "ELSE" "ELSEIF" "ENCLOSED" "ESCAPED" "EXISTS" "EXIT" "EXPLAIN"
 
-    "FALSE" "FETCH" "FILTER" "FLOAT" "FOR" "FOREIGN" "FREE" "FROM" "FULL" "FUNCTION"
+    "FALSE" "FETCH" "FLOAT" "FLOAT4" "FLOAT8" "FOR" "FORCE" "FOREIGN" "FROM"
+    "FULLTEXT"
+    "FULL" ; SQL standards compliant, necessary for hive
 
-    "GET" "GLOBAL" "GRANT" "GROUP" "GROUPING"
+    "GRANT" "GROUP" "HAVING" "HIGH_PRIORITY" "HOUR_MICROSECOND" "HOUR_MINUTE"
+    "HOUR_SECOND"
 
-    "HAVING" "HOLD" "HOUR"
-
-    "IDENTITY" "IMMEDIATE" "IN" "INDICATOR" "INNER" "INOUT" "INPUT" "INSENSITIVE"
-    "INSERT" "INT" "INTEGER" "INTERSECT" "INTERVAL" "INTO" "IS" "ISOLATION"
+    "IF" "IGNORE" "IN" "INDEX" "INFILE" "INNER" "INOUT" "INSENSITIVE" "INSERT"
+    "INT" "INT1" "INT2" "INT3" "INT4" "INT8" "INTEGER" "INTERVAL" "INTO" "IS"
+    "ITERATE"
 
     "JOIN"
 
-    "LANGUAGE" "LARGE" "LATERAL" "LEADING" "LEFT" "LIKE" "LOCAL" "LOCALTIME"
-    "LOCALTIMESTAMP"
-    "LIMIT" ; MySQL & Hive extension; not in SQL standards
+    "KEY" "KEYS" "KILL"
 
-    "MATCH" "MEMBER" "MERGE" "METHOD" "MINUTE" "MODIFIES" "MODULE" "MONTH"
-    "MULTISET"
+    "LEADING" "LEAVE" "LEFT" "LIKE" "LIMIT" "LINEAR" "LINES" "LOAD" "LOCALTIME"
+    "LOCALTIMESTAMP" "LOCK" "LONG" "LONGBLOB" "LONGTEXT" "LOOP" "LOW_PRIORITY"
 
-    "NATIONAL" "NATURAL" "NCHAR" "NCLOB" "NEW" "NO" "NONE" "NOT" "NULL" "NUMERIC"
+    "MASTER_SSL_VERIFY_SERVER_CERT" "MATCH" "MAXVALUE" "MEDIUMBLOB" "MEDIUMINT"
+    "MEDIUMTEXT" "MIDDLEINT" "MINUTE_MICROSECOND" "MINUTE_SECOND" "MOD"
+    "MODIFIES"
 
-    "OF" "OLD" "ON" "ONLY" "OPEN" "OR" "ORDER" "OUT" "OUTER" "OUTPUT" "OVER" 
-    "OVERLAPS"
+    "NATURAL" "NOT" "NO_WRITE_TO_BINLOG" "NULL" "NUMERIC"
 
-    "PARAMETER" "PARTITION" "PRECISION" "PREPARE" "PRIMARY" "PROCEDURE"
+    "ON" "OPTIMIZE" "OPTION" "OPTIONALLY" "OR" "ORDER" "OUT" "OUTER" "OUTFILE"
 
-    "RANGE" "READS" "REAL" "RECURSIVE" "REF" "REFERENCES" "REFERENCING"
-    "REGR_AVGX" "REGR_AVGY" "REGR_COUNT" "REGR_INTERCEPT" "REGR_R2" "REGR_SLOPE"
-    "REGR_SXX" "REGR_SXY" "REGR_SYY" "RELEASE" "RESULT" "RETURN" "RETURNS"
-    "REVOKE" "RIGHT" "ROLLBACK" "ROLLUP" "ROW" "ROWS"
+    "PRECISION" "PRIMARY" "PROCEDURE" "PURGE"
 
-    "SAVEPOINT" "SCROLL" "SEARCH" "SECOND" "SELECT" "SENSITIVE" "SESSION_USER"
-    "SET" "SIMILAR" "SMALLINT" "SOME" "SPECIFIC" "SPECIFICTYPE" "SQL" "SQLEXCEPTION"
-    "SQLSTATE" "SQLWARNING" "START" "STATIC" "SUBMULTISET" "SYMMETRIC" "SYSTEM"
-    "SYSTEM_USER"
+    "RANGE" "READ" "READS" "READ_WRITE" "REAL" "REFERENCES" "REGEXP" "RELEASE"
+    "RENAME" "REPEAT" "REPLACE" "REQUIRE" "RESIGNAL" "RESTRICT" "RETURN"
+    "REVOKE" "RIGHT" "RLIKE"
 
-    "TABLE" "THEN" "TIME" "TIMESTAMP" "TIMEZONE_HOUR" "TIMEZONE_MINUTE" "TO"
-    "TRAILING" "TRANSLATION" "TREAT" "TRIGGER" "TRUE"
+    "SCHEMA" "SCHEMAS" "SECOND_MICROSECOND" "SELECT" "SENSITIVE" "SEPARATOR"
+    "SET" "SHOW" "SIGNAL" "SMALLINT" "SPATIAL" "SPECIFIC" "SQL" "SQLEXCEPTION"
+    "SQLSTATE" "SQLWARNING" "SQL_BIG_RESULT" "SQL_CALC_FOUND_ROWS"
+    "SQL_SMALL_RESULT" "SSL" "STARTING" "STRAIGHT_JOIN"
 
-    "UESCAPE" "UNION" "UNIQUE" "UNKNOWN" "UNNEST" "UPDATE" "UPPER" "USER" "USING"
+    "TABLE" "TERMINATED" "THEN" "TINYBLOB" "TINYINT" "TINYTEXT" "TO" "TRAILING"
+    "TRIGGER" "TRUE"
 
-    "VALUE" "VALUES" "VAR_POP" "VAR_SAMP" "VARCHAR" "VARYING"
+    "UNDO" "UNION" "UNIQUE" "UNLOCK" "UNSIGNED" "UPDATE" "USAGE" "USE" "USING"
+    "UTC_DATE" "UTC_TIME" "UTC_TIMESTAMP"
 
-    "WHEN" "WHENEVER" "WHERE" "WIDTH_BUCKET" "WINDOW" "WITH" "WITHIN" "WITHOUT"
+    "VALUES" "VARBINARY" "VARCHAR" "VARCHARACTER" "VARYING"
 
-    "YEAR"
+    "WHEN" "WHERE" "WHILE" "WITH" "WRITE"
+
+    "XOR"
+
+    "YEAR_MONTH"
+
+    "ZEROFILL"
 })
 
 (defn regular-identifier [stream]
@@ -699,28 +702,6 @@
     )
 )
 
-(defn table-correlation [stream]
-    (let [
-        [strm prsd] (->> stream
-            ((prs/chain
-                correlation
-                (prs/choice*
-                    second (prs/chain
-                        blank*
-                        paren-column-list
-                    )
-                    nil
-                )
-            ))
-        )
-        [cor col] prsd
-        res (assoc cor :type :table-correlation)
-        res (if-not col res (assoc res :column-list (:value col)))
-        ]
-        [strm res]
-    )
-)
-
 (declare table-reference)
 (declare value-expr)
 
@@ -732,7 +713,7 @@
                 (prs/choice*
                     second (prs/chain
                         blank+
-                        table-correlation
+                        correlation
                     )
                     nil
                 )
@@ -752,12 +733,12 @@
             ((prs/chain
                 value-expr
                 blank*
-                table-correlation
+                correlation
             ))
         )
         [subquery _ as] prsd
         ]
-        [strm (-> as (dissoc :type) (assoc :query subquery))]
+        [strm (-> as (assoc :type :derived-table :value subquery))]
     )
 )
 
@@ -1300,12 +1281,406 @@
     )
 )
 
+(defn- cast-operator [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "CAST")
+                blank*
+                (paren (prs/chain
+                    value-expr
+                    blank+
+                    (expect-string-ignore-case "AS")
+                    blank+
+                    (prs/choice*
+                        (constantly :int) (expect-string-ignore-case "INT")
+                        (constantly :tinyint) (expect-string-ignore-case "TINYINT")
+                        (constantly :smallint) (expect-string-ignore-case "SMALLINT")
+                        (constantly :bigint) (expect-string-ignore-case "BIGINT")
+                        (constantly :decimal) (expect-string-ignore-case "DECIMAL")
+                        (constantly :float) (expect-string-ignore-case "FLOAT")
+                        (constantly :double) (expect-string-ignore-case "DOUBLE")
+                        (constantly :timestamp) (expect-string-ignore-case "TIMESTAMP")
+                        (constantly :date) (expect-string-ignore-case "DATE")
+                        (constantly :string) (expect-string-ignore-case "STRING")
+                        (constantly :varchar) (expect-string-ignore-case "VARCHAR")
+                        (constantly :boolean) (expect-string-ignore-case "BOOLEAN")
+                        (constantly :binary) (expect-string-ignore-case "BINARY")
+                    )
+                ))
+            ))
+        )
+        prsd (last prsd)
+        v (first prsd)
+        t (last prsd)
+        ]
+        [strm {:type :cast, :left v, :right t}]
+    )
+)
+
+(defn- case-operator [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "CASE")
+                blank+
+                (prs/choice*
+                    first (prs/chain
+                        value-expr
+                        blank+
+                    )
+                    nil
+                )
+                (prs/many1
+                    (prs/chain
+                        (expect-string-ignore-case "WHEN")
+                        blank+
+                        value-expr
+                        blank+
+                        (expect-string-ignore-case "THEN")
+                        blank+
+                        value-expr
+                        blank+
+                    )
+                )
+                (prs/choice*
+                    #(nth % 2) (prs/chain
+                        (expect-string-ignore-case "ELSE")
+                        blank+
+                        value-expr
+                        blank+
+                    )
+                    nil
+                )
+                (expect-string-ignore-case "END")
+            ))
+        )
+        v (nth prsd 2)
+        ww (nth prsd 3)
+        ww (for [[_ _ x _ _ _ y] ww] [x y])
+        else (nth prsd 4)
+        res {:type :case, :when ww}
+        res (if-not v res (assoc res :value v))
+        res (if-not else res (assoc res :else else))
+        ]
+        [strm res]
+    )
+)
+
+(defn- check-arity [opt args stream]
+{
+    :pre [(not (nil? opt))]
+}
+    (let [
+        arity (count args)
+        l (:min opt)
+        u (:max opt)
+        ]
+        (when (and l (< arity l))
+            (prs/gen-ISE stream 
+                (format "%s requires at least %d argument(s)" (:name opt) l)
+            )
+        )
+        (when (and u (> arity u))
+            (prs/gen-ISE stream 
+                (format "%s requires at most %d argument(s)" (:name opt) u)
+            )
+        )
+    )
+)
+
+(def ^:private distinct-buildin-functions {
+    :distinct-count {:min 1, :max 2, :name "COUNT(DISTINCT"}
+    :distinct-sum {:min 1, :max 1, :name "SUM(DISTINCT"}
+    :distinct-avg {:min 1, :max 1, :name "AVG(DISTINCT"}
+})
+
+(defn- distinct-count-sum-avg [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (prs/choice*
+                    (constantly :distinct-count) (expect-string-ignore-case "COUNT")
+                    (constantly :distinct-sum) (expect-string-ignore-case "SUM")
+                    (constantly :distinct-avg) (expect-string-ignore-case "AVG")
+                )
+                blank*
+                (paren (prs/chain
+                    blank*
+                    (expect-string-ignore-case "DISTINCT")
+                    blank+
+                    (prs/separated-list
+                        value-expr
+                        (prs/chain
+                            blank*
+                            (prs/expect-char \,)
+                            blank*
+                        )
+                    )
+                ))
+            ))
+        )
+        ty (first prsd)
+        args (->> prsd (last) (last))
+        ]
+        (check-arity (distinct-buildin-functions ty) args stream)
+        [strm {:type ty, :args args}]
+    )
+)
+
+(def ^:private build-in-functions {
+    :power {:min 2, :max 2, :name "POWER/POW"}
+    :round {:min 1, :max 2, :name "ROUND"}
+    :floor {:min 1, :max 1, :name "FLOOR"}
+    :ceil {:min 1, :max 1, :name "CEIL/CEILING"}
+    :rand {:max 1, :name "RAND"}
+    :exp {:min 1, :max 1, :name "EXP"}
+    :ln {:min 1, :max 1, :name "LN"}
+    :log10 {:min 1, :max 1, :name "LOG10"}
+    :log2 {:min 1, :max 1, :name "LOG2"}
+    :log {:min 2, :max 2, :name "LOG"}
+    :sqrt {:min 1, :max 1, :name "SQRT"}
+    :bin {:min 1, :max 1, :name "BIN"}
+    :hex {:min 1, :max 1, :name "HEX"}
+    :unhex {:min 1, :max 1, :name "UNHEX"}
+    :conv {:min 3, :max 3, :name "CONV"}
+    :abs {:min 1, :max 1, :name "ABS"}
+    :pmod {:min 2, :max 2, :name "PMOD"}
+    :sin {:min 1, :max 1, :name "SIN"}
+    :asin {:min 1, :max 1, :name "ASIN"}
+    :cos {:min 1, :max 1, :name "COS"}
+    :acos {:min 1, :max 1, :name "ACOS"}
+    :tan {:min 1, :max 1, :name "TAN"}
+    :atan {:min 1, :max 1, :name "ATAN"}
+    :degrees {:min 1, :max 1, :name "DEGREES"}
+    :radians {:min 1, :max 1, :name "RADIANS"}
+    :positive {:min 1, :max 1, :name "POSITIVE"}
+    :negative {:min 1, :max 1, :name "NEGATIVE"}
+    :sign {:min 1, :max 1, :name "SIGN"}
+    :e {:max 0, :name "E"}
+    :pi {:max 0, :name "PI"}
+    :binary {:min 1, :max 1, :name "BINARY"}
+    :from_unixtime {:min 1, :max 2, :name "FROM_UNIXTIME"}
+    :unix_timestamp {:max 2, :name "UNIX_TIMESTAMP"}
+    :to_date {:min 1, :max 1, :name "TO_DATE"}
+    :year {:min 1, :max 1, :name "YEAR"}
+    :month {:min 1, :max 1, :name "MONTH"}
+    :day {:min 1, :max 1, :name "DAY/DAYOFMONTH"}
+    :hour {:min 1, :max 1, :name "HOUR"}
+    :minute {:min 1, :max 1, :name "MINUTE"}
+    :second {:min 1, :max 1, :name "SECOND"}
+    :weekofyear {:min 1, :max 1, :name "WEEKOFYEAR"}
+    :datediff {:min 2, :max 2, :name "DATEDIFF"}
+    :date_add {:min 2, :max 2, :name "DATE_ADD"}
+    :date_sub {:min 2, :max 2, :name "DATE_SUB"}
+    :from_utc_timestamp {:min 2, :max 2, :name "FROM_UTC_TIMESTAMP"}
+    :to_utc_timestamp {:min 2, :max 2, :name "TO_UTC_TIMESTAMP"}
+    :if {:min 3, :max 3, :name "IF"}
+    :ascii {:min 1, :max 1, :name "ASCII"}
+    :base64 {:min 1, :max 1, :name "BASE64"}
+    :concat {:name "CONCAT"}
+    :concat_ws {:min 1, :name "CONCAT_WS"}
+    :decode {:min 2, :max 2, :name "DECODE"}
+    :encode {:min 2, :max 2, :name "ENCODE"}
+    :find_in_set {:min 2, :max 2, :name "FIND_IN_SET"}
+    :format_number {:min 2, :max 2, :name "FORMAT_NUMBER"}
+    :get_json_object {:min 2, :max 2, :name "GET_JSON_OBJECT"}
+    :in_file {:min 2, :max 2, :name "IN_FILE"}
+    :instr {:min 2, :max 2, :name "INSTR"}
+    :length {:min 1, :max 1, :name "LENGTH"}
+    :locate {:min 2, :max 3, :name "LOCATE"}
+    :lower {:min 1, :max 1, :name "LOWER/LCASE"}
+    :lpad {:min 3, :max 3, :name "LPAD"}
+    :ltrim {:min 1, :max 1, :name "LTRIM"}
+    :parse_url {:min 2, :max 3, :name "PARSE_URL"}
+    :printf {:min 1, :name "PRINTF"}
+    :regexp_extract {:min 3, :max 3, :name "REGEXP_EXTRACT"}
+    :regexp_replace {:min 3, :max 3, :name "REGEXP_REPLACE"}
+    :repeat {:min 2, :max 2, :name "REPEAT"}
+    :reverse {:min 1, :max 1, :name "REVERSE"}
+    :rpad {:min 3, :max 3, :name "RPAD"}
+    :rtrim {:min 1, :max 1, :name "RTRIM"}
+    :space {:min 1, :max 1, :name "SPACE"}
+    :substring {:min 2, :max 3, :name "SUBSTR/SUBSTRING"}
+    :translate {:min 3, :max 3, :name "TRANSLATE"}
+    :trim {:min 1, :max 1, :name "TRIM"}
+    :unbase64 {:min 1, :max 1, :name "UNBASE64"}
+    :upper {:min 1, :max 1, :name "UPPER/UCASE"}
+    :count {:min 1, :max 1, :name "COUNT"}
+    :sum {:min 1, :max 1, :name "SUM"}
+    :avg {:min 1, :max 1, :name "AVG"}
+    :min {:min 1, :max 1, :name "MIN"}
+    :max {:min 1, :max 1, :name "MAX"}
+    :var_pop {:min 1, :max 1, :name "VARIANCE/VAR_POP"}
+    :var_samp {:min 1, :max 1, :name "VAR_SAMP"}
+    :stddev_pop {:min 1, :max 1, :name "STDDEV_POP"}
+    :stddev_samp {:min 1, :max 1, :name "STDDEV_SAMP"}
+    :covar_pop {:min 2, :max 2, :name "COVAR_POP"}
+    :covar_samp {:min 2, :max 2, :name "COVAR_SAMP"}
+    :corr {:min 2, :max 2, :name "CORR"}
+    :percentile {:min 2, :max 2, :name "PERCENTILE"}
+    :percentile_approx {:min 2, :max 2, :name "PERCENTILE_APPROX"}
+})
+
+(defn- function-call [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (prs/choice*
+                    (constantly :ascii) (expect-string-ignore-case "ASCII")
+                    (constantly :acos) (expect-string-ignore-case "ACOS")
+                    (constantly :asin) (expect-string-ignore-case "ASIN")
+                    (constantly :atan) (expect-string-ignore-case "ATAN")
+                    (constantly :abs) (expect-string-ignore-case "ABS")
+                    (constantly :avg) (expect-string-ignore-case "AVG")
+
+                    (constantly :base64) (expect-string-ignore-case "BASE64")
+                    (constantly :binary) (expect-string-ignore-case "BINARY")
+                    (constantly :bin) (expect-string-ignore-case "BIN")
+
+                    (constantly :covar_samp) (expect-string-ignore-case "COVAR_SAMP")
+                    (constantly :concat_ws) (expect-string-ignore-case "CONCAT_WS")
+                    (constantly :covar_pop) (expect-string-ignore-case "COVAR_POP")
+                    (constantly :ceil) (expect-string-ignore-case "CEILING")
+                    (constantly :concat) (expect-string-ignore-case "CONCAT")
+                    (constantly :count) (expect-string-ignore-case "COUNT")
+                    (constantly :ceil) (expect-string-ignore-case "CEIL")
+                    (constantly :conv) (expect-string-ignore-case "CONV")
+                    (constantly :corr) (expect-string-ignore-case "CORR")
+                    (constantly :cos) (expect-string-ignore-case "COS")
+
+                    (constantly :day) (expect-string-ignore-case "DAYOFMONTH")
+                    (constantly :date_add) (expect-string-ignore-case "DATE_ADD")
+                    (constantly :date_sub) (expect-string-ignore-case "DATE_SUB")
+                    (constantly :datediff) (expect-string-ignore-case "DATEDIFF")
+                    (constantly :degrees) (expect-string-ignore-case "DEGREES")
+                    (constantly :decode) (expect-string-ignore-case "DECODE")
+                    (constantly :day) (expect-string-ignore-case "DAY")
+
+                    (constantly :encode) (expect-string-ignore-case "ENCODE")
+                    (constantly :exp) (expect-string-ignore-case "EXP")
+                    (constantly :e) (expect-string-ignore-case "E")
+
+                    (constantly :from_utc_timestamp) (expect-string-ignore-case "FROM_UTC_TIMESTAMP")
+                    (constantly :format_number) (expect-string-ignore-case "FORMAT_NUMBER")
+                    (constantly :from_unixtime) (expect-string-ignore-case "FROM_UNIXTIME")
+                    (constantly :find_in_set) (expect-string-ignore-case "FIND_IN_SET")
+                    (constantly :floor) (expect-string-ignore-case "FLOOR")
+
+                    (constantly :get_json_object) (expect-string-ignore-case "GET_JSON_OBJECT")
+
+                    (constantly :hour) (expect-string-ignore-case "HOUR")
+                    (constantly :hex) (expect-string-ignore-case "HEX")
+
+                    (constantly :in_file) (expect-string-ignore-case "IN_FILE")
+                    (constantly :instr) (expect-string-ignore-case "INSTR")
+                    (constantly :if) (expect-string-ignore-case "IF")
+
+                    (constantly :length) (expect-string-ignore-case "LENGTH")
+                    (constantly :locate) (expect-string-ignore-case "LOCATE")
+                    (constantly :lower) (expect-string-ignore-case "LCASE")
+                    (constantly :log10) (expect-string-ignore-case "LOG10")
+                    (constantly :lower) (expect-string-ignore-case "LOWER")
+                    (constantly :ltrim) (expect-string-ignore-case "LTRIM")
+                    (constantly :lpad) (expect-string-ignore-case "LPAD")
+                    (constantly :log2) (expect-string-ignore-case "LOG2")
+                    (constantly :log) (expect-string-ignore-case "LOG")
+                    (constantly :ln) (expect-string-ignore-case "LN")
+
+                    (constantly :minute) (expect-string-ignore-case "MINUTE")
+                    (constantly :month) (expect-string-ignore-case "MONTH")
+                    (constantly :max) (expect-string-ignore-case "MAX")
+                    (constantly :min) (expect-string-ignore-case "MIN")
+
+                    (constantly :negative) (expect-string-ignore-case "NEGATIVE")
+
+                    (constantly :percentile_approx) (expect-string-ignore-case "PERCENTILE_APPROX")
+                    (constantly :percentile) (expect-string-ignore-case "PERCENTILE")
+                    (constantly :parse_url) (expect-string-ignore-case "PARSE_URL")
+                    (constantly :positive) (expect-string-ignore-case "POSITIVE")
+                    (constantly :printf) (expect-string-ignore-case "PRINTF")
+                    (constantly :power) (expect-string-ignore-case "POWER")
+                    (constantly :pmod) (expect-string-ignore-case "PMOD")
+                    (constantly :power) (expect-string-ignore-case "POW")
+                    (constantly :pi) (expect-string-ignore-case "PI")
+
+                    (constantly :regexp_extract) (expect-string-ignore-case "REGEXP_EXTRACT")
+                    (constantly :regexp_replace) (expect-string-ignore-case "REGEXP_REPLACE")
+                    (constantly :radians) (expect-string-ignore-case "RADIANS")
+                    (constantly :reverse) (expect-string-ignore-case "REVERSE")
+                    (constantly :repeat) (expect-string-ignore-case "REPEAT")
+                    (constantly :round) (expect-string-ignore-case "ROUND")
+                    (constantly :rtrim) (expect-string-ignore-case "RTRIM")
+                    (constantly :rand) (expect-string-ignore-case "RAND")
+                    (constantly :rpad) (expect-string-ignore-case "RPAD")
+
+                    (constantly :stddev_samp) (expect-string-ignore-case "STDDEV_SAMP")
+                    (constantly :stddev_pop) (expect-string-ignore-case "STDDEV_POP")
+                    (constantly :substring) (expect-string-ignore-case "SUBSTRING")
+                    (constantly :second) (expect-string-ignore-case "SECOND")
+                    (constantly :substring) (expect-string-ignore-case "SUBSTR")
+                    (constantly :space) (expect-string-ignore-case "SPACE")
+                    (constantly :sign) (expect-string-ignore-case "SIGN")
+                    (constantly :sqrt) (expect-string-ignore-case "SQRT")
+                    (constantly :sin) (expect-string-ignore-case "SIN")
+                    (constantly :sum) (expect-string-ignore-case "SUM")
+
+                    (constantly :to_utc_timestamp) (expect-string-ignore-case "TO_UTC_TIMESTAMP")
+                    (constantly :translate) (expect-string-ignore-case "TRANSLATE")
+                    (constantly :to_date) (expect-string-ignore-case "TO_DATE")
+                    (constantly :trim) (expect-string-ignore-case "TRIM")
+                    (constantly :tan) (expect-string-ignore-case "TAN")
+
+                    (constantly :unix_timestamp) (expect-string-ignore-case "UNIX_TIMESTAMP")
+                    (constantly :unbase64) (expect-string-ignore-case "UNBASE64")
+                    (constantly :upper) (expect-string-ignore-case "UCASE")
+                    (constantly :unhex) (expect-string-ignore-case "UNHEX")
+                    (constantly :upper) (expect-string-ignore-case "UPPER")
+
+                    (constantly :var_samp) (expect-string-ignore-case "VAR_SAMP")
+                    (constantly :var_pop) (expect-string-ignore-case "VAR_POP")
+                    (constantly :var_pop) (expect-string-ignore-case "VARIANCE")
+
+                    (constantly :weekofyear) (expect-string-ignore-case "WEEKOFYEAR")
+
+                    (constantly :year) (expect-string-ignore-case "YEAR")
+                )
+                blank*
+                (paren
+                    (prs/choice*
+                        identity (prs/separated-list
+                            value-expr
+                            (prs/chain
+                                blank*
+                                (prs/expect-char \,)
+                                blank*
+                            )
+                        )
+                        (constantly []) (prs/chain
+                            blank*
+                            (prs/foresee (prs/expect-char \)))
+                        )
+                    )
+                )
+            ))
+        )
+        [f _ args] prsd
+        ]
+        (check-arity (build-in-functions f) args stream)
+        [strm {:type :func-call, :func f, :args args}]
+    )
+)
+
 (defn- simple-expr:term [stream]
     (->> stream
         ((prs/choice
             (paren query)
-            binary-operator
             exists-operator
+            cast-operator
+            case-operator
+            distinct-count-sum-avg
+            function-call
+            binary-operator
             literal
             asterisked-identifier
             dotted-identifier
