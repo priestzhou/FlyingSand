@@ -702,28 +702,6 @@
     )
 )
 
-(defn table-correlation [stream]
-    (let [
-        [strm prsd] (->> stream
-            ((prs/chain
-                correlation
-                (prs/choice*
-                    second (prs/chain
-                        blank*
-                        paren-column-list
-                    )
-                    nil
-                )
-            ))
-        )
-        [cor col] prsd
-        res (assoc cor :type :table-correlation)
-        res (if-not col res (assoc res :column-list (:value col)))
-        ]
-        [strm res]
-    )
-)
-
 (declare table-reference)
 (declare value-expr)
 
@@ -735,7 +713,7 @@
                 (prs/choice*
                     second (prs/chain
                         blank+
-                        table-correlation
+                        correlation
                     )
                     nil
                 )
@@ -755,12 +733,12 @@
             ((prs/chain
                 value-expr
                 blank*
-                table-correlation
+                correlation
             ))
         )
         [subquery _ as] prsd
         ]
-        [strm (-> as (dissoc :type) (assoc :query subquery))]
+        [strm (-> as (assoc :type :derived-table :value subquery))]
     )
 )
 

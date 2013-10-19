@@ -837,32 +837,20 @@
     (:fact correlation:as
         (->> "AS tbl"
             (prs/str->stream)
-            (sql/table-correlation)
+            (sql/correlation)
             (extract-result)
         )
         :is
-        [[:eof] {:type :table-correlation, :name "tbl"}]
+        [[:eof] {:type :correlation, :name "tbl"}]
     )
     (:fact correlation:no-as
         (->> "tbl"
             (prs/str->stream)
-            (sql/table-correlation)
+            (sql/correlation)
             (extract-result)
         )
         :is
-        [[:eof] {:type :table-correlation, :name "tbl"}]
-    )
-)
-
-(suite "table correlation"
-    (:fact table-correlation:column-list
-        (->> "AS tbl(a, b)"
-            (prs/str->stream)
-            (sql/table-correlation)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :table-correlation, :name "tbl", :column-list ["a" "b"]}]
+        [[:eof] {:type :correlation, :name "tbl"}]
     )
 )
 
@@ -910,20 +898,6 @@
         [[:eof] {:type :from-clause, :tables [
             {:type :table, :name "a", :refer ["catalog" "tbl"]}
         ]}]
-    )
-    (:fact from-clause:table-name:as:column-list
-        (->> "FROM catalog.tbl AS a(b)"
-            (prs/str->stream)
-            (sql/from-clause)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :from-clause, :tables [{
-            :type :table
-            :name "a"
-            :refer ["catalog" "tbl"]
-            :column-list ["b"]
-        }]}]
     )
     (:fact from-clause:table-name:multiple
         (->> "FROM tbl1, tbl2"
@@ -1155,6 +1129,26 @@
         [[:eof] {:type :select, :set-quantifier :all
             :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
+        }]
+    )
+    (:fact select:subquery
+        (->> "SELECT * FROM (SELECT * FROM tbl) t"
+            (prs/str->stream)
+            (sql/query)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :select
+            :select-list [{:type :derived-column, :value {:type :asterisk}}],
+            :from-clause [{:type :derived-table
+                :name "t"
+                :value {:type :select, 
+                    :select-list [
+                        {:type :derived-column, :value {:type :asterisk}}
+                    ],
+                    :from-clause [{:type :table, :refer ["tbl"]}]
+                }
+            }]
         }]
     )
     (:fact select:asterisked-identifier-chain
