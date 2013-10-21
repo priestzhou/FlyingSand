@@ -106,7 +106,7 @@
                 )
                 dblist
             )
-            ;_ (debug "dblist2" dbList)
+            _ (debug "dblist2" (str dbList))
             res1 (map #(merge (get-schema-db %) (get-db-table-list'' %)) dbList)
             res (map get-schema-db dbList)
         ]

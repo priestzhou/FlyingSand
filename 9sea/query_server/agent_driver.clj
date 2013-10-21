@@ -9,6 +9,7 @@
         [argparser.core :as arg]
         [hdfs.core :as hc]
         [query-server.mysql-connector :as mysql]
+        [utilities.aes :as aes]
     )
     (:gen-class)
 )
@@ -106,6 +107,14 @@
     )
 )
 
+(defn- get-decrypt-body [res]
+    (let [body (:body res)
+            detxt (aes/decrypt body "fs_agent_enrypt_key_1")
+        ]
+        detxt
+    )
+)
+
 (defn- httpget 
     ([agenturl op params]
         (println  "httpget" (str agenturl (op urlmap) params))
@@ -197,14 +206,14 @@
 (defn new-agent [agentid, agentname,agenturl,accountid]
     (println "new-agent" agentid "-" agentname "-" agenturl "-" accountid)
     (let [setting (js/read-str 
-                (:body (httpget agenturl :get-setting))
+                (get-decrypt-body (httpget agenturl :get-setting))
                 :key-fn keyword
             )
             hashcode (:hashcode setting)
             appname (:app setting)
             appversion (:appversion setting)
             schema (js/read-str 
-                    (:body (httpget agenturl :get-schema)) 
+                    (get-decrypt-body (httpget agenturl :get-schema)) 
                     :key-fn keyword
                 )
             datalist (flatten 
@@ -285,7 +294,7 @@
                         "&keynum=" position
                     )
                 )
-            resList (get (js/read-str (:body res)) "data")
+            resList (get (js/read-str (get-decrypt-body res)) "data")
             hiveName (:hive_name tableinfo)
             tskey (:timestampkey tableinfo)
             filterList (inc-data-filter resList tskey)
@@ -331,7 +340,7 @@
                         "&tablename=" tablename 
                     )
                 )
-            resList (get (js/read-str (:body res)) "data")
+            resList (get (js/read-str (get-decrypt-body res)) "data")
             hiveName (:hive_name tableinfo)
             
         ]

@@ -36,6 +36,7 @@
                 )
             )
             (catch SQLException e
+                (error e)
                 (error (.printStackTrace e) )
             )
         )
@@ -56,6 +57,7 @@
                 )
             )
             (catch SQLException e
+                (error e)
                 (error (.printStackTrace e) )
             )
         )
@@ -76,6 +78,7 @@
                 )
             )
             (catch SQLException e
+                (error e)
                 (error (.printStackTrace e) )
             )
         )        
@@ -101,6 +104,7 @@
                 )
             )
             (catch SQLException e
+                (error e)
                 (error (.printStackTrace e) )
             )
         )        

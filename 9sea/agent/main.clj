@@ -13,7 +13,8 @@
         [clojure.data.json :as js]
         [agent.dbadapt :as dba]
         [agent.mysqladapt :as mysql]
-        [monitor.tools :as tool] 
+        [monitor.tools :as tool]
+        [utilities.aes :as aes] 
     )
     (:gen-class)
 )
@@ -32,6 +33,14 @@
     )
 )
 
+(defn- encryptWrt [s]
+    (let [txt (js/write-str s)
+            etxt (aes/encrypt txt "fs_agent_enrypt_key_1")
+        ]
+        etxt
+    )
+)
+
 (cp/defroutes app-routes
     (cp/GET "/get-setting" {params :params} 
         (info "get-setting")
@@ -42,7 +51,7 @@
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json"
                     }
-                    :body (js/write-str (set-parse @dbatom h) )
+                    :body (encryptWrt (set-parse @dbatom h) )
                 }
             )
             {:status 503
@@ -50,7 +59,7 @@
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json"
                     }
-                :body (js/write-str 
+                :body (encryptWrt 
                         {
                             :errCode 1001
                             :errStr @dbatom
@@ -68,7 +77,7 @@
                     "Access-Control-Allow-Origin" "*"
                     "Content-Type" "application/json"
                 }
-                :body (js/write-str r)
+                :body (encryptWrt r)
             }
         )
     )
@@ -84,7 +93,7 @@
                     "Access-Control-Allow-Origin" "*"
                     "Content-Type" "application/json ; charset=UTF-8"
                 }
-                :body (js/write-str r)
+                :body (encryptWrt r)
             }
         )
     )
@@ -101,7 +110,7 @@
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json ; charset=UTF-8"
                     }
-                    :body (js/write-str r )
+                    :body (encryptWrt r )
                 }  
         )
     )    
