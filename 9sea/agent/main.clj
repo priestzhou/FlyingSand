@@ -2,6 +2,7 @@
     (:use 
         [ring.middleware.params :only (wrap-params)]
         [logging.core :only [defloggers]]
+        [agent.util :only (except->str)]
     )    
     (:require
         [argparser.core :as arg]
@@ -16,9 +17,6 @@
         [monitor.tools :as tool]
         [utilities.aes :as aes] 
     )
-    (:import
-        [java.io StringWriter PrintWriter]
-    )
     (:gen-class)
 )
 
@@ -32,15 +30,14 @@
     (let [db1 (:databse smap)
             db2 (map #(dissoc % :dbuser :dbpassword) db1)
         ]
-        (merge smap {:databse db2 :hashcode hc})
+        (assoc smap :databse db2 :hashcode hc)
     )
 )
 
 (defn- encryptWrt [s]
-    (let [txt (js/write-str s)
-            etxt (aes/encrypt txt "fs_agent_enrypt_key_1")
-        ]
-        etxt
+    (-> s
+        (js/write-str)
+        (aes/encrypt "fs_agent_enrypt_key_1")
     )
 )
 
@@ -49,7 +46,7 @@
         (info "/setting/list")
         (if (map? @dbatom)
             (let [h (hash @dbatom )]
-                {:status 202
+                {:status 200
                     :headers {
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json"
@@ -75,7 +72,7 @@
         (info "into get schemas" )
         (let [r (dba/get-schemas @dbatom)]
             (debug "schemas result" (js/write-str r))
-            {:status 202
+            {:status 200
                 :headers {
                     "Access-Control-Allow-Origin" "*"
                     "Content-Type" "application/json"
@@ -91,7 +88,7 @@
                 )
             ]
             (debug "all data result" (js/write-str r))
-            {:status 202
+            {:status 200
                 :headers {
                     "Access-Control-Allow-Origin" "*"
                     "Content-Type" "application/json ; charset=UTF-8"
@@ -108,7 +105,7 @@
             ]
             ;(println r)
             (debug "all inc result" (js/write-str r) )
-                {:status 202
+                {:status 200
                     :headers {
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json ; charset=UTF-8"
@@ -171,15 +168,8 @@
                 (reset! dbatom dbsetting)
             )
             (catch Exception e
-                (let [
-                    sw (StringWriter.)
-                    ]
-                    (with-open [wr (PrintWriter. sw)]
-                        (.printStackTrace e wr)
-                    )
-                    (error sw)
-                )
-                (System/exit 1)
+                (error (except->str e))
+                (reset! dbatom (str e))
             )
         )
         (rj/run-jetty #'app 
