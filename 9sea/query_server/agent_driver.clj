@@ -27,10 +27,10 @@
 
 (def ^:private urlmap
     {
-        :get-setting "/get-setting"
-        :get-schema "/get-schemas"
+        :get-setting "/setting/list"
+        :get-schema "/schemas/all"
         :get-table-inc-data "/get-table-inc-data"
-        :get-table-all-data "/get-table-all-data"
+        :get-table-all-data "/data/get/inc"
     }
 )
 

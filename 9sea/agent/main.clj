@@ -42,8 +42,8 @@
 )
 
 (cp/defroutes app-routes
-    (cp/GET "/get-setting" {params :params} 
-        (info "get-setting")
+    (cp/GET "/setting/list" {params :params} 
+        (info "/setting/list")
         (if (map? @dbatom)
             (let [h (hash @dbatom )]
                 {:status 202
