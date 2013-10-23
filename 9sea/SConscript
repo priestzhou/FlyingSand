@@ -15,15 +15,15 @@ env.install(env.compileAndJar('agent.jar', 'agent',
     ], 
     standalone=True, manifest={'Main-Class': 'agent.main'}))
 
-#env.install(env.compileAndJar('monitor.jar', 'monitor', 
-#    libs=[env['CLOJURE'],
-#        env.File('$BUILD_DIR/utilities.jar'),
-#        env.File('$BUILD_DIR/argparser.jar'),
-#        env.File('$EXTLIB/ring-1.1.8.jar'),
-#        env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
-#        env.File('$EXTLIB/compojure-1.1.5.jar'),
-#    ], 
-#    standalone=True, manifest={'Main-Class': 'monitor.main'}))
+env.install(env.compileAndJar('monitor.jar', 'monitor', 
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/argparser.jar'),
+        env.File('$EXTLIB/ring-1.1.8.jar'),
+        env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
+        env.File('$EXTLIB/compojure-1.1.5.jar'),
+    ], 
+    standalone=True, manifest={'Main-Class': 'monitor.main'}))
 
 parser = env.compileAndJar('parser.jar', 'parser',
     libs=[env['CLOJURE'],
@@ -44,6 +44,7 @@ env.install(env.compileAndJar('sql_parser.jar', 'parser',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/utilities.jar'),
         env.File('$BUILD_DIR/argparser.jar'),
+        env.File('$BUILD_DIR/logging.jar'),
     ], 
     standalone=True, manifest={'Main-Class': 'parser.main'}))
 
@@ -87,29 +88,12 @@ env.install(env.compileAndJar('query_server.jar', 'query_server',
     install={},
     standalone=True, manifest={'Main-Class': 'query_server.main'}))
 
-env.install(env.compileAndJar('monitor.jar', 'monitor', 
-    libs=[env['CLOJURE'],
-        env.File('$BUILD_DIR/utilities.jar'),
-    ], 
-    standalone=True, manifest={'Main-Class': 'monitor.main'}))
-
-parser = env.compileAndJar('parser.jar', 'parser',
-    libs=[env['CLOJURE'],
-        env.File('$BUILD_DIR/utilities.jar'),
-    ])
-env.install(env.compileAndJar('parser_unittest.jar', 'parser_unittest', 
-    libs=[env['CLOJURE'],
-        env.File('$BUILD_DIR/testing.jar'),
-        env.File('$BUILD_DIR/utilities.jar'),
-        parser, 
-    ], 
-    standalone=True, manifest={'Main-Class': 'parser_unittest.main'}))
 
 env.install(env.compileAndJar('9sea_unittest.jar', 'unittest',
     libs=[env['CLOJURE'], 
         env.File('$EXTLIB/tools.cli-0.2.2.jar'),
         env.File('$BUILD_DIR/testing.jar'),
-#        env.File('$BUILD_DIR/agent.jar'),
+        env.File('$BUILD_DIR/agent.jar'),
         env.File('$BUILD_DIR/query_server.jar'),
         env.File('$EXTLIB/clj-time-0.5.2.jar'),
         env.File('$EXTLIB/lib-for-shark/hive-jdbc-0.9.0.jar'),
