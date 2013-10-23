@@ -3,6 +3,7 @@
         unittest.utilities.core
         unittest.utilities.shutil
         unittest.utilities.parse
+        unittest.utilities.aes
         unittest.argparser.core
     )
     (:use testing.core)
@@ -14,6 +15,7 @@
             'unittest.utilities.core 
             'unittest.utilities.shutil 
             'unittest.utilities.parse
+            'unittest.utilities.aes
             'unittest.argparser.core)
         (main args)
     )
