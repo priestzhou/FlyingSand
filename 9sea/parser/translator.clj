@@ -81,17 +81,16 @@
 )
 
 (defn search-table [nss refered]
-    (if (= 1 (count refered))
-        (let [tbl (search-name-in-ns nss (first refered))]
-            tbl
-        )
-        (let [[x & xs] refered]
-            (if-let [nz (search-name-in-ns nss x)]
+{
+    :pre [(>= (count refered) 1)]
+}
+    (let [[x & xs] refered]
+        (if-let [nz (search-name-in-ns nss x)]
+            (if (empty? xs)
+                nz
                 (if (= (:type nz) "namespace")
                     (recur (:children nz) xs)
-                    nil
                 )
-                nil
             )
         )
     )
@@ -102,12 +101,9 @@
         x (concat nz refered)
         r (search-table nss x)
         ]
-        (if r
+        (if (= (:type r) "table")
             r
-            (if (empty? nz)
-                (throw (InvalidSyntaxException. 
-                    (format "unknown table: %s" (pr-str refered))
-                ))
+            (if-not (empty? nz)
                 (recur nss (drop-last nz) refered)
             )
         )
@@ -115,7 +111,12 @@
 )
 
 (defn normalize-table [context refered]
-    (normalize-table' (:ns context) (:default-ns context) refered)
+    (if-let [res (normalize-table' (:ns context) (:default-ns context) refered)]
+        res
+        (throw (InvalidSyntaxException. 
+            (format "unknown table: %s" (pr-str refered))
+        ))
+    )
 )
 
 
