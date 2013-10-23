@@ -68,7 +68,7 @@
             }            
         )
     )
-    (cp/GET "/get-schemas" {params :params}
+    (cp/GET "/schemas/all" {params :params}
         (info "into get schemas" )
         (let [r (dba/get-schemas @dbatom)]
             (debug "schemas result" (js/write-str r))
@@ -81,7 +81,7 @@
             }
         )
     )
-    (cp/GET "/get-table-all-data" {params :params}
+    (cp/GET "/data/get/all" {params :params}
         (info "into get all data" (js/write-str params))
         (let [r (dba/get-table-all-data @dbatom 
                      (:dbname params) (:tablename params) 
@@ -97,7 +97,7 @@
             }
         )
     )
-    (cp/GET "/get-table-inc-data" {params :params}
+    (cp/GET "/data/get/inc" {params :params}
         (info "into get inc data" (js/write-str params))
         (let [r (dba/get-table-inc-data @dbatom 
                     (:dbname params) (:tablename params) (:keynum params)

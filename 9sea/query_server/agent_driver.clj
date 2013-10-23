@@ -29,8 +29,8 @@
     {
         :get-setting "/setting/list"
         :get-schema "/schemas/all"
-        :get-table-inc-data "/get-table-inc-data"
-        :get-table-all-data "/data/get/inc"
+        :get-table-inc-data "/data/get/inc"
+        :get-table-all-data "/data/get/all"
     }
 )
 
