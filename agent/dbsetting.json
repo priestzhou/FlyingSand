@@ -9,8 +9,8 @@
             "dbpassword":"fs123",
             "tables":[
             {"tablename":"acter_statistics_new","hasTimestamp":"false","selcols":"*"},
-            {"tablename":"acter","hasTimestamp":"true","timestampCol":"id","selcols":"*"},
-            {"tablename":"user","hasTimestamp":"true","timestampCol":"id","selcols":"*"}
+            {"tablename":"acter","hasTimestamp":"false","timestampCol":"createtime","selcols":"id,userID,`name`,`class`,`sex`,`level`,money,gift,gold,fastPay,faction,createtime"},
+            {"tablename":"user","hasTimestamp":"true","timestampCol":"dt","selcols":"`id`,`username`,`dt`"}
             ]
         }
     ]
