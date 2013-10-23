@@ -4,6 +4,9 @@
         [argparser.core :as arg]
         [query-server.web-server :as web]
         [query-server.agent-scheduler :as as]
+        [query-server.config :as config]
+        [query-server.core :as hive]
+        [query-server.mysql-connector :as mysql]
     )
     (:gen-class)
 )
@@ -35,6 +38,7 @@
                 (arg/opt :dir 
                     "-d <dir>" "the directory where index.html and its friends are placed")
                 (arg/opt :port "-p <port>" "port")
+                (arg/opt :conf "-conf <config>" "conf")
             ]
         }
         opts (->> args
@@ -43,6 +47,19 @@
             (process arg-spec)
         )
         ]
+        (config/set-config-path (first (:conf opts)))
+        (mysql/set-mysql-db 
+          (config/get-key :mysql-host)
+          (config/get-key :mysql-port)
+          (config/get-key :mysql-db)
+          (config/get-key :mysql-user)
+          (config/get-key :mysql-password)
+        )
+        (hive/set-hive-db
+          (config/get-key :shark-host)
+          (config/get-key :shark-port)
+        )
+        
         (web/start opts)
         (future 
             (as/new-agent-check)

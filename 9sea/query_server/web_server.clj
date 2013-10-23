@@ -10,8 +10,9 @@
         [utilities.shutil :as sh]
         [clj-time.core :as time]
         [query-server.query-backend :as backend]
-        [parser.translator :as trans]
         [utilities.parse :as prs]
+        [query-server.config :as config]
+        [query-server.mysql-connector :as mysql]
         
     )
     (:use
@@ -35,14 +36,6 @@
 
 (defloggers debug info warn error)
 
-(defdb flying-sand 
-   (sqlite3 {:db "flyingsand.db"})
-)
-
-(db/defentity users
-    (db/pk :user_id)
-)
-
 (defn sha1 [^String str]
     (->> str
         (util/str->bytes)
@@ -51,14 +44,15 @@
 )
 
 (defn log-in [email psw]
-    (let [res (db/select users
-            (db/fields :user_id)
-            (db/where {:email email :password (-> psw (sha1) (util/hexdigits))})
+          (prn "password" (-> psw (sha1) (util/hexdigits)))
+    (let [res (db/select mysql/TblUsers
+            (db/fields :UserId)
+            (db/where {:Email email :Password (-> psw (sha1) (util/hexdigits))})
         )
         ]
         (if (empty? res)
             nil
-            (-> res (first) (:user_id))
+            (-> res (first) (:UserId))
         )
     )
 )
@@ -74,14 +68,14 @@
 (defn authenticate [cookies]
     (if-let [user-id (extract-user-id cookies)]
         (let [
-            res (db/select users
-                (db/fields :user_id)
-                (db/where {:user_id user-id})
+            res (db/select mysql/TblUsers
+                (db/fields :UserId)
+                (db/where {:UserId user-id})
             )
             ]
             (if (empty? res)
                 nil
-                (-> res (first) (:user_id))
+                (-> res (first) (:UserId))
             )
         )
     )
@@ -179,13 +173,13 @@
 
 (defn get-account-id
     [user-id]
-    (let [res (db/select users
-            (db/fields :account_id)
-            (db/where {:user_id user-id})
+    (let [res (db/select mysql/TblUsers
+            (db/fields :AccountId)
+            (db/where {:UserId user-id})
     )]
         (if (empty? res)
             nil
-            (-> res (first) (:account_id))
+            (-> res (first) (:AccountId))
         )
     )
 )
@@ -210,11 +204,7 @@
                context (gen-context account-id app version db)
                ]
            (prn "query context" context)
-           (try
-             (let [hive-query (trans/sql-2003->hive context query)]
-               (prn "hive-query:" hive-query)
-
-               (let [qid (backend/submit-query user-id app version db hive-query)]
+               (let [qid (backend/submit-query context user-id query)]
                  (println (str "qid is:" qid))
 
                  {
@@ -227,13 +217,7 @@
 
               )
             )
-          (catch InvalidSyntaxException ex
-            (prn (.getMessage ex))
-            (prn (.getStackTrace ex))
-          )
-        )
       )
-  )
 )
       
 (defn get-result [qid]
@@ -251,14 +235,6 @@
             (if-let [csv-url (get result :url)]
               (do
                 (prn "csv-url" csv-url)
-                (dosync
-                  (let [filename (format "result/%d_%d_result.csv" 
-                                       qid (get result :submit-time))
-                      _ (println "csv filename:" filename)
-                     ]
-                    (alter csv assoc qid filename )
-                  )
-                )
               )
             )
             {
@@ -279,7 +255,7 @@
           ]
       (if (nil? meta-tree) (println "get meta error!")
         (do
-         (println "GET meta" (pr-str {:user_id user-id}))
+         (println "GET meta" (pr-str {:UserId user-id}))
          {
             :status 200
             :headers {"Content-Type" "application/json"}
@@ -297,7 +273,7 @@
     (let [user-id (extract-user-id cookies)
           res (backend/select-saved-queries user-id)
         ]
-        (println (format "GET saved/ %s" (pr-str {:user_id user-id})))
+        (println (format "GET saved/ %s" (pr-str {:UserId user-id})))
         {
             :status 200
             :headers {"Content-Type" "application/json"}
@@ -311,7 +287,7 @@
         user-id (extract-user-id cookies)
         {:keys [name app version db query]} params
         qname name
-        _ (println (format "POST saved/?name=%s&app=%s&version=%s&db=%s&query=%s %s" app version db qname query (pr-str {:user_id user-id})))
+        _ (println (format "POST saved/?name=%s&app=%s&version=%s&db=%s&query=%s %s" app version db qname query (pr-str {:UserId user-id})))
         r-qid (backend/check-query-name qname)
         s-time (unparse (formatters :date-hour-minute-second) (from-long (System/currentTimeMillis)))
         ]
@@ -353,7 +329,7 @@
     (let [
         user-id (extract-user-id cookies)
         id (->> params (:qid) (Long/parseLong))
-        _ (println (format "DELETE saved/%d/ %s" id (pr-str {:user_id user-id})))
+        _ (println (format "DELETE saved/%d/ %s" id (pr-str {:UserId user-id})))
         ]
         (authenticate cookies)
         (try
@@ -387,16 +363,16 @@
     (println (format "GET queries/%d/csv" qid))
     (if-let [r (@csv qid)]
       (do
-      (prn "download csv: " r)
+        (prn "download csv: " r)
         {
             :status 200
             :headers {"Content-Type" "text/csv"}
             :body r
         }
+      )
         {
             :status 404
         }
-      )
     )
 )
 
@@ -419,8 +395,8 @@
 (defn list-queries [cookies]
     (let [
         user-id (extract-user-id cookies)
-        _ (println "GET queries/" (pr-str {:user_id user-id}))
-        res (backend/select-history-queries)
+        _ (println "GET queries/" (pr-str {:UserId user-id}))
+        res (backend/select-history-queries user-id)
         ]
         {
             :status 200
@@ -542,9 +518,9 @@
 (defn authenticate* [cookies]
     (if-let [user-id (extract-user-id cookies)]
         (let [
-            res (db/select users
-                (db/fields :user_id)
-                (db/where {:user_id user-id})
+            res (db/select mysql/TblUsers
+                (db/fields :UserId)
+                (db/where {:UserId user-id})
             )
             ]
             (if (empty? res)
@@ -721,10 +697,6 @@
             (HEAD "/sql/queries/:qid/csv" [qid]
                 (sniff (Long/parseLong qid))
             )
-            (GET "/sql/queries/:qid/csv" [qid]
-                (download (Long/parseLong qid))
-            )
-
 
             (POST "/sql/saved/" {:keys [cookies params]}
                 (add-query params cookies)

@@ -34,7 +34,7 @@
 )
 
 (defn- runsql [sql]
-                (jdbc/with-connection mysql/db
+                (jdbc/with-connection (mysql/get-mysql-db)
                     (jdbc/with-query-results res [sql]
                         (->>
                             res
@@ -45,7 +45,7 @@
 )
 
 (defn- runupdate [sql]
-                (jdbc/with-connection mysql/db
+                (jdbc/with-connection (mysql/get-mysql-db)
                     (jdbc/do-commands sql)
                 )
 )

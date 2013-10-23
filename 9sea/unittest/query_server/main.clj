@@ -9,6 +9,7 @@
         [query-server.query-backend :as qs]
         [query-server.mysql-connector :as mysql]
         [query-server.core :as shark]
+        [query-server.config :as config]
         [clj-time.core]
         [korma.core :as orm]
     )
@@ -16,7 +17,7 @@
 
 (suite "get metaschema"
        (:fact test-get-metastore-tree
-               (let [r (qs/get-metastore-tree 2)]
+               (let [r (qs/get-metastore-tree 4)]
                  r
                )
               :is
@@ -36,6 +37,22 @@
               :is
               nil
        )
+       (:fact test-execute-query
+              (
+               shark/execute-query "select * from tn_df3807a49308ac0d35bc7f87245853226a32411e a
+                                   join tn_df3807a49308ac0d35bc7f87245853226a32411e b on a.id=b.id limit 10"
+              )
+              :is
+              nil
+       )
+
+       (:fact test-config
+              (
+               config/get-key :shark-server-host
+              )
+              :is 
+              "192.168.1.100"
+        )
 
 
 )
