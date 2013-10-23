@@ -28,25 +28,24 @@ env.install(env.compileAndJar('agent.jar', 'agent',
 parser = env.compileAndJar('parser.jar', 'parser',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/argparser.jar'),
+        env.File('$BUILD_DIR/logging.jar'),
     ])
 env.install(env.compileAndJar('parser_unittest.jar', 'parser_unittest', 
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/testing.jar'),
         env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/argparser.jar'),
+        env.File('$BUILD_DIR/logging.jar'),
         parser, 
     ], 
     standalone=True, manifest={'Main-Class': 'parser_unittest.main'}))
-
-env.install(env.compileAndJar('9sea_smoketest.jar', 'smoketest',
-    libs=[env['CLOJURE'], 
-        env.File('$EXTLIB/tools.cli-0.2.2.jar'),
-        env.File('$BUILD_DIR/testing.jar'),
+env.install(env.compileAndJar('sql_parser.jar', 'parser',
+    libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/utilities.jar'),
-        env.File('$BUILD_DIR/monitor.jar'),
-        env.File('$EXTLIB/data.json-0.2.2.jar'),
-        
-    ],
-    standalone=True, manifest={'Main-Class': 'smoketest.main'}))
+        env.File('$BUILD_DIR/argparser.jar'),
+    ], 
+    standalone=True, manifest={'Main-Class': 'parser.main'}))
 
 env.install(env.compileAndJar('query_server.jar', 'query_server',
     libs=[env['CLOJURE'], 
