@@ -158,6 +158,17 @@
     )
 )
 
+(defn- add-record-bycol [table colnames & allcol] 
+    (let [collist (reduce  #(str  %1 "\",\"" %2)  allcol )
+            colstr (str "( \"" collist "\")")
+            sql (str  "insert into " table " (" colnames ") VALUES " colstr ";"
+            )
+            res (runupdate sql)
+        ]
+        res
+    )
+)
+
 (defn check-agent-table [agentid tns]
     (let [sql (str 
                 "select * from TblSchema where namespace = \"" 
@@ -191,7 +202,7 @@
     (when (check-table (:namespace dataset))
         (do 
             (add-record "TblMetaStore"
-                (:namespace dataset) 
+                (:namespace dataset)
                 appname 
                 appversion 
                 (:dbname dataset)
@@ -224,6 +235,10 @@
             )
             _ (println "datalist" datalist)
         ]
+        (add-record-bycol 
+            "TblApplication" "ApplicationName,AccountId" 
+            appname accountid
+        )
         (doall 
             (map (partial create-table agentid appname appversion ) datalist )
         )
