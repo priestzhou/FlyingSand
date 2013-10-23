@@ -34,7 +34,6 @@
 )
 
 (defn- tb [test]
-    (time
     (let [rng (Random.)]
         (doseq [
             _ (range 10000)
@@ -43,7 +42,6 @@
             ]
             (test text key)
         )
-    )
     )
 )
 
