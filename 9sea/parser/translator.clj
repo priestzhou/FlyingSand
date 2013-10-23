@@ -321,6 +321,18 @@
     )
 )
 
+(declare dump-hive:table)
+
+(defn- dump-hive:subtable [dfg]
+    (if (or 
+            (#{:derived-table :cross-join :join :outer-join} (:type dfg))
+            (and (= (:type dfg) :table) (:name dfg))
+        )
+        (format "(%s)" (dump-hive:table dfg))
+        (dump-hive:table dfg)
+    )
+)
+
 (defn- dump-hive:table [dfg]
     (condp contains? (:type dfg)
         #{:derived-table} (let [
@@ -345,8 +357,8 @@
             )
         )
         #{:cross-join :join :outer-join} (let [
-            left (dump-hive:table (:left dfg))
-            right (dump-hive:table (:right dfg))
+            left (dump-hive:subtable (:left dfg))
+            right (dump-hive:subtable (:right dfg))
             join-cond (:on dfg)
             join-str (case (:type dfg)
                 :cross-join "CROSS JOIN"
@@ -361,8 +373,8 @@
             )
             ]
             (if-not join-cond
-                (format "(%s) %s (%s)" left join-str right)
-                (format "(%s) %s (%s) ON %s" left join-str right 
+                (format "%s %s %s" left join-str right)
+                (format "%s %s %s ON %s" left join-str right 
                     (dump-hive:value-subexpr join-cond)
                 )
             )

@@ -209,6 +209,11 @@
         "SELECT * FROM (hivetbl t1) JOIN (hivetbl t2)"
     )
     (:fact to-hive:inner-join:on
+        (trans/sql-2003->hive context "SELECT * FROM tbl JOIN tbl1 ON tbl.col=tbl1.col")
+        :is
+        "SELECT * FROM hivetbl JOIN hivetbl1 ON (hivetbl.col = hivetbl1.col)"
+    )
+    (:fact to-hive:inner-join:on:rename
         (trans/sql-2003->hive context "SELECT * FROM (tbl t1) JOIN (tbl t2) ON t1.col=t2.col")
         :is
         "SELECT * FROM (hivetbl t1) JOIN (hivetbl t2) ON (t1.col = t2.col)"
