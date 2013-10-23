@@ -197,6 +197,7 @@
 (defn add-children 
 ; return a vector of children based on group-set items
   [group-set raw-data]
+  (prn "raw-data" raw-data)
   (if (empty? group-set)
     ; deal with table
     (do
@@ -219,7 +220,7 @@
 (defn make-app-tree
   [app-name ver-db-tables]
   (debug "app-name: " app-name "ver-db-tables:" ver-db-tables)
-  (let [group-vec [:AppVersion :DBName]
+  (let [group-vec [:AppVersion]
         app-tree {:type "namespace" :name app-name}
         group-data (group-by :AppName ver-db-tables)
         ]

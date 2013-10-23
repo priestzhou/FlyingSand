@@ -60,7 +60,6 @@
           (config/get-key :shark-port)
         )
         
-        (web/start opts)
         (future 
             (as/new-agent-check)
         )

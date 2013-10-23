@@ -229,6 +229,7 @@
   [q-id query-str]
   (try
    (debug (str "run-shark-query:" q-id))
+    (prn (str "query-str:" query-str))
   ( sql/with-connection (get-hive-db)
     (sql/with-query-results rs [query-str]
       (doall rs)

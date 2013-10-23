@@ -186,10 +186,11 @@
 
 (defn gen-context
   [account-id app version db]
+  (prn "app:" app "version:" version "db:" db)
 
   (let [meta-info (backend/get-metastore-tree account-id)]
     
-    {:ns meta-info :default-ns ["appname" "appversion" "test"]}
+    {:ns meta-info :default-ns [app version]}
   )
 )
 
