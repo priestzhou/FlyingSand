@@ -9,6 +9,7 @@
         [argparser.core :as arg]
         [hdfs.core :as hc]
         [query-server.mysql-connector :as mysql]
+        [utilities.aes :as aes]
     )
     (:gen-class)
 )
@@ -94,7 +95,7 @@
 )
 
 (defn- check-table [tns]
-    (let [sql (str "select * from TblMetaStore where namespace = '" tns "'")
+    (let [sql (str "select * from TblMetaStore where namespace = \"" tns "\"")
             res (runsql sql)
             rcount (count   res)
         ]
@@ -106,11 +107,21 @@
     )
 )
 
+(defn- get-decrypt-body [res]
+    (let [body (:body res)
+            detxt (aes/decrypt body "fs_agent_enrypt_key_1")
+        ]
+        detxt
+    )
+)
+
 (defn- httpget 
     ([agenturl op params]
+        (println  "httpget" (str agenturl (op urlmap) params))
         @(client/get (str agenturl (op urlmap) params))
     )
     ([agenturl op]
+        (println  "httpget" (str agenturl (op urlmap) ))
         @(client/get (str agenturl (op urlmap) ))
     )
 )
@@ -137,8 +148,8 @@
 )
 
 (defn- add-record [table & allcol] 
-    (let [collist (reduce  #(str  %1 "','" %2)  allcol )
-            colstr (str "('" collist "')")
+    (let [collist (reduce  #(str  %1 "\",\"" %2)  allcol )
+            colstr (str "( \"" collist "\")")
             sql (str  "insert into " table " VALUES " colstr ";"
             )
             res (runupdate sql)
@@ -149,8 +160,8 @@
 
 (defn check-agent-table [agentid tns]
     (let [sql (str 
-                "select * from TblSchema where namespace = '" 
-                tns "' and agentid ='" agentid "'"
+                "select * from TblSchema where namespace = \"" 
+                tns "\" and agentid ='" agentid "'"
             )
             res (runsql sql)
             rcount (count   res)
@@ -164,6 +175,7 @@
 )
 
 (defn create-table [agentid appname appversion dataset]
+    (println agentid "-" appname "-" appversion "-" dataset)
     (when (check-agent-table agentid (:namespace dataset))
         (add-record "TblSchema"
             (:namespace dataset)
@@ -192,15 +204,16 @@
 )
 
 (defn new-agent [agentid, agentname,agenturl,accountid]
+    (println "new-agent" agentid "-" agentname "-" agenturl "-" accountid)
     (let [setting (js/read-str 
-                (:body (httpget agenturl :get-setting))
+                (get-decrypt-body (httpget agenturl :get-setting))
                 :key-fn keyword
             )
             hashcode (:hashcode setting)
             appname (:app setting)
             appversion (:appversion setting)
             schema (js/read-str 
-                    (:body (httpget agenturl :get-schema)) 
+                    (get-decrypt-body (httpget agenturl :get-schema)) 
                     :key-fn keyword
                 )
             datalist (flatten 
@@ -209,8 +222,11 @@
                     schema 
                 )
             )
+            _ (println "datalist" datalist)
         ]
-        (map (partial create-table agentid appname appversion ) datalist )
+        (doall 
+            (map (partial create-table agentid appname appversion ) datalist )
+        )
     )
 )
 
@@ -265,6 +281,7 @@
 )
 
 (defn- get-inc-data [agentid agenturl tableinfo]
+    (println agentid "-" agenturl "-" tableinfo)
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -277,7 +294,7 @@
                         "&keynum=" position
                     )
                 )
-            resList (get (js/read-str (:body res)) "data")
+            resList (get (js/read-str (get-decrypt-body res)) "data")
             hiveName (:hive_name tableinfo)
             tskey (:timestampkey tableinfo)
             filterList (inc-data-filter resList tskey)
@@ -311,6 +328,7 @@
 )
 
 (defn- get-all-data [agentid agenturl tableinfo]
+    (println agentid "-" agenturl "-" tableinfo)
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -322,7 +340,7 @@
                         "&tablename=" tablename 
                     )
                 )
-            resList (get (js/read-str (:body res)) "data")
+            resList (get (js/read-str (get-decrypt-body res)) "data")
             hiveName (:hive_name tableinfo)
             
         ]
@@ -337,6 +355,7 @@
 )
 
 (defn- get-table-data-both [agentid agenturl tableinfo]
+    (println "both=" agentid "-" agenturl "-" tableinfo)
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
         (get-all-data agentid,agenturl tableinfo)
@@ -344,28 +363,37 @@
 )
 
 (defn- get-table-data-inc [agentid agenturl tableinfo]
+    (println "inc=" agentid "-" agenturl "-" tableinfo)
     (when (:hastimestamp tableinfo)
         (get-inc-data agentid,agenturl tableinfo)
     )
 )
 
 (defn- get-table-data-all [agentid agenturl tableinfo]
+    (println "all=" agentid "-" agenturl "-" tableinfo)
     (when (not (:hastimestamp tableinfo))
         (get-all-data agentid,agenturl tableinfo)
     )
 )
 
 (defn get-agent-data [agentid agenturl type]
+    (println "get-agent-data=" agentid "-" agenturl "-" type)    
     (let [tablelist (query-agent-schema agentid)]
-        (when (= type "both")
-            (map (partial get-table-data-both agentid, agenturl) tablelist)
-        )
-        (when (= type "inc")
-            (map (partial get-table-data-inc agentid, agenturl) tablelist)
-        )
-        (when (= type "all")
-            (map (partial get-table-data-all agentid, agenturl) tablelist)
-        )        
+            (when (= type "both")
+                (doall
+                    (map (partial get-table-data-both agentid, agenturl) tablelist)
+                )
+            )
+            (when (= type "inc")
+                (doall
+                    (map (partial get-table-data-inc agentid, agenturl) tablelist)
+                )
+            )
+            (when (= type "all")
+                (doall
+                    (map (partial get-table-data-all agentid, agenturl) tablelist)
+                )
+            )        
     )
 )
 

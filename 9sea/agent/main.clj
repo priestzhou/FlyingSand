@@ -13,7 +13,8 @@
         [clojure.data.json :as js]
         [agent.dbadapt :as dba]
         [agent.mysqladapt :as mysql]
-        [monitor.tools :as tool] 
+        [monitor.tools :as tool]
+        [utilities.aes :as aes] 
     )
     (:gen-class)
 )
@@ -32,8 +33,17 @@
     )
 )
 
+(defn- encryptWrt [s]
+    (let [txt (js/write-str s)
+            etxt (aes/encrypt txt "fs_agent_enrypt_key_1")
+        ]
+        etxt
+    )
+)
+
 (cp/defroutes app-routes
     (cp/GET "/get-setting" {params :params} 
+        (info "get-setting")
         (if (map? @dbatom)
             (let [h (hash @dbatom )]
                 {:status 202
@@ -41,7 +51,7 @@
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json"
                     }
-                    :body (js/write-str (set-parse @dbatom h) )
+                    :body (encryptWrt (set-parse @dbatom h) )
                 }
             )
             {:status 503
@@ -49,7 +59,7 @@
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json"
                     }
-                :body (js/write-str 
+                :body (encryptWrt 
                         {
                             :errCode 1001
                             :errStr @dbatom
@@ -59,48 +69,48 @@
         )
     )
     (cp/GET "/get-schemas" {params :params}
-        (info "into get schemas" params)
+        (info "into get schemas" )
         (let [r (dba/get-schemas @dbatom)]
-            (debug "schemas result" r)
+            (debug "schemas result" (js/write-str r))
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
                     "Content-Type" "application/json"
                 }
-                :body (js/write-str r)
+                :body (encryptWrt r)
             }
         )
     )
     (cp/GET "/get-table-all-data" {params :params}
-        (info "into get all data" params)
+        (info "into get all data" (js/write-str params))
         (let [r (dba/get-table-all-data @dbatom 
                      (:dbname params) (:tablename params) 
                 )
             ]
-            (debug "all data result" r)
+            (debug "all data result" (js/write-str r))
             {:status 202
                 :headers {
                     "Access-Control-Allow-Origin" "*"
                     "Content-Type" "application/json ; charset=UTF-8"
                 }
-                :body (js/write-str r)
+                :body (encryptWrt r)
             }
         )
     )
     (cp/GET "/get-table-inc-data" {params :params}
-        (info "into get inc data" params)
+        (info "into get inc data" (js/write-str params))
         (let [r (dba/get-table-inc-data @dbatom 
                     (:dbname params) (:tablename params) (:keynum params)
                 )
             ]
             ;(println r)
-            (debug "all inc result" r)
+            (debug "all inc result" (js/write-str r) )
                 {:status 202
                     :headers {
                         "Access-Control-Allow-Origin" "*"
                         "Content-Type" "application/json ; charset=UTF-8"
                     }
-                    :body (js/write-str r )
+                    :body (encryptWrt r )
                 }  
         )
     )    
