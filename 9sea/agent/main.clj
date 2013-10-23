@@ -16,6 +16,9 @@
         [monitor.tools :as tool]
         [utilities.aes :as aes] 
     )
+    (:import
+        [java.io StringWriter PrintWriter]
+    )
     (:gen-class)
 )
 
@@ -157,22 +160,26 @@
             (System/exit 0)            
         )
         (try 
-            (let [dbsetting (->>
+            (let [dbsetting (->
                             opts-with-default
                             :dbsetting
                             first
                             slurp
-                            (#(js/read-str % :key-fn keyword))
+                            (js/read-str % :key-fn keyword)
                     )
                 ]
                 (reset! dbatom dbsetting)
             )
             (catch Exception e
-                (error e)
-                (error (.printStackTrace e) )
-                (reset! dbatom 
-                    (str  e) 
+                (let [
+                    sw (StringWriter.)
+                    ]
+                    (with-open [wr (PrintWriter. sw)]
+                        (.printStackTrace e wr)
+                    )
+                    (error sw)
                 )
+                (System/exit 1)
             )
         )
         (rj/run-jetty #'app 
