@@ -2,12 +2,13 @@
 (:require 
   [clojure.java.jdbc :as jdbc]
   [korma.core :as orm ]
-  [query-server.conf :as conf]
+  [query-server.config :as config]
   [clojure.java.io :as io]
   [query-server.core :as shark]
   [clojure.data.json :as json]
   [clj-time.core :as time]
   [query-server.mysql-connector :as mysql]
+  [query-server.hive-adapt :as hive]
   )
 (:use 
   [korma.db]
@@ -37,7 +38,7 @@
 (defn check-query-ownership
   [qid user-id]
   (let [res (orm/select mysql/TblSavedQuery (orm/fields :QueryId) 
-            (orm/where {:QueryId qid :CreateUserId user-id}))
+            (orm/where {:QueryId qid :CreatedUserId user-id}))
        ]
   (if (empty? res)
     nil
@@ -57,7 +58,7 @@
  ;   )
   ;   mysq/TblHistoryQuery
   (let [sql-str (str " update TblHistoryQuery set ExecutionStatus=" (mysql/status-convert stat)" where QueryId="query-id)]
-   (orm/exec-raw mysql/korma-db sql-str)
+   (orm/exec-raw (mysql/get-korma-db) sql-str)
   )
 )
 
@@ -72,22 +73,31 @@
                         q-id
                 )] 
     (prn "update-history-query" sql-str)
-    (orm/exec-raw mysql/korma-db sql-str)
+    (orm/exec-raw (mysql/get-korma-db) sql-str)
   )
 )
 
 (defn select-saved-queries
   [user-id]
   (
-   orm/select mysql/TblSavedQuery (orm/fields :QueryId :QueryName :AppName :AppVersion :DBName :QueryString)
-    (orm/where {:CreateUserId user-id})
+   orm/exec-raw (mysql/get-korma-db)
+                 ["select QueryId as id,QueryName as name,AppName as app,AppVersion as version,
+                  DBName as db,QueryString as query from TblSavedQuery where CreatedUserId=? 
+                  order by SubmitTime desc" [user-id]] :results
   )
 )
 
 (defn select-history-queries
   [user-id]
+  (let [rs (orm/exec-raw (mysql/get-korma-db) [
+                          "select QueryId as id,QueryString as query,ExecutionStatus as status,
+                          date_format(SubmitTime,'%Y-%m-%d %H:%i:%s') as submit_time,Url as url,
+                          Duration as duration from TblHistoryQuery where SubmitUserId=? 
+                          order by SubmitTime desc" [user-id]] :results)
+       ]
+    rs
+    )
 )
-
 
 (defn save-query
   [query-name app-name app-ver db query-str submit-time user-id]
@@ -124,7 +134,7 @@
   (let [app (orm/select mysql/TblApplication
           (orm/where {:AccountId account-id}))]
     (if (empty? app)
-      (println "application not found!"
+      (warn "application not found!"
       nil)
       (-> app )
         )
@@ -139,7 +149,7 @@
 )
 
 (defn submit-query
-  [user-id app-name app-version db-name query-str]
+  [context user-id query-str]
     ;if-let [app-id (if-let [app (get-application account-id app-name)] (:application_id))]
     ;TODO we should replace table name with hive-table-name, 
     ; it is included: parse hql to AST, replace TOK_TABNAME, then rewrite back to hql
@@ -150,8 +160,8 @@
          ; query-id (hash start-time)]
           query-id (log-query query-str user-id submit-date)
          ]
-      (println (format "queryid: %s start-time: %s" query-id submit-date))
-      (shark/submit-query query-id query-str update-history-query)
+      (debug (format "queryid: %s start-time: %s" query-id submit-date))
+      (shark/submit-query context query-id query-str)
       (-> query-id)
     )
 )
@@ -184,40 +194,13 @@
     )
 )
 
-(defn transform-cols
-  [raw-result]
-
-  (let [
-      ;  map-result (apply hash-map raw-result)
-       res (map #(rename-keys % {:col_name :name :data_type :type}) raw-result)
-    ;    r (rename-keys map-result {:col_name :name :data_type :type})
-       ]
-    res
-  )
-)
-
-(defn get-table-schema
-  [schema]
-  (let [hive-table (get schema :hive_name)
-        table-name (get schema :TableName)
-        cols (transform-cols (get-hive-cols hive-table))]
-    (prn "table column" cols)
-    {
-     :type "table"
-     :name table-name
-     :hive-name hive-table
-     :children (into [] cols)
-    }
-  )
-)
-
 (defn add-children 
 ; return a vector of children based on group-set items
   [group-set raw-data]
   (if (empty? group-set)
     ; deal with table
     (do
-    (vec (map #(-> % (get-table-schema)) (nth (vals raw-data) 0))) 
+     (vec (map #(-> % (hive/get-table-schema)) (nth (vals raw-data) 0))) 
       )
 
   (let [group-key (first group-set)
@@ -243,7 +226,6 @@
    (let [children (add-children group-vec group-data) 
      app-tree2 (assoc app-tree :children children)]
      
-   (info "app-tree" app-tree2)
     app-tree2
   ))
 )
@@ -256,7 +238,8 @@
       nil
       res
     )
-))
+  )
+)
 
 (defn app-mapper
   [app]

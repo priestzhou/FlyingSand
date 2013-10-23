@@ -84,8 +84,6 @@ env.install(env.compileAndJar('query_server.jar', 'query_server',
         env.File('$EXTLIB/hadoop-hdfs-2.0.0-cdh4.3.0.jar'),
         env.File('$EXTLIB/sqlite-jdbc-3.8.0-20130827.035027-1.jar'),
         env.File('$EXTLIB/clojure-contrib-1.2.0.jar'),
-	env.File('$EXTLIB/java.jdbc-0.3.0-alpha5.jar'),
-        env.File('$EXTLIB/mysql-connector-java-5.1.26-bin.jar'),
     ],
     install={},
     standalone=True, manifest={'Main-Class': 'query_server.main'}))
@@ -106,6 +104,7 @@ env.install(env.compileAndJar('9sea_unittest.jar', 'unittest',
         env.File('$EXTLIB/lib-for-shark/hive-jdbc-0.9.0.jar'),
         env.File('$EXTLIB/ring-1.1.8.jar'),
         env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
+        env.File('$EXTLIB/java.jdbc-0.3.0-alpha5.jar'),
         ],
 
     standalone=True, manifest={'Main-Class': 'unittest.main'}))

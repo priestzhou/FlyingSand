@@ -3,6 +3,9 @@
         [clojure.string :as cs]
         [query-server.core :as qc]
     )
+    (:use
+        [clojure.set]
+    )
 )
 
 (def ^:private mysql-hive-type-map 
@@ -121,4 +124,40 @@
         (map #(get inmap % ))
         (reduce #(str %1 "\1" %2) )
     )
+)
+
+(defn transform-cols
+  [raw-result]
+
+  (let [
+      ;  map-result (apply hash-map raw-result)
+       res (map #(rename-keys % {:col_name :name :data_type :type}) raw-result)
+    ;    r (rename-keys map-result {:col_name :name :data_type :type})
+       ]
+    res
+  )
+)
+
+(defn get-hive-cols [tn]
+    (let [mainSql (str "DESCRIBE " tn )
+            res (qc/run-shark-query' "" mainSql)
+        ]
+      (prn "get-hive-cols" res)
+      (map #(select-keys % [:col_name :data_type]) res)
+    )
+)
+
+(defn get-table-schema
+  [schema]
+  (let [hive-table (get schema :hive_name)
+        table-name (get schema :TableName)
+        cols (transform-cols (get-hive-cols hive-table))]
+    (prn "table column" cols)
+    {
+     :type "table"
+     :name table-name
+     :hive-name hive-table
+     :children (into [] cols)
+    }
+  )
 )
