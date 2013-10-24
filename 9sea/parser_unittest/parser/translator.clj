@@ -15,28 +15,34 @@
 (def context {
     :ns [{
         :type "namespace"
-        :name "com"
+        :name "app"
         :children [{
             :type "namespace"
-            :name "app"
+            :name "ver"
             :children [{
-                :type "namespace"
-                :name "ver"
-                :children [{
-                    :type "table"
-                    :name "tbl"
-                    :hive-name "hivetbl"
-                    :children [
-                        {
-                            :name "col"
-                            :type "varchar(255)"
-                        }
-                    ]
-                }]
+                :type "table"
+                :name "tbl"
+                :hive-name "hivetbl"
+                :children [
+                    {
+                        :name "col"
+                        :type "varchar(255)"
+                    }
+                ]
+            } {
+                :type "table"
+                :name "tbl1"
+                :hive-name "hivetbl1"
+                :children [
+                    {
+                        :name "col"
+                        :type "varchar(255)"
+                    }
+                ]
             }]
         }]
     }]
-    :default-ns ["com" "app" "ver"]
+    :default-ns ["app" "ver"]
 })
 
 (suite "quoted"
@@ -75,12 +81,18 @@
         "hivetbl"
     )
     (:fact normalize-table:absolute
-        (->> ["com" "app" "ver" "tbl"]
+        (->> ["app" "ver" "tbl"]
             (trans/normalize-table context)
             (:hive-name)
         )
         :is
         "hivetbl"
+    )
+    (:fact normalize-table:ns
+        (fn []
+            (trans/normalize-table context ["ver"])
+        )
+        :throws InvalidSyntaxException
     )
     (:fact normalize-table:unmatch
         (fn []
@@ -197,6 +209,11 @@
         "SELECT * FROM (hivetbl t1) JOIN (hivetbl t2)"
     )
     (:fact to-hive:inner-join:on
+        (trans/sql-2003->hive context "SELECT * FROM tbl JOIN tbl1 ON tbl.col=tbl1.col")
+        :is
+        "SELECT * FROM hivetbl JOIN hivetbl1 ON (hivetbl.col = hivetbl1.col)"
+    )
+    (:fact to-hive:inner-join:on:rename
         (trans/sql-2003->hive context "SELECT * FROM (tbl t1) JOIN (tbl t2) ON t1.col=t2.col")
         :is
         "SELECT * FROM (hivetbl t1) JOIN (hivetbl t2) ON (t1.col = t2.col)"
