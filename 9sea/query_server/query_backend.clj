@@ -101,9 +101,7 @@
 
 (defn save-query
   [query-name app-name app-ver db query-str submit-time user-id]
-  (
-   info (format "save query: name %s; string %s;submit-time %s; user-id %s" query-name query-str submit-time user-id)
-   )
+  (info "save-query" :query-name query-name :submit-time submit-time :user-id user-id)
   	   (orm/insert mysql/TblSavedQuery
               (orm/values [{:QueryName query-name 
 			    :AppName app-name
@@ -134,8 +132,7 @@
   (let [app (orm/select mysql/TblApplication
           (orm/where {:AccountId account-id}))]
     (if (empty? app)
-      (warn "application not found!"
-      nil)
+      (warn "application not found!")
       (-> app )
         )
       )
@@ -160,7 +157,7 @@
          ; query-id (hash start-time)]
           query-id (log-query query-str user-id submit-date)
          ]
-      (debug (format "queryid: %s start-time: %s" query-id submit-date))
+      (debug "submit-query" :queryid query-id :start-time submit-date)
       (shark/submit-query context query-id query-str)
       (-> query-id)
     )
@@ -219,7 +216,7 @@
 
 (defn make-app-tree
   [app-name ver-db-tables]
-  (debug "app-name: " app-name "ver-db-tables:" ver-db-tables)
+  (debug "make-app-tree" :app-name app-name :ver-db-tables ver-db-tables)
   (let [group-vec [:AppVersion]
         app-tree {:type "namespace" :name app-name}
         group-data (group-by :AppName ver-db-tables)
@@ -247,7 +244,7 @@
   (let [app-name (get app :ApplicationName)
         tree (make-app-tree app-name (select-meta app-name))
         ]
-    (debug "app-tree is " tree)
+    ; (debug "app-tree" :tree tree)
     tree
   )
 )
