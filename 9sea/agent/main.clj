@@ -162,7 +162,7 @@
                             :dbsetting
                             first
                             slurp
-                            (js/read-str % :key-fn keyword)
+                            (js/read-str :key-fn keyword)
                     )
                 ]
                 (reset! dbatom dbsetting)
