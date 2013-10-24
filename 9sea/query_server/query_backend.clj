@@ -93,7 +93,7 @@
                           "select QueryId as id,QueryString as query,ExecutionStatus as status,
                           date_format(SubmitTime,'%Y-%m-%d %H:%i:%s') as submit_time,Url as url,
                           Duration as duration from TblHistoryQuery where SubmitUserId=? 
-                          order by SubmitTime desc" [user-id]] :results)
+                          order by SubmitTime desc limit 20" [user-id]] :results)
        ]
     rs
     )
@@ -108,10 +108,10 @@
               (orm/values [{:QueryName query-name 
 			    :AppName app-name
 			    :AppVersion app-ver
-			    :DBName db
+			  ;  :DBName db
 			    :QueryString query-str 
 			    :SubmitTime submit-time 
-			    :CreateUserId user-id}]))
+			    :CreatedUserId user-id}]))
 )
 
 (defn log-query
