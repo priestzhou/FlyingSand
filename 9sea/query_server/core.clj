@@ -141,7 +141,7 @@
 
 (defn update-history-query
   [q-id stats error url end-time duration]
-  (let [sql-str (format "update TblHistoryQuery set ExecutionStatus=%d, Error=%s, Url=\"%s\", EndTime=\"%s\", Duration=%d where QueryId=%d"
+  (let [sql-str (format "update TblHistoryQuery set ExecutionStatus=%d, Error=\"%s\", Url=\"%s\", EndTime=\"%s\", Duration=%d where QueryId=%d"
                         (mysql/status-convert stats)
                         error
                         url
@@ -232,7 +232,7 @@
   (catch Exception exception
    (.printStackTrace exception)
     ; we should seperate exception
-  ;  (update-result-map q-id "Failed" nil exception)
+    (update-result-map q-id "failed" nil exception)
     ))
 )
 
