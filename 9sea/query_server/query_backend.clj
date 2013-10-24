@@ -85,6 +85,7 @@
                  ["select QueryId as id,QueryName as name,AppName as app,AppVersion as version,
                   DBName as db,QueryString as query from TblSavedQuery where CreatedUserId=? 
                   order by SubmitTime desc" [user-id]] :results
+
   )
 )
 
@@ -96,7 +97,6 @@
                           Duration as duration from TblHistoryQuery where SubmitUserId=? 
                           order by SubmitTime desc limit 20" [user-id]] :results)
        ]
-    rs
     )
 )
 
