@@ -1,6 +1,7 @@
 (ns agent.mysqladapt
     (:use 
         [logging.core :only [defloggers]]
+        [agent.util :only (except->str)]
     )      
     (:require
         [clojure.java.jdbc :as jdbc]
@@ -36,8 +37,7 @@
                 )
             )
             (catch SQLException e
-                (error e)
-                (error (.printStackTrace e) )
+                (error (except->str e))
             )
         )
     )
@@ -57,8 +57,7 @@
                 )
             )
             (catch SQLException e
-                (error e)
-                (error (.printStackTrace e) )
+                (error (except->str e))
             )
         )
     )
@@ -78,8 +77,7 @@
                 )
             )
             (catch SQLException e
-                (error e)
-                (error (.printStackTrace e) )
+                (error (except->str e))
             )
         )        
     )
@@ -104,8 +102,7 @@
                 )
             )
             (catch SQLException e
-                (error e)
-                (error (.printStackTrace e) )
+                (error (except->str e))
             )
         )        
     )
