@@ -97,6 +97,12 @@
                           Duration as duration from TblHistoryQuery where SubmitUserId=? 
                           order by SubmitTime desc limit 20" [user-id]] :results)
        ]
+       (for [
+        x rs
+        :let [i (:status x)]
+        ]
+        (assoc x :status (get mysql/query-status i))
+       )
     )
 )
 
