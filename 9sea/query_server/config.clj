@@ -25,8 +25,7 @@
       )
     )
   (catch Exception e
-    (error "read configuration failed!")
-    (error (.getMessage e))
+    (error "read configuration failed!" :error-msg (.getMessage e))
   )
   )
 )

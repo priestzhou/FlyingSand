@@ -154,7 +154,7 @@
                         duration
                         q-id
                 )]
-    (debug "update-history-query" sql-str)
+    (debug "update-history-query" :sql-str sql-str)
     (run-sql-query (mysql/get-mysql-db) sql-str)
    ; (orm/exec-raw mysql/korma-db sql-str)
   )
@@ -178,8 +178,7 @@
 
 (defn update-result-map
   [q-id stats ret-result error-message csv-url ]
-  (debug "update status:" q-id stats)
-  (debug "error:" error-message)
+  (debug "update status" :qid q-id :stats stats :error error-message)
   (let [start-time (:submit-time (@result-map q-id))
         cur-time (System/currentTimeMillis)
         duration (if (nil? start-time) 0 (- cur-time start-time))
@@ -228,7 +227,7 @@
 (defn run-shark-query'
   [q-id query-str]
   (try
-   (debug (str "run-shark-query:" q-id))
+   (debug "run-shark-query" :qid q-id)
     (prn (str "query-str:" query-str))
   ( sql/with-connection (get-hive-db)
     (sql/with-query-results rs [query-str]
@@ -244,9 +243,8 @@
 (defn run-shark-query
   [context q-id query-str]
   (try
-   (debug (str "run-shark-query:" q-id))
+   (debug "run-shark-query" :qid q-id)
     (let [hive-query (trans/sql-2003->hive context query-str)
-          _ (info "hive-query-string" hive-query)
           ret-rs (execute-query hive-query)]
       (process-query q-id ret-rs)
     )
@@ -262,7 +260,7 @@
   [context q-id query-str]
  ;; {:pre [not (str/blank? query-str)]}
   ;; TODO add query syntax check, only allow select clause
-  (debug (str q-id ":" query-str))
+  (debug "submit-query" :qid q-id :query query-str)
   (update-result-map q-id "running" {} nil nil)
   (future (run-shark-query context q-id query-str))
 )
