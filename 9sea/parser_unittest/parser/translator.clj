@@ -223,7 +223,7 @@
             "SELECT * FROM (tbl t1) JOIN (tbl t2) ON t1.col=t2.col JOIN (tbl t3) ON t3.col=t2.col"
         )
         :is
-        "SELECT * FROM ((hivetbl t1) JOIN (hivetbl t2) ON (t1.col = t2.col)) JOIN (hivetbl t3) ON (t3.col = t2.col)"
+        "SELECT * FROM (hivetbl t1) JOIN (hivetbl t2) ON (t1.col = t2.col) JOIN (hivetbl t3) ON (t3.col = t2.col)"
     )
     (:fact to-hive:outer-join:left
         (trans/sql-2003->hive context 
