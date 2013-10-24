@@ -16,6 +16,7 @@
         )
         (ad/get-agent-data 
             (:id agentMap)
+            (:agentname agentMap) 
             (:agenturl agentMap)
             "both"
         )
@@ -53,6 +54,7 @@
         (doall (map  
             #(ad/get-agent-data 
                 (:id %)
+                (:agentname %) 
                 (:agenturl %)
                 "inc"
             )
@@ -69,6 +71,7 @@
         (doall (map  
             #(ad/get-agent-data 
                 (:id %)
+                (:agentname %) 
                 (:agenturl %)
                 "all"
             )
