@@ -10,6 +10,7 @@
         [query-server.mysql-connector :as mysql]
         [query-server.core :as shark]
         [query-server.config :as config]
+        [query-server.web-server :as web]
         [clj-time.core]
         [korma.core :as orm]
     )
@@ -52,9 +53,7 @@
               )
               :is 
               "192.168.1.100"
-        )
-
-
+       )
 )
 
 (defdb korma-db (mysql {:host "192.168.1.101" :port 3306 :db "meta" :user "root" :password "fs123"}))

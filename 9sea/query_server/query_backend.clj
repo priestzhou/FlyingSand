@@ -68,7 +68,8 @@
                         (mysql/status-convert stats) 
                         error 
                         url
-                        (unparse (formatters :date-hour-minute-second) (from-long end-time))
+                        (unparse (with-zone (formatters :date-hour-minute-second)(time/time-zone-for-offset +8))
+                                   (from-long end-time))
                         duration
                         q-id
                 )] 
@@ -129,14 +130,17 @@
   
 (defn get-application
   [account-id]
-  (let [app (orm/select mysql/TblApplication
-          (orm/where {:AccountId account-id}))]
+  (let [account-prefix (str account-id ".%")
+        app (orm/select mysql/TblMetaStore
+           (orm/fields [:AppName])
+           (orm/modifier "DISTINCT")
+          (orm/where {:NameSpace [like account-prefix]}))]
     (if (empty? app)
       (warn "application not found!")
       (-> app )
         )
       )
-    )
+)
 
 (defn get-query-result
   [query-id]
@@ -153,7 +157,9 @@
     
     ;insert into history query
     (let [submit-time (System/currentTimeMillis)
-          submit-date (unparse (formatters :date-hour-minute-second) (from-long submit-time))
+          submit-date (unparse (with-zone (formatters :date-hour-minute-second) 
+                                 (time/time-zone-for-offset +8))
+                                 (from-long submit-time))
          ; query-id (hash start-time)]
           query-id (log-query query-str user-id submit-date)
          ]
@@ -241,7 +247,7 @@
 
 (defn app-mapper
   [app]
-  (let [app-name (get app :ApplicationName)
+  (let [app-name (get app :AppName)
         tree (make-app-tree app-name (select-meta app-name))
         ]
     ; (debug "app-tree" :tree tree)

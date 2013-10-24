@@ -12,6 +12,7 @@
   )
 (:import [com.mchange.v2.c3p0 ComboPooledDataSource DataSources PooledDataSource]
          [java.io IOException]
+         [java.io File]
          [java.net URI]
          [java.sql BatchUpdateException DriverManager
                PreparedStatement ResultSet SQLException Statement Types]
@@ -131,7 +132,8 @@
       (doseq [value values]
         (.write wrtr (format "%s\n" value))
       )
-      (sh (str "touch " done-file))
+;      (sh (str "touch " done-file))
+      (.createNewFile (new File done-file))
     (catch IOException e
       (error (.getMessage e))
       (error (.getStackTrace e))
@@ -150,7 +152,8 @@
                         (mysql/status-convert stats)
                         error
                         url
-                        (unparse (formatters :date-hour-minute-second) (from-long end-time))
+                        (unparse (with-zone (formatters :date-hour-minute-second) 
+                                  (time/time-zone-for-offset +8))(from-long end-time))
                         duration
                         q-id
                 )]
