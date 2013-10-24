@@ -235,9 +235,14 @@
             )
             _ (println "datalist" datalist)
         ]
-        (add-record-bycol 
-            "TblApplication" "ApplicationName,AccountId" 
-            appname accountid
+        (try 
+            (add-record-bycol 
+                "TblApplication" "ApplicationName,AccountId" 
+                appname accountid
+            )
+            (catch Exception e
+                (println e)
+            )
         )
         (doall 
             (map (partial create-table agentid appname appversion ) datalist )
