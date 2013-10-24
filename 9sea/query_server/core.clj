@@ -124,13 +124,13 @@
   [result-set filename]
   (let [titles (:titles result-set)
         values (:values result-set)
+        done-file (str filename ".done")
        ]
     (try
       (with-open [wrtr (io/writer filename)]
         (csv/write-csv wrtr (cons titles values))
       )
-;      (sh (str "touch " done-file))
-      (.createNewFile (new File done-file))
+      (spit done-file "")
     (catch IOException e
       (error (.getMessage e))
       (error (.getStackTrace e))
