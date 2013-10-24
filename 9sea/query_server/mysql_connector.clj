@@ -27,7 +27,7 @@
 
 (defloggers debug info warn error)
 
-(def query-status ["submitted" "running" "successed" "failed"])
+(def query-status ["running" "succeeded" "failed"])
 
 (defn status-convert
      [stat]
