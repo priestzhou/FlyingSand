@@ -247,7 +247,7 @@
   (let [app-name (get app :ApplicationName)
         tree (make-app-tree app-name (select-meta app-name))
         ]
-    (debug "app-tree is " tree)
+;    (debug "app-tree is " tree)
     tree
   )
 )
