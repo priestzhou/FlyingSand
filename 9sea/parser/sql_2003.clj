@@ -433,32 +433,47 @@
     )
 )
 
-(defn- one-escapable-char []
+(defn- one-escapable-char [ch]
     (prs/choice
-        (prs/chain (prs/expect-char \') (prs/expect-char \'))
-        (prs/expect-char-if #(and (not= % :eof) (not= % \')))
+        (prs/chain (prs/expect-char ch) (prs/expect-char ch))
+        (prs/expect-char-if #(and (not= % :eof) (not= % ch)))
     )
 )
 
 (defliteral national-string-literal :national-string-literal
     (string-literal
         (expect-char-ignore-case \N)
-        (prs/many (one-escapable-char))
+        (prs/many (one-escapable-char \'))
     )
 )
 
 (defliteral national-string-literal :national-string-literal
     (string-literal
         (expect-char-ignore-case \N)
-        (prs/many (one-escapable-char))
+        (prs/many (one-escapable-char \'))
     )
 )
 
 ; this is not completely compliant to SQL-92 for lack of leading charactor set spec
 (defliteral character-string-literal :character-string-literal
-    (string-literal
-        (prs/foresee (prs/expect-char \'))
-        (prs/many (one-escapable-char))
+    (prs/choice
+        (string-literal
+            (prs/foresee (prs/expect-char \'))
+            (prs/many (one-escapable-char \'))
+        )
+        (prs/chain
+            (prs/expect-char \")
+            (prs/many (one-escapable-char \"))
+            (prs/expect-char \")
+            (prs/many
+                (prs/chain
+                    blank+
+                    (prs/expect-char \")
+                    (prs/many (one-escapable-char \"))
+                    (prs/expect-char \")
+                )
+            )
+        )
     )
 )
 
@@ -640,7 +655,6 @@
     (let [
         [strm prsd] (->> stream
             ((prs/choice
-                (partial quoted-identifier \")
                 (partial quoted-identifier \`)
                 regular-identifier
             ))
