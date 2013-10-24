@@ -63,7 +63,7 @@
 )
 
 (defn check-partition [tn pn]
-    (let [mainSql (str "SHOW PARTITIONS " tn " PARTITION (" partStr "=" pn ")")
+    (let [mainSql (str "SHOW PARTITIONS " tn " PARTITION (" partStr "=\"" pn "\")")
             res (qc/run-shark-query' "" mainSql)
         ]
         (cond
@@ -75,7 +75,7 @@
 )
 
 (defn add-partition [tn pn]
-    (let [mainSql (str "alter table " tn " add PARTITION (" partStr "=" pn ")")
+    (let [mainSql (str "alter table " tn " add PARTITION (" partStr "=\"" pn "\")")
             res (qc/run-shark-query' "" mainSql)
         ]
         res
@@ -84,7 +84,7 @@
 
 (defn get-partition-location [tn pn]
     (let [mainSql (str "show table extended like " 
-                    tn " PARTITION (" partStr "=" pn ")"
+                    tn " PARTITION (" partStr "=\"" pn "\")"
                 )
             res (qc/run-shark-query' "" mainSql)
             flist (filter 
