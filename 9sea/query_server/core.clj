@@ -9,6 +9,7 @@
   [query-server.mysql-connector :as mysql]
   [clj-time.core :as time]
   [parser.translator :as trans]
+  [clojure.data.csv :as csv]
   )
 (:import [com.mchange.v2.c3p0 ComboPooledDataSource DataSources PooledDataSource]
          [java.io IOException]
@@ -121,26 +122,18 @@
 
 (defn persist-query-result
   [result-set filename]
-  (let [titles (map #(str % "\t") (get result-set :titles))
-        values (get result-set :values)
-        column (reduce str titles)
+  (let [titles (:titles result-set)
+        values (:values result-set)
         done-file (str filename ".done")
        ]
-    (with-open [wrtr (io/writer filename)]
     (try
-      (.write wrtr (format column "\n"))
-      (doseq [value values]
-        (.write wrtr (format "%s\n" value))
+      (with-open [wrtr (io/writer filename)]
+        (csv/write-csv wrtr (cons titles values))
       )
-;      (sh (str "touch " done-file))
-      (.createNewFile (new File done-file))
+      (spit done-file "")
     (catch IOException e
       (error (.getMessage e))
       (error (.getStackTrace e))
-    )
-    (finally 
-      (.close wrtr)
-    )
     )
     )
   )
