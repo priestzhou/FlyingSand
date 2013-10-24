@@ -627,6 +627,15 @@
         :is
         [[:eof] {:type :character-string-literal, :value "'a'"}]
     )
+    (:fact character-string-literal:doublequoted
+        (->> "\"a\""
+            (prs/str->stream)
+            (sql/literal)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :character-string-literal, :value "\"a\""}]
+    )
     (:fact character-string-literal:escaped-quote
         (->> "'a''b'"
             (prs/str->stream)
@@ -635,6 +644,24 @@
         )
         :is
         [[:eof] {:type :character-string-literal, :value "'a''b'"}]
+    )
+    (:fact character-string-literal:doublequoted:escaped
+        (->> "\"a\"\"b\""
+            (prs/str->stream)
+            (sql/literal)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :character-string-literal, :value "\"a\"\"b\""}]
+    )
+    (:fact character-string-literal:doublequoted:multi-segments
+        (->> "\"a\" \"b\""
+            (prs/str->stream)
+            (sql/literal)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :character-string-literal, :value "\"a\" \"b\""}]
     )
     (:fact character-string-literal:multi-segments
         (->> "'a' 'b'"
@@ -726,33 +753,6 @@
         :is
         [[:eof] {:type :identifier, :value "a0"}]
     )
-    (:fact identifier:doublequoted
-        (->> "\"a\""
-            (prs/str->stream)
-            (sql/identifier)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :identifier, :value "a"}]
-    )
-    (:fact identifier:doublequoted:escaped
-        (->> "\"a\"\"b\""
-            (prs/str->stream)
-            (sql/identifier)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :identifier, :value "a\"b"}]
-    )
-    (:fact identifier:period-in-doublequotes
-        (->> "\"a.b\""
-            (prs/str->stream)
-            (sql/identifier)
-            (extract-result)
-        )
-        :is
-        [[:eof] {:type :identifier, :value "a.b"}]
-    )
     (:fact identifier:backquoted
         (->> "`a`"
             (prs/str->stream)
@@ -783,6 +783,15 @@
     (:fact identifier:reserved-keyword
         (fn []
             (->> "AS"
+                (prs/str->stream)
+                (sql/identifier)
+            )
+        )
+        :throws InvalidSyntaxException
+    )
+    (:fact identifier:doublequoted-is-str
+        (fn []
+            (->> "\"a\""
                 (prs/str->stream)
                 (sql/identifier)
             )

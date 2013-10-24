@@ -324,10 +324,7 @@
 (declare dump-hive:table)
 
 (defn- dump-hive:subtable [dfg]
-    (if (or 
-            (#{:derived-table :cross-join :join :outer-join} (:type dfg))
-            (and (= (:type dfg) :table) (:name dfg))
-        )
+    (if (:name dfg)
         (format "(%s)" (dump-hive:table dfg))
         (dump-hive:table dfg)
     )
