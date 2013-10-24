@@ -666,7 +666,7 @@
                         :headers {
                             "Content-Type" "text/html"
                         }
-                        :cookies {"user_id" {:value auth :path "/sql/" :max-age 36000}}
+                        :cookies {"user_id" {:value auth :path "/sql/"}}
                         :body "
 <!doctype html>
 <html>
