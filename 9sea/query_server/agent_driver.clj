@@ -295,7 +295,7 @@
     )
 )
 
-(defn- get-inc-data [agentid agenturl tableinfo]
+(defn- get-inc-data [agentid agentname agenturl tableinfo]
     (println agentid "-" agenturl "-" tableinfo)
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
@@ -315,11 +315,11 @@
             filterList (inc-data-filter resList tskey)
             maxkey (get-max-key filterList tskey)
         ]
-        (when (not (ha/check-partition hiveName agentid))
-            (ha/add-partition hiveName agentid)
+        (when (not (ha/check-partition hiveName agentname))
+            (ha/add-partition hiveName agentname)
         )
         (when (not (empty? filterList))
-            (save-inc-data (ha/get-partition-location hiveName agentid) 
+            (save-inc-data (ha/get-partition-location hiveName agentname) 
                 filterList
                 (ha/get-hive-clos hiveName)
             )            
@@ -342,7 +342,7 @@
     )
 )
 
-(defn- get-all-data [agentid agenturl tableinfo]
+(defn- get-all-data [agentid agentname agenturl tableinfo]
     (println agentid "-" agenturl "-" tableinfo)
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
@@ -359,54 +359,54 @@
             hiveName (:hive_name tableinfo)
             
         ]
-        (when (not (ha/check-partition hiveName agentid))
-            (ha/add-partition hiveName agentid)
+        (when (not (ha/check-partition hiveName agentname))
+            (ha/add-partition hiveName agentname)
         )
-        (save-all-data (ha/get-partition-location hiveName agentid) 
+        (save-all-data (ha/get-partition-location hiveName agentname) 
             resList
             (ha/get-hive-clos hiveName)
         )
     )
 )
 
-(defn- get-table-data-both [agentid agenturl tableinfo]
+(defn- get-table-data-both [agentid agentname agenturl tableinfo]
     (println "both=" agentid "-" agenturl "-" tableinfo)
     (if (:hastimestamp tableinfo)
-        (get-inc-data agentid,agenturl tableinfo)
-        (get-all-data agentid,agenturl tableinfo)
+        (get-inc-data agentid agentname agenturl tableinfo)
+        (get-all-data agentid agentname agenturl tableinfo)
     )
 )
 
-(defn- get-table-data-inc [agentid agenturl tableinfo]
+(defn- get-table-data-inc [agentid agentname agenturl tableinfo]
     (println "inc=" agentid "-" agenturl "-" tableinfo)
     (when (:hastimestamp tableinfo)
-        (get-inc-data agentid,agenturl tableinfo)
+        (get-inc-data agentid agentname agenturl tableinfo)
     )
 )
 
 (defn- get-table-data-all [agentid agenturl tableinfo]
     (println "all=" agentid "-" agenturl "-" tableinfo)
     (when (not (:hastimestamp tableinfo))
-        (get-all-data agentid,agenturl tableinfo)
+        (get-all-data agentid agentname agenturl tableinfo)
     )
 )
 
-(defn get-agent-data [agentid agenturl type]
+(defn get-agent-data [agentid agentname agenturl type]
     (println "get-agent-data=" agentid "-" agenturl "-" type)    
     (let [tablelist (query-agent-schema agentid)]
             (when (= type "both")
                 (doall
-                    (map (partial get-table-data-both agentid, agenturl) tablelist)
+                    (map (partial get-table-data-both agentid agentname agenturl) tablelist)
                 )
             )
             (when (= type "inc")
                 (doall
-                    (map (partial get-table-data-inc agentid, agenturl) tablelist)
+                    (map (partial get-table-data-inc agentid agentname agenturl) tablelist)
                 )
             )
             (when (= type "all")
                 (doall
-                    (map (partial get-table-data-all agentid, agenturl) tablelist)
+                    (map (partial get-table-data-all agentid agentname agenturl) tablelist)
                 )
             )        
     )
