@@ -18,6 +18,8 @@
                      "-h|--help" "show this help message")
                 (arg/opt :context
                      "--context file" "context file")
+                (arg/opt :query-file
+                     "--query file" "query file")
                 (arg/opt :query
                      "query" "SQL query")
             ]
@@ -28,13 +30,13 @@
             (println (arg/default-doc arg-spec))
             (System/exit 0)
         )
-        (util/throw-if-not (:query opts)
-            IllegalArgumentException. 
-            "require query"
-        )
         (util/throw-if-not (:context opts)
             IllegalArgumentException. 
             "require context"
+        )
+        (util/throw-if (and (nil? (:query opts)) (nil? (:query-file opts)))
+            IllegalArgumentException. 
+            "require query or --query"
         )
         opts
     )
@@ -49,9 +51,16 @@
             (slurp)
             (read-string)
         )
-        query (->> opts
-            (:query)
+        qf (->> opts
+            (:query-file)
             (first)
+        )
+        query (if qf 
+            (slurp qf)
+            (->> opts
+                (:query)
+                (first)
+            )
         )
         ]
         (println
