@@ -384,7 +384,7 @@
     )
 )
 
-(defn- get-table-data-all [agentid agenturl tableinfo]
+(defn- get-table-data-all [agentid agentname agenturl tableinfo]
     (println "all=" agentid "-" agenturl "-" tableinfo)
     (when (not (:hastimestamp tableinfo))
         (get-all-data agentid agentname agenturl tableinfo)
