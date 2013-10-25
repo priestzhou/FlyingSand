@@ -2,7 +2,11 @@
     (:require
         [clojure.string :as str]
         [clojure.walk :as walk]
+        [clojure.java.io :as io]
         [argparser.core :as arg]
+    )
+    (:import
+        [java.io PrintWriter]
     )
 )
 
@@ -259,7 +263,31 @@
     )
 )
 
+(defn- run [cs]
+    (try
+        (cs)
+    (catch Throwable ex
+        (with-open [wrt (PrintWriter. *out*)]
+            (.printStackTrace ex wrt)
+        )
+        (System/exit 1)
+    ))
+)
+
+(defn- interactively-run' [cases in]
+    (when-let [csname (.readLine in)]
+        (let [cs (cases csname)]
+            (run cs)
+            (println "RESPONSE: PASS")
+            (recur cases in)
+        )
+    )
+)
+
 (defn- interactively-run [cases]
+    (let [in (io/reader *in*)]
+        (interactively-run' cases in)
+    )
 )
 
 (defn main [args cases]
