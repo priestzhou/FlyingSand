@@ -253,19 +253,29 @@
     )
 )
 
+(defn- silently-run [cases to-run]
+    (doseq [cs to-run]
+        ((cases cs))
+    )
+)
+
+(defn- interactively-run [cases]
+)
+
 (defn main [args cases]
-    (let [arg-spec {
-                    :usage "Usage: [options] [case]"
-                    :args [
-                              (arg/opt :help
-                                       "-h|--help" "show this help message")
-                              (arg/opt :show-cases
-                                       "--show-cases" "show all cases and exit")
-                              (arg/opt :else
-                                       "case" "specify a case to run")
-                          ]
-                   }
-          opts (arg/transform->map (arg/parse arg-spec args))
+    (let [
+        arg-spec {
+            :usage "Usage: [options] [case]"
+            :args [
+                (arg/opt :help
+                    "-h|--help" "show this help message")
+                (arg/opt :show-cases
+                    "--show-cases" "show all cases and exit")
+                (arg/opt :else
+                    "case" "specify a case to run")
+            ]
+        }
+        opts (arg/transform->map (arg/parse arg-spec args))
         ]
         (when (:help opts)
             (println (arg/default-doc arg-spec))
@@ -279,13 +289,10 @@
             )
             (System/exit 0)
         )
-        (throw-if-not (= 1 (count args))
-            IllegalArgumentException. "exactly one case expected"
-        )
-        (
-            (->> args
-                (first)
-                (cases)
+        (let [to-run (:else opts)]
+            (if (empty? to-run)
+                (interactively-run cases)
+                (silently-run cases to-run)
             )
         )
     )
