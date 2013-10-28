@@ -2,7 +2,7 @@
     (:use 
         [ring.middleware.params :only (wrap-params)]
         [logging.core :only [defloggers]]
-        [agent.util :only (except->str)]
+        [utilities.core :only (except->str)]
     )    
     (:require
         [argparser.core :as arg]
@@ -71,7 +71,7 @@
     (cp/GET "/schemas/all" {params :params}
         (info "into get schemas" )
         (let [r (dba/get-schemas @dbatom)]
-            (debug "schemas result" (js/write-str r))
+            (debug "schemas result count" (count r))
             {:status 200
                 :headers {
                     "Access-Control-Allow-Origin" "*"
@@ -87,7 +87,7 @@
                      (:dbname params) (:tablename params) 
                 )
             ]
-            (debug "all data result" (js/write-str r))
+            (debug "all data result count " (count r))
             {:status 200
                 :headers {
                     "Access-Control-Allow-Origin" "*"
@@ -104,7 +104,7 @@
                 )
             ]
             ;(println r)
-            (debug "all inc result" (js/write-str r) )
+            (debug "all inc result count" (count r) )
                 {:status 200
                     :headers {
                         "Access-Control-Allow-Origin" "*"
