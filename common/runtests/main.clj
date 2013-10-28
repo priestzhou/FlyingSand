@@ -69,7 +69,86 @@
     )
 )
 
+(defn- new-process [exejar]
+    (sh/popen ["java" "-jar" exejar] :in :pipe :err :out :out :pipe)
+)
+
+(defn- read-until-case-finish' [sb out]
+    (let [x (.readLine out)]
+        (cond
+            (nil? x) :quit
+            (= x "RESPONSE: PASS") :pass
+            (= x "RESPONSE: FAIL") :fail
+            :else (do
+                (.append sb x)
+                (.append sb \newline)
+                (recur sb out)
+            )
+        )
+    )
+)
+
+(defn- read-until-case-finish [proc]
+    (let [
+        sb (StringBuilder.)
+        out (io/reader (.getInputStream proc))
+        res (read-until-case-finish' sb out)
+        ]
+        [res (str sb)]
+    )
+)
+
+(defn- dump-a-case [proc c]
+    (doto (io/writer (.getOutputStream proc))
+        (.write c)
+        (.newLine)
+        (.flush)
+    )
+)
+
+(declare run-in-shared-process)
+
+(defn- run-in-shared-process' [work-dir exejar cs-names proc]
+    (when-not (empty? cs-names)
+        (let [
+            [c & cs] cs-names
+            _ (dump-a-case proc c)
+            [res output] (read-until-case-finish proc)
+            ]
+            (spit (format "%s/%s.out" work-dir c) output)
+            (if (= res :pass)
+                (.put outq [:pass c exejar])
+                (.put outq [:fail c exejar])
+            )
+            (if (= res :quit)
+                (run-in-shared-process work-dir exejar cs)
+                (recur work-dir exejar cs proc)
+            )
+        )
+    )
+)
+
+(defn- run-in-shared-process [work-dir exejar cs-names]
+    (let [
+        p (new-process exejar)
+        ]
+        (run-in-shared-process' work-dir exejar cs-names p)
+        (.destroy p)
+    )
+)
+
 (defn- provider [work-dir cases parallel]
+    (let [
+        pts (:pt cases)
+        g (group-by second pts)
+        ]
+        (doseq [
+            [exejar cs] g
+            :let [cs (map first cs)]
+            ]
+            (.put waiting (partial run-in-shared-process work-dir exejar cs))
+        )
+    )
     (let [uts (:ut cases)]
         (doseq [[cs-name exejar] uts]
             (.put waiting (partial run-in-new-process work-dir cs-name exejar))
@@ -159,6 +238,7 @@
 
 (defn- classifier [[cs-name exejar]]
     (cond
+        (.endsWith exejar "puretest.jar") :pt
         (.endsWith exejar "unittest.jar") :ut
         :else :else
     )

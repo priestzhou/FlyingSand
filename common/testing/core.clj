@@ -266,6 +266,15 @@
 (defn- run [cs]
     (try
         (cs)
+        (println)
+        (println "RESPONSE: PASS")
+    (catch AssertionError ex
+        (let [wrt (PrintWriter. *out*)]
+            (.printStackTrace ex wrt)
+        )
+        (println)
+        (println "RESPONSE: FAIL")
+    )
     (catch Throwable ex
         (with-open [wrt (PrintWriter. *out*)]
             (.printStackTrace ex wrt)
@@ -278,7 +287,6 @@
     (when-let [csname (.readLine in)]
         (let [cs (cases csname)]
             (run cs)
-            (println "RESPONSE: PASS")
             (recur cases in)
         )
     )
