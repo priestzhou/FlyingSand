@@ -247,7 +247,10 @@
                 appname accountid
             )
             (doall 
-                (map (partial create-table agentid appname appversion ) datalist )
+                (map 
+                    (partial create-table agentid appname appversion) 
+                    datalist 
+                )
             )
         )
         (catch Exception e
@@ -373,7 +376,6 @@
 )
 
 (defn- get-all-data' [res agentname tableinfo]
-    (info agentid "-" agenturl "-" tableinfo)
     (let [
             resList (get (js/read-str (get-decrypt-body res)) "data")
             hiveName (:hive_name tableinfo)
