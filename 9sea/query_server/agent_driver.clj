@@ -1,4 +1,8 @@
 (ns query-server.agent-driver
+    (:use
+        [utilities.core :only (except->str)]
+        [logging.core :only [defloggers]]
+    )
     (:require 
         [org.httpkit.client :as client]
         [query-server.query-backend :as qb]
@@ -13,6 +17,8 @@
     )
     (:gen-class)
 )
+
+(defloggers debug info warn error)
 
 (defn- get-group-time [timeStep timeValue]
     (let [modTime (mod timeValue timeStep)
@@ -117,11 +123,11 @@
 
 (defn- httpget 
     ([agenturl op params]
-        (println  "httpget" (str agenturl (op urlmap) params))
+        (info  "httpget" (str agenturl (op urlmap) params))
         @(client/get (str agenturl (op urlmap) params))
     )
     ([agenturl op]
-        (println  "httpget" (str agenturl (op urlmap) ))
+        (info  "httpget" (str agenturl (op urlmap) ))
         @(client/get (str agenturl (op urlmap) ))
     )
 )
@@ -186,7 +192,7 @@
 )
 
 (defn create-table [agentid appname appversion dataset]
-    (println agentid "-" appname "-" appversion "-" dataset)
+    (info agentid "-" appname "-" appversion "-" dataset)
     (when (check-agent-table agentid (:namespace dataset))
         (add-record "TblSchema"
             (:namespace dataset)
@@ -215,7 +221,7 @@
 )
 
 (defn new-agent [agentid, agentname,agenturl,accountid]
-    (println "new-agent" agentid "-" agentname "-" agenturl "-" accountid)
+    (info "new-agent" agentid "-" agentname "-" agenturl "-" accountid)
     (let [setting (js/read-str 
                 (get-decrypt-body (httpget agenturl :get-setting))
                 :key-fn keyword
@@ -233,7 +239,7 @@
                     schema 
                 )
             )
-            _ (println "datalist" datalist)
+            _ (debug "datalist" datalist)
         ]
         (try 
             (add-record-bycol 
@@ -241,7 +247,7 @@
                 appname accountid
             )
             (catch Exception e
-                (println e)
+                (error  (except->str e))
             )
         )
         (doall 
@@ -300,23 +306,11 @@
     )
 )
 
-(defn- get-inc-data [agentid agentname agenturl tableinfo]
-    (println agentid "-" agenturl "-" tableinfo)
-    (let [dbname (:dbname tableinfo)
-            tablename (:tablename tableinfo)
-            position (:timestampposition tableinfo)
-            res (httpget 
-                    agenturl 
-                    :get-table-inc-data 
-                    (str 
-                        "?dbname=" dbname 
-                        "&tablename=" tablename 
-                        "&keynum=" position
-                    )
-                )
-            resList (get (js/read-str (get-decrypt-body res)) "data")
+(defn- get-inc-data' [res agentid agentname tableinfo]
+    (let [
             hiveName (:hive_name tableinfo)
-            tskey (:timestampkey tableinfo)
+            tskey (:timestampkey tableinfo)            
+            resList (get (js/read-str (get-decrypt-body res)) "data")
             filterList (inc-data-filter resList tskey)
             maxkey (get-max-key filterList tskey)
         ]
@@ -337,6 +331,33 @@
     )
 )
 
+(defn- get-inc-data [agentid agentname agenturl tableinfo]
+    (info agentid "-" agenturl "-" tableinfo)
+    (let [dbname (:dbname tableinfo)
+            tablename (:tablename tableinfo)
+            position (:timestampposition tableinfo)
+
+            res (httpget 
+                    agenturl 
+                    :get-table-inc-data 
+                    (str 
+                        "?dbname=" dbname 
+                        "&tablename=" tablename 
+                        "&keynum=" position
+                    )
+                )
+            status (:status res)
+        ]
+        (cond 
+            (= 200 status) (get-inc-data' res agentid agentname tableinfo)
+            :else 
+            (
+                (error "the http response's status is not 200" :response res)
+            )
+        )
+    )
+)
+
 (defn- save-all-data [location inlist metalist]
     (let [ts (System/currentTimeMillis)
             filepath (str location "/" ts ".txt")
@@ -348,7 +369,7 @@
 )
 
 (defn- get-all-data [agentid agentname agenturl tableinfo]
-    (println agentid "-" agenturl "-" tableinfo)
+    (info agentid "-" agenturl "-" tableinfo)
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -375,7 +396,7 @@
 )
 
 (defn- get-table-data-both [agentid agentname agenturl tableinfo]
-    (println "both=" agentid "-" agenturl "-" tableinfo)
+    (info "both=" agentid "-" agenturl "-" tableinfo)
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid agentname agenturl tableinfo)
         (get-all-data agentid agentname agenturl tableinfo)
@@ -383,22 +404,23 @@
 )
 
 (defn- get-table-data-inc [agentid agentname agenturl tableinfo]
-    (println "inc=" agentid "-" agenturl "-" tableinfo)
+    (info "inc=" agentid "-" agenturl "-" tableinfo)
     (when (:hastimestamp tableinfo)
         (get-inc-data agentid agentname agenturl tableinfo)
     )
 )
 
 (defn- get-table-data-all [agentid agentname agenturl tableinfo]
-    (println "all=" agentid "-" agenturl "-" tableinfo)
+    (info "all=" agentid "-" agenturl "-" tableinfo)
     (when (not (:hastimestamp tableinfo))
         (get-all-data agentid agentname agenturl tableinfo)
     )
 )
 
 (defn get-agent-data [agentid agentname agenturl type]
-    (println "get-agent-data=" agentid "-" agenturl "-" type)    
-    (let [tablelist (query-agent-schema agentid)]
+    (info "get-agent-data=" agentid "-" agenturl "-" type)
+    (try
+        (let [tablelist (query-agent-schema agentid)]
             (when (= type "both")
                 (doall
                     (map (partial get-table-data-both agentid agentname agenturl) tablelist)
@@ -414,8 +436,13 @@
                     (map (partial get-table-data-all agentid agentname agenturl) tablelist)
                 )
             )        
+        )
+        (catch Exception e
+            (error  (except->str e))
+        )
     )
 )
+
 
 (defn -main [& args]
     (let [arg-spec 
