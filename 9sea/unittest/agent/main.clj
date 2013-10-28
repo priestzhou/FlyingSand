@@ -14,7 +14,7 @@
     [{:id "id2" :name "col2"} {:id "id1" :name "col1"}]
 )
 
-(defn- table-all-data [in1 in2]
+(defn- table-all-data [in1 in2 in3]
     [{:id "id2" :name "col2"} {:id "id1" :name "col1"}]
 )
 
@@ -35,9 +35,9 @@
     )
 )
 
-(defn- get-table-all-data [in qstr]
+(defn- get-table-all-data [in db tn]
     (binding [dba/*db-func-map* mock-map]
-        (dba/get-table-all-data in qstr)
+        (dba/get-table-all-data in db tn)
     )
 )
 
@@ -87,10 +87,21 @@
             get-schemas
         )
         :is
-        [{:dbname "test db", 
-            :tables [
-            {:tablename "test-table1", :cols [{:name "col2", :id "id2"} {:name "col1", :id "id1"}]} 
-            {:tablename "test-table2", :cols [{:name "col2", :id "id2"} {:name "col1", :id "id1"}]}
+        [{   
+            "test db" 
+            {
+                "test-table2" {:tablename "test-table2"}, 
+                "test-table1" {:tablename "test-table1"}
+            }, 
+            :dbname "test db", 
+            :tables 
+            [   
+                {:tablename "test-table1", :cols
+                    [{:name "col2", :id "id2"} {:name "col1", :id "id1"}]
+                } 
+                {:tablename "test-table2", :cols [{:name "col2", :id "id2"} {
+                    :name "col1", :id "id1"}]
+                }
             ]
         }]
     )
@@ -122,33 +133,12 @@
         :is
         2
     )
-    (:fact test-table-all-data-apperro
-        (->>
-            (get-table-all-data
-                dbsetting
-                "abc.bsc.def.test1"
-            )
-            :errCode
-        )
-        :is
-        "app mismach"
-    )
-    (:fact test-table-all-data-versionerro
-        (->>
-            (get-table-all-data
-                dbsetting
-                "testapp.bsc.def.test1"
-            )
-            :errCode
-        )
-        :is
-        "version mismach"
-    )
     (:fact test-table-all-data-dberro
         (->>
             (get-table-all-data
                 dbsetting
-                "testapp.ves-1.def.test1"
+                "def"
+                "test1"
             )
             :errCode
         )
@@ -159,7 +149,8 @@
         (->>
             (get-table-all-data
                 dbsetting
-                "testapp.ves-1.test db.test1"
+                "test db"
+                "test1"
             )
             :errCode
         )
@@ -170,7 +161,8 @@
         (->>
             (get-table-all-data
                 dbsetting
-                "testapp.ves-1.test db.test-table1"
+                "test db"
+                "test-table1"
             )
             :errCode
         )
@@ -181,7 +173,8 @@
         (->>
             (get-table-all-data
                 dbsetting
-                "testapp.ves-1.test db.test-table1"
+                "test db"
+                "test-table1"
             )
             :data
             count
