@@ -222,36 +222,36 @@
 
 (defn new-agent [agentid, agentname,agenturl,accountid]
     (info "new-agent" agentid "-" agentname "-" agenturl "-" accountid)
-    (let [setting (js/read-str 
-                (get-decrypt-body (httpget agenturl :get-setting))
-                :key-fn keyword
-            )
-            hashcode (:hashcode setting)
-            appname (:app setting)
-            appversion (:appversion setting)
-            schema (js/read-str 
+    (try
+        (let [setting (js/read-str 
+                    (get-decrypt-body (httpget agenturl :get-setting))
+                    :key-fn keyword
+                )
+                hashcode (:hashcode setting)
+                appname (:app setting)
+                appversion (:appversion setting)
+                schema (js/read-str 
                     (get-decrypt-body (httpget agenturl :get-schema)) 
                     :key-fn keyword
                 )
-            datalist (flatten 
-                (map 
-                    #(gen-table-list accountid appname appversion %) 
-                    schema 
+                datalist (flatten 
+                    (map 
+                        #(gen-table-list accountid appname appversion %) 
+                        schema 
+                    )
                 )
-            )
-            _ (debug "datalist" datalist)
-        ]
-        (try 
+                _ (debug "datalist" datalist)
+            ]
             (add-record-bycol 
                 "TblApplication" "ApplicationName,AccountId" 
                 appname accountid
             )
-            (catch Exception e
-                (error  (except->str e))
+            (doall 
+                (map (partial create-table agentid appname appversion ) datalist )
             )
         )
-        (doall 
-            (map (partial create-table agentid appname appversion ) datalist )
+        (catch Exception e
+            (error "add new agent fail " :except (except->str e))
         )
     )
 )
@@ -336,7 +336,6 @@
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
-
             res (httpget 
                     agenturl 
                     :get-table-inc-data 
@@ -352,7 +351,12 @@
             (= 200 status) (get-inc-data' res agentid agentname tableinfo)
             :else 
             (
-                (error "the http response's status is not 200" :response res)
+                (error 
+                    "The http response's status in get-inc-data is not 200" 
+                    :agenturl agenturl
+                    :tableinfo tableinfo
+                    :response res
+                )
             )
         )
     )
@@ -365,6 +369,23 @@
         ]
         (hc/delete (str location "/*"))
         (dorun (hc/write-lines filepath  strList))
+    )
+)
+
+(defn- get-all-data' [res agentname tableinfo]
+    (info agentid "-" agenturl "-" tableinfo)
+    (let [
+            resList (get (js/read-str (get-decrypt-body res)) "data")
+            hiveName (:hive_name tableinfo)
+            
+        ]
+        (when (not (ha/check-partition hiveName agentname))
+            (ha/add-partition hiveName agentname)
+        )
+        (save-all-data (ha/get-partition-location hiveName agentname) 
+            resList
+            (ha/get-hive-clos hiveName)
+        )
     )
 )
 
@@ -381,17 +402,20 @@
                         "&tablename=" tablename 
                     )
                 )
-            resList (get (js/read-str (get-decrypt-body res)) "data")
-            hiveName (:hive_name tableinfo)
-            
+            status (:status res)
         ]
-        (when (not (ha/check-partition hiveName agentname))
-            (ha/add-partition hiveName agentname)
+        (cond 
+            (= 200 status) (get-all-data' res agentname tableinfo)
+            :else 
+            (
+                (error "The http response's status is not 200" 
+                    :agenturl agenturl
+                    :tableinfo tableinfo
+                    :response res
+                )
+            )
         )
-        (save-all-data (ha/get-partition-location hiveName agentname) 
-            resList
-            (ha/get-hive-clos hiveName)
-        )
+
     )
 )
 
