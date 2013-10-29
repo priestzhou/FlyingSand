@@ -169,6 +169,7 @@
             colstr (str "( \"" collist "\")")
             sql (str  "insert into " table " (" colnames ") VALUES " colstr ";"
             )
+            _ (debug "add-record-bycol" :sql sql)
             res (runupdate sql)
         ]
         res
@@ -192,12 +193,12 @@
 )
 
 (defn create-table [agentid appname appversion dataset]
-    (info 
+    (debug 
         "create-table" 
         :agentid agentid
         :appname appname 
         :appversion appversion  
-        :dataset dataset
+        :dataset (str dataset)
     )
     (when (check-agent-table agentid (:namespace dataset))
         (add-record "TblSchema"
@@ -251,12 +252,17 @@
                         schema 
                     )
                 )
-                _ (debug "datalist" datalist)
             ]
-            (add-record-bycol 
-                "TblApplication" "ApplicationName,AccountId" 
-                appname accountid
+            (try 
+                (add-record-bycol 
+                    "TblApplication" "ApplicationName,AccountId" 
+                    appname accountid
+                )
+                (catch Exception e 
+                    (debug " add TblApplication fail " :except (except->str e))
+                )
             )
+
             (doall 
                 (map 
                     (partial create-table agentid appname appversion) 
@@ -268,7 +274,9 @@
 
 (defn- query-agent-schema [agentid]
     (let [sql (str "select *  from TblSchema a  left join TblMetaStore b " 
-            " on a.Namespace = b.Namespace   where agentid ='" agentid "'")
+            " on a.Namespace = b.Namespace   where agentid ='" agentid "'"
+            " and Namespace is not null "
+            )
             res (runsql sql)
         ]
         (debug "query-agent-schema" :res (str res) )
@@ -347,7 +355,7 @@
         "get-inc-data" 
         :agentid agentid 
         :agenturl agenturl  
-        :tableinfo tableinfo
+        :tableinfo (str tableinfo)
     )
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
