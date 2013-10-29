@@ -435,12 +435,10 @@
         (cond 
             (= 200 status) (get-all-data' res agentname tableinfo)
             :else 
-            (
-                (error "The http response's status is not 200" 
-                    :agenturl agenturl
-                    :tableinfo tableinfo
-                    :response res
-                )
+            (error "The http response's status is not 200" 
+                :agenturl agenturl
+                :tableinfo tableinfo
+                :response res
             )
         )
 
