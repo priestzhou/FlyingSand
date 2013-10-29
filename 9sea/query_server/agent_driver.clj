@@ -234,7 +234,6 @@
         :agenturl agenturl  
         :accountid accountid
     )
-    (try
         (let [setting (js/read-str 
                     (get-decrypt-body (httpget agenturl :get-setting))
                     :key-fn keyword
@@ -265,10 +264,6 @@
                 )
             )
         )
-        (catch Exception e
-            (error "add new agent fail " :except (except->str e))
-        )
-    )
 )
 
 (defn- query-agent-schema [agentid]

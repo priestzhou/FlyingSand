@@ -2,11 +2,17 @@
     (:require 
         [query-server.agent-driver :as ad]
     )
+    (:use
+        [utilities.core :only (except->str)]
+        [logging.core :only [defloggers]]
+    )    
     (:gen-class)
 )
 
+(defloggers debug info warn error)
+
 (defn- new-agent-run [agentMap]
-    (println "new-agent-run")
+    (info "new-agent-run" )
     (try
         (ad/new-agent 
             (:id agentMap) 
@@ -25,13 +31,13 @@
             "normal"
         )
         (catch Exception e 
-            (println e)
+            (error "add new agent fail " :except (except->str e))
         )
     )
 )
 
 (defn new-agent-check []
-    (println "new-agent-check")
+    (info "new-agent-check")
     (try 
         (let [agent-list (ad/get-agent-list "new")
             _ (println agent-list)
@@ -39,8 +45,7 @@
             (doall (map new-agent-run agent-list))
         )
         (catch Exception e 
-            (println e)
-            (println (.printStackTrace e))
+            (error " new agent check fail " :except (except->str e))
         )
     )
     
@@ -49,34 +54,45 @@
 )
 
 (defn inc-data-check []
-    (println "inc-data-check")
-    (let [agent-list (ad/get-agent-list "normal")]
-        (doall (map  
-            #(ad/get-agent-data 
-                (:id %)
-                (:agentname %) 
-                (:agenturl %)
-                "inc"
-            )
-            agent-list
-        ))
+    (info "inc-data-check")
+    (try
+        (let [agent-list (ad/get-agent-list "normal")]
+            (doall (map  
+                #(ad/get-agent-data 
+                    (:id %)
+                    (:agentname %) 
+                    (:agenturl %)
+                    "inc"
+                )
+                agent-list
+            ))
+        )
+        (catch Exception e 
+            (error " inc-data-check fail " :except (except->str e))
+        )        
     )
+
     (Thread/sleep 300000)
     (recur)
 )
 
 (defn all-data-check []
-    (println "all-data-check")
-    (let [agent-list (ad/get-agent-list "normal")]
-        (doall (map  
-            #(ad/get-agent-data 
-                (:id %)
-                (:agentname %) 
-                (:agenturl %)
-                "all"
-            )
-            agent-list
-        ))
+    (info "all-data-check")
+    (try 
+        (let [agent-list (ad/get-agent-list "normal")]
+            (doall (map  
+                #(ad/get-agent-data 
+                    (:id %)
+                    (:agentname %) 
+                    (:agenturl %)
+                    "all"
+                )
+                agent-list
+            ))
+        )
+        (catch Exception e 
+            (error " all-data-check fail " :except (except->str e))
+        )          
     )
     (Thread/sleep 86400000)
     (recur)
