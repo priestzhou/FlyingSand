@@ -274,9 +274,7 @@
 
 (defn- query-agent-schema [agentid]
     (let [sql (str "select *  from TblSchema a  left join TblMetaStore b " 
-            " on a.Namespace = b.Namespace   where agentid ='" agentid "'"
-            " and Namespace is not null "
-            )
+            " on a.Namespace = b.Namespace   where agentid ='" agentid "'")
             res (runsql sql)
         ]
         (debug "query-agent-schema" :res (str res) )
