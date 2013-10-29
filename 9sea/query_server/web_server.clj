@@ -10,6 +10,7 @@
         [utilities.shutil :as sh]
         [clj-time.core :as time]
         [query-server.query-backend :as backend]
+        [query-server.agent-backend :as at-backend]
         [utilities.parse :as prs]
         [query-server.config :as config]
         [query-server.mysql-connector :as mysql]
@@ -33,6 +34,8 @@
         [utilities.parse InvalidSyntaxException]
     )
 )
+
+(def not-nil? (complement nil?))
 
 (defloggers debug info warn error)
 
@@ -85,7 +88,7 @@
 
 (def results (ref {}))
 (def csv (ref {}))
-(def meta-tree (ref {}))
+(def meta-tree (ref []))
 
 (defn progress [qid result total-stages current-stage]
     (if (< current-stage total-stages)
@@ -186,11 +189,15 @@
 
 (defn gen-context
   [account-id app version db]
-  (prn "app:" app "version:" version "db:" db)
-
-  (let [meta-info (backend/get-metastore-tree account-id)]
+  (debug "app:" app "version:" version "db:" db)
+  (if (not (empty? @meta-tree))
+    {:ns @meta-tree :default-ns [app version]}
+    (do
+      (let [meta-info (backend/get-metastore-tree account-id)]
     
-    {:ns meta-info :default-ns [app version]}
+      {:ns meta-info :default-ns [app version]}
+      )
+    )
   )
 )
 
@@ -252,15 +259,17 @@
     (let [user-id (extract-user-id cookies)
           account-id (get-account-id user-id)
           _ (println "account-id: " account-id)
-          meta-tree (backend/get-metastore-tree account-id)
           ]
-      (if (nil? meta-tree) (println "get meta error!")
+      (dosync
+        (ref-set meta-tree (backend/get-metastore-tree account-id))
+      ) 
+      (if (nil? @meta-tree) (println "get meta error!")
         (do
          (println "GET meta" (pr-str {:UserId user-id}))
          {
             :status 200
             :headers {"Content-Type" "application/json"}
-            :body (json/write-str meta-tree) 
+            :body (json/write-str @meta-tree) 
          }
         )
       )
@@ -312,6 +321,7 @@
                   }
 
                 (catch SQLException ex
+                  (prn (.getMessage ex))
                     {
                         :status 400
                         :headers {"Content-Type" "text/plain"}
@@ -455,68 +465,6 @@
     )
 )
 
-(defn check-duplicated-name?
-    ([cid name]
-        (check-collector "duplicated name"
-            (fn [c v]
-                (and (not= cid c) (= name (:name v)))
-            )
-        )
-    )
-
-    ([name]
-        (check-collector "duplicated name"
-            (fn [c v]
-                (= name (:name v))
-            )
-        )
-    )
-)
-
-(defn check-duplicated-url?
-    ([cid url]
-        (check-collector "duplicated url"
-            (fn [c v]
-                (and (not= cid c) (= url (:url v)))
-            )
-        )
-    )
-
-    ([url]
-        (check-collector "duplicated url"
-            (fn [c v]
-                (= url (:url v))
-            )
-        )
-    )
-)
-
-(defn is-collector-no-sync? [cid]
-    (if-let [v (@collectors cid)]
-        (when-not (= (:status v) "no-sync")
-            (throw+
-                {
-                    :status 403 
-                    :headers {"Content-Type" "application/json"} 
-                    :body "null"
-                }
-            )
-        )
-    )
-)
-
-(defn does-collector-exist? [cid]
-    (when-not (contains? @collectors cid)
-        (throw+
-            {
-                :status 404 
-                :headers {"Content-Type" "application/json"} 
-                :body "null"
-            }
-        )
-    )
-)
-
 (defn authenticate* [cookies]
     (if-let [user-id (extract-user-id cookies)]
         (let [
@@ -538,108 +486,156 @@
     )
 )
 
+(defn duplicated-name-response
+  [agent-id]
+  {
+   :status 409
+   :body (json/write-str {:error "duplicated name" :collector (str agent-id)})
+  }
+)
+
+(defn duplicated-url-response
+  [agent-id]
+  {
+   :status 409
+   :body (json/write-str {:error "duplicated url" :collector (str agent-id)})
+  }
+)
+
+
 (defn add-collector [params cookies]
     (println "POST /sql/collectors" params cookies)
-    (try+
+    (try
         (authenticate* cookies)
         (let [
-            name (:name params)
+            agent-name (:name params)
             url (:url params)
-            cid (rand-int 1000)
+            user-id (extract-user-id cookies)
+            account-id (get-account-id user-id)
             ]
-            (dosync
-                (check-duplicated-name? name)
-                (check-duplicated-url? url)
-
-                (let [r {:status "no-sync" :name name :url url}]
-                    (alter collectors assoc cid r)
-                    {
-                        :status 201
-                        :headers {"Content-Type" "application/json"}
-                        :body (json/write-str (assoc r :id cid))
-                    }
+          (let[
+               duplicated-name-id (at-backend/check-agent-name? agent-name account-id)
+               duplicated-url-id (at-backend/check-agent-url? url account-id)
+               ]
+            (if (not-nil? duplicated-name-id)
+              (duplicated-name-response duplicated-name-id)
+              (if (not-nil? duplicated-url-id)
+                (duplicated-url-response duplicated-url-id)
+                (do
+                  (at-backend/add-agent agent-name url account-id)
+                  {
+                   :status 200
+                  }
                 )
+              )
             )
+          )
         )
-    (catch map? ex
-        ex
+    (catch SQLException ex
+        (prn (.getMessage ex))
+        {
+         :status 500
+         :body "null"
+        }
     ))
 )
 
 (defn list-collectors [cookies]
     (println "GET /sql/collectors/" cookies)
-    (try+
+    (try
         (authenticate* cookies)
-
-        (let [r (dosync
-                (for [
-                    [cid v] @collectors
-                    ]
-                    (assoc v :id cid)
-                )
-            )
-            ]
-            {
-                :status 200
-                :headers {"Content-Type" "application/json"}
-                :body (json/write-str r)
-            }
+        (let[ user-id (extract-user-id cookies)
+             account-id (get-account-id user-id)
+             res (at-backend/select-agent account-id)]
+                  {
+                   :status 200
+                   :body (json/write-str res)
+                  }
         )
-    (catch map? ex
-        ex
+    (catch SQLException ex
+        (debug (.getMessage ex))
+        {
+         :status 500
+         :body "null"
+        } 
     ))
 )
 
 (defn delete-collector [params cookies]
-    (try+
+    (try
         (let [cid (-> params (:cid) (Long/parseLong))]
             (println (format "DELETE /sql/collectors/%d" cid) cookies)
             (authenticate* cookies)
-            (dosync
-                (does-collector-exist? cid)
-
-                (alter collectors dissoc cid)
+            (let [agent (at-backend/check-agent-id? cid)]
+              (if (nil? agent)
                 {
-                    :status 200 
-                    :headers {"Content-Type" "application/json"} 
-                    :body (json/write-str {})
+                  :status 404 
+                  :headers {"Content-Type" "application/json"} 
+                  :body "null"
                 }
+                (do
+                  (at-backend/delete-agent cid)
+                  {
+                   :status 200
+                  }
+                )
+              )
             )
         )
-    (catch map? ex
-        ex
+    (catch SQLException ex
+       (prn (.getMessage ex))
+       {
+        :status 500
+        :body "null"
+       }
     ))
 )
 
 (defn edit-collector [params cookies body]
-    (try+
+    (try
         (authenticate* cookies)
         (let [
+            user-id (extract-user-id cookies)
+            account-id (get-account-id user-id)
             cid (Long/parseLong (:cid params))
-            body (-> body 
-                (io/reader :encoding "UTF-8") 
-                (json/read :key-fn keyword)
-            )
-            name (:name body)
-            url (:url body)
+            agent-name (:name params)
+            url (:url params)
             ]
             (println (format "PUT /sql/collectors/%d" cid) cookies body)
-            (dosync
-                (does-collector-exist? cid)
-                (is-collector-no-sync? cid)
-                (check-duplicated-name? cid name)
-                (check-duplicated-url? cid url)
-
-                (alter collectors update-in [cid] assoc :name name :url url)
+            (let [agent-id (at-backend/check-agent-id? cid)
+                  ]
+              (if (nil? agent-id)
                 {
-                    :status 200 
-                    :headers {"Content-Type" "application/json"} 
-                    :body (json/write-str {})
+                 :status 404
+                 :body "no agent found"
                 }
+                (do
+                
+                  (let [duplicated-url-id (at-backend/check-agent-url? url account-id)
+                       duplicated-name-id (at-backend/check-agent-name? url account-id)]
+                   (if (not-nil? duplicated-name-id)
+                     (duplicated-name-response duplicated-name-id)
+                     (if (not-nil? duplicated-url-id)
+                       (duplicated-url-response duplicated-url-id)
+                       (do
+                        (at-backend/edit-agent cid agent-name url)
+                        {
+                         :status 200
+                        }
+                       )
+                     )
+                   )
+                  )
+                 )
+              )
             )
-        )
-    (catch map? ex
-        ex
+           )
+    (catch SQLException ex
+       (prn (.getMessage ex))
+      {
+       :status 500
+       :error "null"
+      }
     ))
 )
 
