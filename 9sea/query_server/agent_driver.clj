@@ -195,7 +195,7 @@
     (info 
         "create-table" 
         :agentid agentid
-        :agentname agentname 
+        :appname appname 
         :appversion appversion  
         :dataset dataset
     )
@@ -276,6 +276,7 @@
             " on a.Namespace = b.Namespace   where agentid ='" agentid "'")
             res (runsql sql)
         ]
+        (debug "query-agent-schema" :res (str res) )
         res
     )
 )
@@ -382,9 +383,15 @@
 
 (defn- save-all-data [location inlist metalist]
     (let [ts (System/currentTimeMillis)
-            filepath (str location "/" ts ".txt")
+            filepath (str location "/all-data.txt")
             strList (map #(ha/build-hive-txt-row % metalist) inlist)
         ]
+        (debug 
+            "save-all-data" 
+            :location location 
+            :filepath filepath 
+            :strListcount (count strList)
+        )
         (hc/delete (str location "/*"))
         (dorun (hc/write-lines filepath  strList))
     )
@@ -410,7 +417,7 @@
     (info "get-all-data" 
         :agentid  agentid 
         :agenturl agenturl 
-        :tableinfo tableinfo
+        :tableinfo (str tableinfo)
     )
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
@@ -444,7 +451,7 @@
     (info "get-table-data-both" 
         :agentid  agentid 
         :agenturl agenturl 
-        :tableinfo tableinfo
+        :tableinfo (str tableinfo)
     )
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid agentname agenturl tableinfo)
@@ -456,7 +463,7 @@
     (info "get-table-data-inc" 
         :agentid  agentid 
         :agenturl agenturl 
-        :tableinfo tableinfo
+        :tableinfo (str tableinfo)
     )
     (when (:hastimestamp tableinfo)
         (get-inc-data agentid agentname agenturl tableinfo)
@@ -467,7 +474,7 @@
     (info "get-table-data-all" 
         :agentid  agentid 
         :agenturl agenturl 
-        :tableinfo tableinfo
+        :tableinfo (str tableinfo)
     )
     (when (not (:hastimestamp tableinfo))
         (get-all-data agentid agentname agenturl tableinfo)
