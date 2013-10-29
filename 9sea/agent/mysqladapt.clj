@@ -1,7 +1,7 @@
 (ns agent.mysqladapt
     (:use 
         [logging.core :only [defloggers]]
-        [agent.util :only (except->str)]
+        [utilities.core :only (except->str)]
     )      
     (:require
         [clojure.java.jdbc :as jdbc]

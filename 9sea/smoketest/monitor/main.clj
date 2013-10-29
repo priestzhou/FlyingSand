@@ -8,19 +8,28 @@
 )
 
 (def atag "agent.main")
-(def abash " nohup java -cp .:agent.jar agent.main 2>&1 >>agent.log & " )
+(def abash "./start_agent.sh" )
 
 (def mtag "\" monitor.main\"")
-(def mbash " nohup java -cp  .:monitor.jar monitor.main 2>&1 >>monitor.log & " )
+(def mbash "./start_monitor.sh" )
 
 
 (defn- killone [tag]
-    (mt/restart-process 
-        (str 
-            "ps -ef |grep -v grep |grep " 
-            tag 
-            "| awk '{print $2}' | xargs  kill -9 "
-        )
+    (let [
+            cmd  (into-array 
+                    ["/bin/sh" "-c" 
+                        (str 
+                            "ps -ef |grep -v grep |grep " 
+                            tag 
+                            "| awk '{print $2}' | xargs  kill -9 "
+                        )
+                    ]
+                )
+            run (Runtime/getRuntime)
+            p (.exec run cmd)
+
+        ]
+        p
     )
 )
 
@@ -28,6 +37,8 @@
     (killone atag)
     (killone mtag)
 )
+
+
 
 (suite "monitor and agent start each other"
     (:fact agent_start_monitor

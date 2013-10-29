@@ -5,8 +5,11 @@
     )
     (:use
         [clojure.set]
+        [logging.core :only [defloggers]]
     )
 )
+
+(defloggers debug info warn error)
 
 (def ^:private mysql-hive-type-map 
     {
@@ -142,7 +145,7 @@
     (let [mainSql (str "DESCRIBE " tn )
             res (qc/run-shark-query' "" mainSql)
         ]
-      (prn "get-hive-cols" res)
+      (debug "get-hive-cols" res)
       (map #(select-keys % [:col_name :data_type]) res)
     )
 )
@@ -152,7 +155,7 @@
   (let [hive-table (get schema :hive_name)
         table-name (get schema :TableName)
         cols (transform-cols (get-hive-cols hive-table))]
-    (prn "table column" cols)
+    (debug "table column" cols)
     {
      :type "table"
      :name table-name
