@@ -10,6 +10,7 @@
   [clj-time.core :as time]
   [parser.translator :as trans]
   [clojure.data.csv :as csv]
+  [utilities.core :as util]
   )
 (:import [com.mchange.v2.c3p0 ComboPooledDataSource DataSources PooledDataSource]
          [java.io IOException]
@@ -109,9 +110,8 @@
         (debug "count is:" row-count)
         (swap! result-count-map update-in [q-id] assoc :count row-count)
     )
-  (catch Exception ex
-    (.printStackTrace ex)
-    (.getMessage ex)
+  (catch SQLException ex
+    (error "fail to execute count query" (util/except->str ex))
     (swap! result-count-map update-in [q-id] assoc :count -1)
   ))
 )
@@ -152,8 +152,7 @@
       )
       (spit done-file "")
     (catch IOException e
-      (error (.getMessage e))
-      (error (.getStackTrace e))
+      (error "can't save query result:" (util/except->str e))
     )
     )
   )
@@ -260,7 +259,7 @@
       (doall rs)
       ))
   (catch Exception exception
-   (.printStackTrace exception)
+    (error "run shark query:" (util/except->str exception))
     ; we should seperate exception
     (update-result-map q-id "failed" nil exception)
     ))
@@ -277,7 +276,7 @@
     )
   (catch Exception ex
   (do
-   (.printStackTrace ex)
+   (error "can't execute shark query:" (util/except->str ex))
     (update-result-map q-id "failed" nil (.getMessage ex) nil )
     ; we should seperate exception
     )))
