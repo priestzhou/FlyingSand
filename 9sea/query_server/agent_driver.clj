@@ -192,7 +192,13 @@
 )
 
 (defn create-table [agentid appname appversion dataset]
-    (info agentid "-" appname "-" appversion "-" dataset)
+    (info 
+        "create-table" 
+        :agentid agentid
+        :agentname agentname 
+        :appversion appversion  
+        :dataset dataset
+    )
     (when (check-agent-table agentid (:namespace dataset))
         (add-record "TblSchema"
             (:namespace dataset)
@@ -221,7 +227,13 @@
 )
 
 (defn new-agent [agentid, agentname,agenturl,accountid]
-    (info "new-agent" agentid "-" agentname "-" agenturl "-" accountid)
+    (info 
+        "new-agent" 
+        :agentid agentid
+        :agentname agentname 
+        :agenturl agenturl  
+        :accountid accountid
+    )
     (try
         (let [setting (js/read-str 
                     (get-decrypt-body (httpget agenturl :get-setting))
@@ -335,7 +347,12 @@
 )
 
 (defn- get-inc-data [agentid agentname agenturl tableinfo]
-    (info agentid "-" agenturl "-" tableinfo)
+    (info 
+        "get-inc-data" 
+        :agentid agentid 
+        :agenturl agenturl  
+        :tableinfo tableinfo
+    )
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -353,13 +370,11 @@
         (cond 
             (= 200 status) (get-inc-data' res agentid agentname tableinfo)
             :else 
-            (
-                (error 
-                    "The http response's status in get-inc-data is not 200" 
-                    :agenturl agenturl
-                    :tableinfo tableinfo
-                    :response res
-                )
+            (error 
+                "The http response's status in get-inc-data is not 200" 
+                :agenturl agenturl
+                :tableinfo tableinfo
+                :response res
             )
         )
     )
@@ -392,7 +407,11 @@
 )
 
 (defn- get-all-data [agentid agentname agenturl tableinfo]
-    (info agentid "-" agenturl "-" tableinfo)
+    (info "get-all-data" 
+        :agentid  agentid 
+        :agenturl agenturl 
+        :tableinfo tableinfo
+    )
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
@@ -422,7 +441,11 @@
 )
 
 (defn- get-table-data-both [agentid agentname agenturl tableinfo]
-    (info "both=" agentid "-" agenturl "-" tableinfo)
+    (info "get-table-data-both" 
+        :agentid  agentid 
+        :agenturl agenturl 
+        :tableinfo tableinfo
+    )
     (if (:hastimestamp tableinfo)
         (get-inc-data agentid agentname agenturl tableinfo)
         (get-all-data agentid agentname agenturl tableinfo)
@@ -430,21 +453,33 @@
 )
 
 (defn- get-table-data-inc [agentid agentname agenturl tableinfo]
-    (info "inc=" agentid "-" agenturl "-" tableinfo)
+    (info "get-table-data-inc" 
+        :agentid  agentid 
+        :agenturl agenturl 
+        :tableinfo tableinfo
+    )
     (when (:hastimestamp tableinfo)
         (get-inc-data agentid agentname agenturl tableinfo)
     )
 )
 
 (defn- get-table-data-all [agentid agentname agenturl tableinfo]
-    (info "all=" agentid "-" agenturl "-" tableinfo)
+    (info "get-table-data-all" 
+        :agentid  agentid 
+        :agenturl agenturl 
+        :tableinfo tableinfo
+    )
     (when (not (:hastimestamp tableinfo))
         (get-all-data agentid agentname agenturl tableinfo)
     )
 )
 
 (defn get-agent-data [agentid agentname agenturl type]
-    (info "get-agent-data=" agentid "-" agenturl "-" type)
+    (info "get-agent-data" 
+        :agentid  agentid 
+        :agenturl agenturl 
+        :type type
+    )
     (try
         (let [tablelist (query-agent-schema agentid)]
             (when (= type "both")
