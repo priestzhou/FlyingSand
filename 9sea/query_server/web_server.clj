@@ -490,6 +490,7 @@
   [agent-id]
   {
    :status 409
+   :headers {"Content-Type" "application/json"}
    :body (json/write-str {:error "duplicated name" :collector (str agent-id)})
   }
 )
@@ -498,6 +499,7 @@
   [agent-id]
   {
    :status 409
+   :headers {"Content-Type" "application/json"}
    :body (json/write-str {:error "duplicated url" :collector (str agent-id)})
   }
 )
@@ -524,7 +526,8 @@
                 (do
                   (at-backend/add-agent agent-name url account-id)
                   {
-                   :status 200
+                   :status 201
+                   :headers {"Content-Type" "application/json"}
                   }
                 )
               )
@@ -535,6 +538,7 @@
         (prn (.getMessage ex))
         {
          :status 500
+         :headers {"Content-Type" "application/json"}
          :body "null"
         }
     ))
@@ -549,6 +553,7 @@
              res (at-backend/select-agent account-id)]
                   {
                    :status 200
+                   :headers {"Content-Type" "application/json"} 
                    :body (json/write-str res)
                   }
         )
@@ -577,6 +582,8 @@
                   (at-backend/delete-agent cid)
                   {
                    :status 200
+                   :headers {"Content-Type" "application/json"}
+                   :body "null"
                   }
                 )
               )
@@ -586,6 +593,7 @@
        (prn (.getMessage ex))
        {
         :status 500
+        :headers {"Content-Type" "application/json"}
         :body "null"
        }
     ))
@@ -607,6 +615,7 @@
               (if (nil? agent-id)
                 {
                  :status 404
+                 :headers {"Content-Type" "text/plain"}
                  :body "no agent found"
                 }
                 (do
@@ -621,6 +630,8 @@
                         (at-backend/edit-agent cid agent-name url)
                         {
                          :status 200
+                         :headers {"Content-Type" "application/json"}
+                         :body "null"
                         }
                        )
                      )
@@ -634,6 +645,7 @@
        (prn (.getMessage ex))
       {
        :status 500
+       :headers {"Content-Type" "application/json"}
        :error "null"
       }
     ))
