@@ -97,3 +97,7 @@
   (orm/pk :ApplicationId)
 )
 
+(orm/defentity TblAgent
+  (orm/pk :id)
+)
+

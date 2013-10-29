@@ -38,6 +38,7 @@
 (defloggers debug info warn error)
 
 (def ^:private result-map (atom {}))
+(def ^:private result-count-map (atom {}))
 
 (def ^:private hive-db (ref {:classname "org.apache.hadoop.hive.jdbc.HiveDriver"
                              :subprotocol "hive"
@@ -96,9 +97,28 @@
     (DriverManager/getConnection url user password)
 )
 
+(defn- execute-count-query
+  [q-id sql-str]
+  (try
+    (let [count-sql-str (str "select count(*) cnt from (" sql-str ") a")
+          conn (get-hive-conn (get-hive-conn-str) "" "")
+          ^Statement stmt (.createStatement conn)
+          ^ResultSet rs-count (.executeQuery stmt count-sql-str)
+          row-count (if (.next rs-count) (.getInt rs-count "cnt") 0)
+          ]
+        (debug "count is:" row-count)
+        (swap! result-count-map update-in [q-id] assoc :count row-count)
+    )
+  (catch Exception ex
+    (.printStackTrace ex)
+    (.getMessage ex)
+    (swap! result-count-map update-in [q-id] assoc :count -1)
+  ))
+)
+
 (defn execute-query
   [sql-str]
-  (let [conn (get-hive-conn (get-hive-conn-str) "" "")
+    (let [conn (get-hive-conn (get-hive-conn-str) "" "")
         result-size (config/get-key :max-result-size)
         _ (prn "result-size:" result-size)
         ^Statement stmt (.createStatement conn)
@@ -109,14 +129,14 @@
         row-values (fn [] (map (fn [i] (.getString rs i)) idxs))
         rows (fn rowfn [] (when (.next rs) 
                             (cons (vec (row-values)) (lazy-seq (rowfn)))))
-        result-4-save (doall (take 100 (rows)))
-        _ (prn result-4-save)
-
+        result-4-save (doall (take result-size (rows)))
+        _ (debug (str result-4-save))
         ]
 
     {:titles (vec col-name)
      :values result-4-save
     }
+   
   )
 )
 
@@ -173,7 +193,7 @@
 )
 
 (defn update-result-map
-  [q-id stats ret-result error-message csv-url ]
+  [q-id stats ret-result error-message csv-url]
   (debug "update status" :qid q-id :stats stats :error error-message)
   (let [start-time (:submit-time (@result-map q-id))
         cur-time (System/currentTimeMillis)
@@ -184,27 +204,34 @@
              :status stats 
              :submit-time cur-time
              :progress [0 1]
-             :log "running"
+             :log "query is running"
              :result ret-result)
      "succeeded"(swap! result-map  update-in [q-id] assoc 
              :status stats 
              :end-time cur-time
              :progress [1 1]
-             :log ""
+             :log "query is succeeded!"
              :duration duration
              :url csv-url
-             :result ret-result)
+             :count  (ret-result :count)
+             :result (select-keys ret-result [:titles :values]))
      "failed" (swap! result-map  update-in [q-id] assoc
              :status stats 
              :end-time cur-time
-             :log "1 stage 1"
+             :progress [1 1]
+             :log "query is failed!"
              :duration duration
              :error error-message
              :result ret-result)
     )
-   ; (apply update-history-fn [q-id stats error-message url cur-time duration])
      (update-history-query q-id stats error-message csv-url cur-time duration)
   )
+)
+
+(defn- get-count-by-qid
+  [qid]
+  (while (nil? (:count (@result-count-map qid))))
+  (-> (:count (@result-count-map qid)))
 )
       
 (defn process-query
@@ -213,10 +240,13 @@
 	ret-result (transform-result rs)
         filename (format "%s/%d_%d_result.csv" (config/get-key :result-file-dir) q-id q-time)
         csv-url (format "/result/%d_%d_result.csv" q-id q-time)
+        count (get-count-by-qid q-id)
        ]
-        (update-result-map q-id "succeeded" ret-result nil csv-url )
+        (debug (format "result count for qid:%s is %s" q-id count))
+    (let [res (assoc ret-result :count count)]
+        (update-result-map q-id "succeeded" res nil csv-url)
         (future (persist-query-result rs filename))
-       ; (persist-query-result result-set q-id q-time)
+    )
   )
 )
 
@@ -242,6 +272,7 @@
    (debug "run-shark-query" :qid q-id)
     (let [hive-query (trans/sql-2003->hive context query-str)
           ret-rs (execute-query hive-query)]
+      (future (execute-count-query q-id hive-query))
       (process-query q-id ret-rs)
     )
   (catch Exception ex

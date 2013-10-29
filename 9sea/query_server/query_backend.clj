@@ -269,13 +269,12 @@
        nil
        ; get tree structure of all applications
       (do
-      (prn "app is" apps)
-     (let[ret (map app-mapper apps)]
-       (prn "metastore-tree ret" ret)
-       ret)
-     ; (vector? apps)
-    ;  (app-mapper (nth apps 0))
-     )
+        (prn "app is" apps)
+        (let[ret (map app-mapper apps)]
+          (prn "metastore-tree ret" ret)
+          ret
+        )
+      )
    ))
 )
 
