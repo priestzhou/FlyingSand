@@ -190,14 +190,8 @@
 (defn gen-context
   [account-id app version db]
   (debug "app:" app "version:" version "db:" db)
-  (if (not (empty? @meta-tree))
-    {:ns @meta-tree :default-ns [app version]}
-    (do
-      (let [meta-info (backend/get-metastore-tree account-id)]
-    
-      {:ns meta-info :default-ns [app version]}
-      )
-    )
+  (let [meta-info (backend/get-metastore-tree account-id)]
+    {:ns meta-info :default-ns [app version]}
   )
 )
 
