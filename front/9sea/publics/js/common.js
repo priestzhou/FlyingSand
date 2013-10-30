@@ -4,6 +4,58 @@ var Common={
 	},
 	setInput:function(){
 		$.sc2.placeholder({trigger:".popInput"});
+
+	},
+	  login:function(){
+	    var login_btn=$(".loginBtn");
+	    login_btn.live("click",function(){
+	      var html='<div class="loginPop">'+
+	      '<input type="email" name="email" value="" placeholder="请输入您的用户名" class="boxy-content popInput">'+
+	      '<input type="password" name="password" value="" placeholder="请输入您的密码" class="boxy-content popInput">'+
+	      '<a class="loginPost btn_blue_long" href="#">登录</a>'+
+	      '</div>';
+
+	      Common.setPop("<span class='sqlIcon tipIcon tipPerIcon'></span>登录 WhaleMiner",html);
+	      Common.setInput();
+	      return false;
+	    })
+
+	    $(".loginPost").live("click",function(){
+	        var email=$(".loginPop > input:eq(0)").val(),
+	            password=$(".loginPop > input:eq(1)").val();
+	        $.ajax({
+	            url: '/sql/',
+	            type: 'post',
+	            data:{
+	                      "email":email,
+	                      "password":password
+	            },
+	            dataType: 'json',
+	            error: function(){},
+	            success: function(data){
+
+	            },
+	            statusCode:{
+	              201:function(){location.href=location.href;},
+	              401:function(){Boxy.alert("用户名或密码不正确")}
+	            }
+
+	        });
+	    })
+	  },
+	delCookie:function(){
+		var delLink=$(".loginOut");
+		    var uid=$.cookie("user_id");
+		    if(uid){
+		      delLink.find("strong").html('退出登录');
+		    }else{
+		    	delLink.find("strong").html('<a href="#" class="loginBtn">登录</a>');
+		    }
+
+		delLink.click(function(){
+			$(this).find("strong").html('<a href="#" class="loginBtn">登录</a>');
+			$.cookie("user_id",null);
+		})
 	},
 	getTimes:function(){
 		return new Date().getTime();
@@ -18,14 +70,14 @@ var Common={
 	        hide: 1000
 	      }
 	    });
-	    		
+
 	},
 	getSelectTime:function(from,main){
 		var startTime=from;
 		$(".sqlTime",main).html("");
 		var name=main.attr("name");
 
-		Common.timer={};Common.timer[name]=null;
+		Common.timer={};
 		Common.timer[name]=setInterval(function(){
 			var currentTime=Common.getTimes(),
 				ms=currentTime-startTime;
@@ -43,7 +95,7 @@ var Common={
 				remainM<=9?remainM="0"+remainM:remainM=remainM;
 				remainS<=9?remainS="0"+remainS:remainS=remainS;
 
-				$(".sqlTime",main).html(remainH+":"+remainM+":"+remainS)							
+				$(".sqlTime",main).html(remainH+":"+remainM+":"+remainS)
 		},1000);
 
 	},
@@ -60,25 +112,13 @@ var Common={
 				m<12?m=m+1:m=1;
 				h<=9?h="0"+h:h=h;
 				mi<=9?mi="0"+mi:mi=mi;
-				s<=9?s="0"+s:s=s;			
+				s<=9?s="0"+s:s=s;
 
 			return y+"-"+m+"-"+d+" "+h+":"+mi+":"+s;
 	},
 	isLogin:function(){
         $.get(
         "/sql/", {
-          "timestamp": Common.getTimes()
-        },
-        function(data,status) {
-
-        },
-        "json");
-	},
-	login:function(){
-        $.post(
-        "/sql/", {
-          "email":"a@b.c",
-          "password":"123",
           "timestamp": Common.getTimes()
         },
         function(data,status) {
@@ -116,7 +156,7 @@ var Common={
 	  "url":"收集器路径",
 	  "status":"状态",
 	  "操作":"操作"
-	}    
+	}
     var values=value,
         column=title;
     var allColumn=[];
@@ -145,11 +185,11 @@ var Common={
             "sLast": "尾页",
             "sNext": "下一页",
             "sPrevious": "上一页"
-          }                    
-        }     
+          }
+        }
       });
 
 
 
-  }    	
+  }
 }

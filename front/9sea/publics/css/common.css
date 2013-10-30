@@ -86,10 +86,12 @@ a:hover{
 	margin-right: 2px;
 }
 .logoIcon{
-	background-position: -382px 0;
-	width: 188px;
-	height: 36px;
-	margin: 10px 0 0 0;
+	background: url(../img/logo.png) no-repeat 0 0;
+	display: inline-block;
+	width: 213px;
+	height: 42px;
+	margin: 5px 0 0 10px;
+
 }
 .selectIcon{
 	background-position: -51px -71px;
@@ -106,6 +108,10 @@ a:hover{
 	width: 18px;
 	height: 18px;
 }
+.downIcon:hover,.downIcon.active{
+	background-position: -211px -147px;	
+}
+
 .topMenu1:hover .downIcon,.topMenu1.active .downIcon{
 	background-position: -211px -147px;
 }
@@ -379,15 +385,15 @@ margin: 0 auto; */
 	text-decoration: underline;
 }
 
-#sqlDownload{
+.sqlDownload{
 	/* display: none; */
 	position: relative;
 	left: 22px;
 	padding-left: 15px;
 	padding-right: 15px;
-	visibility: hidden;
+/* 	visibility: hidden; */
 }
-#sqlDownload p{
+.sqlDownload p{
 	position: absolute;
 	width: 167px;
 	height: 46px;
@@ -398,12 +404,12 @@ margin: 0 auto; */
 	visibility: hidden;
 	background: url(../img/f_bg.png) no-repeat 0 0;
 }
-#sqlDownload p a{
+.sqlDownload p a{
 	display: inline-block;
 	color: #555;
 	text-decoration: underline;
 }
-#sqlDownload p a:hover,#sqlDownload p a.hover{
+.sqlDownload p a:hover,#sqlDownload p a.hover{
 	color: #499fef;
 }
 .sqlDownloadWrap{
@@ -531,7 +537,7 @@ a.sqlLogLink{
 #popGrid td{
 	border:1px solid #d3d8db;
 }
-#sqlTableWrap .dataTables_wrapper{
+.sqlTableWrap .dataTables_wrapper{
 /* 	height: 400px; */	
 	overflow-x:scroll;
 }
@@ -568,7 +574,7 @@ a.sqlLogLink{
 	display: inline-block;
 	vertical-align: middle;
 }
-#sqlTableWrap{
+.sqlTableWrap{
 	padding-top: 7px;
 
 }
@@ -613,6 +619,9 @@ table.dataTable td{
     font-weight: bold;
     text-align: left;
     vertical-align: top;
+}
+#sqlTableWrap{
+	padding-top: 7px;
 }
 .dataTables_scroll{
 	overflow: auto;
@@ -777,4 +786,15 @@ input.popInput{
 	width: 240px;
 	display: block;
 	margin: 0 auto 10px;
+}
+.btn-group{
+	width: 160px;
+}
+.downIcon{
+	position: absolute;
+	top: 17px;
+	right: 0;
+}
+.loginOut strong{
+	font-weight: normal;
 }

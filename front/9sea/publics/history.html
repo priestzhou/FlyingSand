@@ -2,14 +2,14 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>datawize</title>
+	<title>历史查询</title>
 	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="all"/>
-	<link rel="stylesheet" href="css/codemirror.css" type="text/css" media="all"/>	
+	<link rel="stylesheet" href="css/codemirror.css" type="text/css" media="all"/>
 	<link rel="stylesheet" href="css/zTreeStyle.css" type="text/css" media="all"/>
 	<link rel="stylesheet" href="css/tabs.css" type="text/css" media="all"/>
 	<link rel="stylesheet" href="css/jquery.dataTables.css" type="text/css" media="all"/>
 	<link rel="stylesheet" href="css/boxy.css" type="text/css" media="all"/>
-	<link rel="stylesheet" href="css/common.css" type="text/css" media="all"/>		
+	<link rel="stylesheet" href="css/common.css" type="text/css" media="all"/>
 <style>
 	table.dataTable thead th{
 		background-color: #4A9FF0;
@@ -25,10 +25,10 @@
 		<div id="sqlWrapMain">
 
 	<div class="sqlBar">
-		<span class="loginInfo">尊敬的***，欢迎您！</span>
-		<a href="#"><span class="sqlIcon homeIcon"></span>首页</a>｜
+		<span class="loginInfo"></span>
+		<a href="index.html"><span class="sqlIcon homeIcon"></span>首页</a>｜
 		<a href="#"><span class="sqlIcon myIcon"></span>个人中心</a>｜
-		<a href="#"><span class="sqlIcon loginOutIcon"></span>退出登录</a>｜
+		<a class="loginOut" href="#"><span class="sqlIcon loginOutIcon"></span><strong>退出登录</strong></a>｜
 		<a href="#"><span class="sqlIcon helpIcon"></span>帮助</a>
 	</div>
 
@@ -36,19 +36,17 @@
 
 			<div class="row-fluid">
 				<div class="span4">
-					<a class="sqlIcon logoIcon" href="#"></a>
+					<a class="sqlIcon logoIcon" href="/sql/"></a>
 				</div>
-				<div class="span8" style="width:315px;float:right;">
+				<div class="span8" style="width:330px;float:right;">
 					<div class="btn-group" style="float:left;">
-						<a class="topMenu1" href="index.html" data-toggle="dropdown">
+						<a class="topMenu1" href="index.html">
 							<span class="sqlIcon selectIcon"></span>
 							数据查询
-							<span class="sqlIcon downIcon"></span>
+
 						</a>
+						<a href="#" class="sqlIcon downIcon" data-toggle="dropdown"></a>
 						<ul class="dropdown-menu" style="margin-left:40px;">
-							<li>
-								<a style="margin-left:0;" class="openCommon" href="#">打开常用查询</a>
-							</li>
 							<li>
 								<a href="history.html" target="_blank">打开历史查询</a>
 							</li>
@@ -57,7 +55,7 @@
 					</div>
 
 					<a style="float:left;" class="topMenu2" href="collectors.html"><span class="sqlIcon dbIcon"></span>收集器管理</a>
-				</div>									
+				</div>
 			</div>
 
 
@@ -65,54 +63,57 @@
 
 	<div class="container">
 			<div class="sqlBread boxShadowStyle">
-				<a href="#">数据查询</a><span class="sqlIcon breadIcon"></span><a class="current" href="#">历史查询</a>
+				<a href=""/sql/"">数据查询</a><span class="sqlIcon breadIcon"></span><a class="current" href="#">历史查询</a>
 			</div>
 
 
 
 		<!-- sqlTable start-->
-	<div class="sqlRTable">	
+	<div class="sqlRTable">
 
 		<div id="sqlTableWrap">
 		</div>
-	</div>	
+	</div>
 		<!-- sqlTable end-->
 
 	</div><!-- container -->
 
 	</div>
 	</div>
-	
+
 	<div id="footer">
 		Copyright &copy; 2013 WhaleMiner
 	</div>
 	<script src="js/jquery-1.7.2.min.js" language="javascript"></script>
 	<script src="js/jquery.cookie.js" language="javascript"></script>
 	<script src="js/bootstrap.min.js" language="javascript"></script>
+	<script src="js/jquery.placeholder.js" language="javascript"></script>
 	<script src="js/jquery.ztree.all-3.5.min.js" language="javascript"></script>
 	<script src="js/magic/core.js" language="javascript"></script>
 	<script src="js/magic/tabs.js" language="javascript"></script>
-	<script src="js/jquery.dataTables.js" language="javascript"></script>		
+	<script src="js/jquery.dataTables.js" language="javascript"></script>
 	<script src="js/jquery.boxy.js" language="javascript"></script>
 	<script src="js/jquery.blockUI.js" language="javascript"></script>
 	<script src="js/codemirror.js" language="javascript"></script>
 	<script src="js/sql.js" language="javascript"></script>
 	<script src="js/jquery.tooltips.js" language="javascript"></script>
-	<script src="js/common.js" language="javascript"></script>	
-	<script src="js/query.js" language="javascript"></script>	
+	<script src="js/common.js" language="javascript"></script>
+	<script src="js/query.js" language="javascript"></script>
 <script>
 
 
-$(function(){		
+$(function(){
 	Query.getHistory();
 	Query.doTablesOp();
+    Common.delCookie();
+    Common.login();
 })
 </script>
 
 <!-- <div id="pop">
-	<table cellpadding="0" cellspacing="0" border="0" id="popGrid"></table>	
+	<table cellpadding="0" cellspacing="0" border="0" id="popGrid"></table>
 </div> -->
-<div id="sqlTabCon" style="display:none">	
+<div id="sqlTabCon" style="display:none">
 
 					<select class="select_pro">
 						<option>产品</option>
@@ -135,7 +136,7 @@ $(function(){
 					<div class="sqlBoxDiv">
 						<textarea rows="10" id="sqlBox" class="sqlArea"></textarea>
 					</div>
-					<!-- sqlBoxDiv -->					
+					<!-- sqlBoxDiv -->
 					<div class="sqlTime"></div>
 					<div class="progress progress-striped active" style="margin-left:10px;margin-right:10px">
 						<div class="bar" style="width: 0;"></div>
@@ -145,9 +146,9 @@ $(function(){
 						<div class="sqlLogLink">日志<a href="#"><span class="sqlSIcon logIcon"></span><strong>收起日志</strong></a>
 						</div>
 						<div class="sqlLog">
-								
+
 						</div>
-					</div>					
+					</div>
 </div>
 </body>
 </html>
