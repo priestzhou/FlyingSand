@@ -325,6 +325,17 @@
     )
 )
 
+(defn- updata-agent-sync-time [agentid]
+    (let [now (System/currentTimeMillis)
+            nowstr (get-group-time now 1000)
+            sql (str "update TblAgent set LastSyncTime=\"" nowstr"\" "
+                    " where id =" agentid
+                )
+        ]
+        res (runupdate sql)
+    )
+)
+
 (defn- get-inc-data' [res agentid agentname tableinfo]
     (let [
             hiveName (:hive_name tableinfo)
@@ -346,6 +357,7 @@
                 (:namespace tableinfo)
                 agentid
             )
+            (updata-agent-sync-time agentid )
         )
     )
 )
@@ -436,7 +448,11 @@
             status (:status res)
         ]
         (cond 
-            (= 200 status) (get-all-data' res agentname tableinfo)
+            (= 200 status) 
+            (do
+                (get-all-data' res agentname tableinfo)
+                (updata-agent-sync-time agentid )
+            )
             :else 
             (error "The http response's status is not 200" 
                 :agenturl agenturl
@@ -444,7 +460,6 @@
                 :response res
             )
         )
-
     )
 )
 
