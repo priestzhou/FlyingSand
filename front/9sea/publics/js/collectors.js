@@ -5,6 +5,8 @@ var Collectors = {
     this.addCollectors();
     this.delCollectors();
     this.editCollectors();
+    Common.delCookie();
+    Common.login();
 
   },
   addCollectors:function(){
@@ -12,8 +14,8 @@ var Collectors = {
 
     add.click(function(){
       var html='<input class="colName popInput" placeholder="请输入收集器名称" type="text" value=""/><input class="colUrl popInput" placeholder="请输入收集器地址" type="text" value=""/><p><a id="colSaveBtn" class="btn_blue_long" href="javascript:void(0);">确定</a></p>';
-      Common.setPop("<span class='sqlIcon tipIcon'></span>添加数据收集器",html); 
-      Common.setInput();           
+      Common.setPop("<span class='sqlIcon tipIcon'></span>添加数据收集器",html);
+      Common.setInput();
     })
 
     $("#colSaveBtn").live("click",function(){
@@ -24,7 +26,7 @@ var Collectors = {
               type: 'post',
               data:{
                         "name": name,
-                        "url": url,  
+                        "url": url,
                         "timestamp": Common.getTimes()
               },
               dataType: 'json',
@@ -38,10 +40,10 @@ var Collectors = {
                 409:function(){}
               }
 
-          });      
+          });
     })
-    
-  
+
+
   },
   getCollectors:function(){
         $.ajax({
@@ -58,8 +60,8 @@ var Collectors = {
               statusCode:{
                 401:function(){alert("暂时没有结果")},
                 200:function(data){
-                  if(!data.length){Boxy.alert("暂时没有常用查询");return;}
-                  var titles=["id", "name", "url", "status", "recent-sync", "synced-data"];
+                  if(!data.length){return;}
+                  var titles=["name", "url", "status", "recent-sync", "synced-data"];
 
                   for (var j=0,l=data.length;j<l;j++){
                       if(data[j].status=="no-sync"){
@@ -88,7 +90,7 @@ var Collectors = {
                       if(data[j].status=="no-sync"){
                         var edit=Collectors.getTablesOp("edit",data[j].id+"__"+data[j].name+"__"+data[j].url)
                       }
-                      v[j].push(del+" "+edit);   
+                      v[j].push(del+" "+edit);
                   }
 
                   titles.push("操作");
@@ -107,7 +109,7 @@ var Collectors = {
         $.ajax({
               url: "/sql/collectors/"+id,
               type: 'delete',
-              data:{    
+              data:{
                         "timestamp": Common.getTimes()
               },
               dataType: 'json',
@@ -123,7 +125,7 @@ var Collectors = {
                 }
               }
 
-          });      
+          });
     })
 
   },
@@ -133,7 +135,7 @@ var Collectors = {
     edit.live("click",function(){
         var rel=$(this).attr("rel"),
             data=rel.split("__");
-        
+
         var id=data[0],name=data[1],url=data[2];
 
       var html='<input class="colName popInput" type="text" value="'+name+'"/><input class="colUrl popInput" type="text" value="'+url+'"/><p><a id="colEditBtn" class="btn_blue_long" href="javascript:void(0);">确定</a></p>';
@@ -160,7 +162,7 @@ var Collectors = {
                   403:function(){},
                   409:function(){
                     Boxy.alert("重复的收集器名称或url");
-                  },                                
+                  },
                   200:function(data){
                     Query.delBoxy();
                     Collectors.getCollectors();
@@ -172,11 +174,11 @@ var Collectors = {
 
             });
 
-       }) 
-      
+       })
+
     })
 
-    
+
   },
   getTablesOp:function(type,value){
     var opName="",cls="";
@@ -189,5 +191,5 @@ var Collectors = {
     }
     var html='<a class='+cls+' rel="'+value+'" href="javascript:void(0);">'+opName+'</a>';
     return html;
-  }  
+  }
 }

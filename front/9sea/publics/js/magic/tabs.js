@@ -114,6 +114,9 @@ mac.tabs = function(self, cfg) {
 		}
 		a.unbind('click');
 		a.click(function() {
+			var name=$(this).attr("name");
+			$(".sqlRTable > div").hide();
+			$(".sqlRTable div[rel="+name+"]").show();
 			var s = self.selected;
 			if (s) {
 				s.removeClass("selected");

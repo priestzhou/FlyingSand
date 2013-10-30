@@ -1,32 +1,15 @@
 
-function quote(s) {
-  var res = "`";
-  for (var i = 0, l = s.length; i < l; ++i) {
-    var c = s[i];
-    if (c == "`") {
-      res += "``";
-    } else {
-      res += c;
-    }
-  }
-  res += "`";
-  return res;
-}
-
 var Query = {
   init: function() {
     //Common.isLogin();
     $.blockUI.defaults.message="加载中...";
-    this.setTabs();
     this.setTreeData();
     this.setUi();
     this.setQuery();
     this.getQuery();
-    //this.setDownQuery();
+    this.setDownQuery();
     Common.slideClick();
-    this.doTablesOp();
-    Common.delCookie();
-    Common.login();
+    this.doTablesOp(); 
 
   },
   setUi: function() {
@@ -49,40 +32,7 @@ var Query = {
     })*/
 
 
-  },
-  setTabsInt:function(data){
-          var main=Query.getCurrentTab();
-          var select_pro=$(".select_pro",main),select_ver=$(".select_ver",main),proArr=[],verArr=[];
-
-          //var verObj={};
-          for(var i=0,l=data.length;i<l;i++){
-            proArr.push('<option>'+data[i].name+'</option>');
-          }
-            for(var j=0,le=data[0].children.length;j<le;j++){
-              verArr.push('<option>'+data[0].children[j].name+'</option>');
-
-            }
-
-          $("#sqlTabCon .select_pro").html(proArr.join(''));
-          $("#sqlTabCon .select_ver").html(verArr.join(''));
-          select_pro.html(proArr.join(''));
-          select_ver.html(verArr.join(''));
-
-          select_pro.change(function(){
-            var app=$(this).val(),verArr=[];
-            for(var i=0,l=data.length;i<l;i++){
-              if(data[i].name==app){
-                for(var j=0,le=data[i].children.length;j<le;j++){
-                  verArr.push('<option>'+data[i].children[j].name+'</option>');
-
-                }
-              }
-
-            }
-            select_ver.html(verArr.join(''));
-
-          })
-  },
+  },  
   setTreeData: function() {
 
     var uid=$.cookie("user_id");
@@ -115,11 +65,11 @@ var Query = {
             var ver=t[0].getParentNode(),
             app=ver.getParentNode(),
             verName=ver.name,
-            appName=app.name;
-            var html = quote(appName) + "." + quote(verName) + "." + quote(name);
+            appName=app.name;                        
+            var html = "`"+appName+"`.`"+verName+"`.`"+name+"`";//'select * from '
             //Query.setAddTabs(Query.tabs,html);
             var currentV=Query.getCurrentEditor().getValue();
-            Query.getCurrentEditor().setValue(currentV+" "+html);
+            Query.getCurrentEditor().setValue(currentV+" "+html);           
             return false;
           } else if (type == "namespace") {
             return false;
@@ -127,7 +77,7 @@ var Query = {
             var pNode = t[0].getParentNode(),
                 ver=pNode.getParentNode(),
                 app=ver.getParentNode(),
-                html = quote(app.name) + "." + quote(ver.name) + "." + quote(pNode.name) + "." + quote(name);
+                html = "`"+app.name+"`.`"+ver.name+"`.`"+pNode.name+"`.`"+name+"`";// + ' from ' + pNode.name
             //Query.setAddTabs(Query.tabs,html);
             var currentV=Query.getCurrentEditor().getValue();
             Query.getCurrentEditor().setValue(currentV+" "+html);
@@ -138,7 +88,7 @@ var Query = {
     };
 //tree data
 
-    var t = $("#sqlTree"),tree;
+    var t = $("#sqlTree"),tree;   
 
     $(".selectTenL",t).live("click",function(){
             var tId=$(this).parent().attr("id"),
@@ -152,26 +102,41 @@ var Query = {
                 titles=[];
 
             for (var i=0,l=children.length;i<l;i++){
-               titles.push(children[i].name);
+               titles.push(children[i].name); 
             }
 
             Query.setPopGrid(titles,values,"<span class='sqlIcon tipIcon tipTenIcon'></span>前十条参考数据",true);
             return false;
     })
-    $("#sqlTree").block();
+    $(".sqlRow").block();
     $.get(
       "/sql/meta", {
 
       },
       function(data,status) {
-        $("#sqlTree").unblock();
+        $(".sqlRow").unblock();
         if(status=="success"){
           //var data=[{"children":[{"children":[{"children":[{"children":[{"name":"item","type":"varchar(255)"},{"name":"id","type":"integer primary key autoincrement"}],"name":"smile","samples":[["hehe",1],["haha",2]],"type":"table"}],"name":"db","type":"namespace"}],"name":"panda","type":"namespace"}],"name":"WoW","type":"namespace"},{"children":[{"children":[{"children":[{"children":[{"name":"item","type":"varchar(255)"},{"name":"id","type":"integer primary key autoincrement"}],"name":"smile","samples":[["hehe",1],["haha",2]],"type":"table"}],"name":"db","type":"namespace"}],"name":"panda","type":"namespace"}],"name":"WoW","type":"namespace"}];
           tree = $.fn.zTree.init(t, setting, data);
           Query.setTreeHandle(tree);
-          Query.setTabsInt(data);
+
+          var select_pro=$(".select_pro"),select_ver=$(".select_ver"),proArr=[],verArr=[];
+          for(var i=0,l=data.length;i<l;i++){
+            proArr.push('<option>'+data[i].name+'</option>');
+            for(var j=0,le=data[i].children.length;j<le;j++){
+              verArr.push('<option>'+data[i].children[j].name+'</option>');
+            }
+          }
+
+          //$("#sqlTabCon .select_pro").html('<option>产品</option>'+proArr.join(''));
+          //$("#sqlTabCon .select_ver").html('<option>版本</option>'+verArr.join(''));
+          $("#sqlTabCon .select_pro").html(proArr.join(''));
+          $("#sqlTabCon .select_ver").html(verArr.join(''));          
+          Query.setTabs();
           //select_pro.append(proArr.join(''));
           //select_ver.append(verArr.join(''));
+
+
         }
       },
       "json");
@@ -193,7 +158,7 @@ var Query = {
   },
   setCodeMirror:function(){
     Query.editor = CodeMirror.fromTextArea($(".sqlArea")[0], {
-      mode: "text/x-mysql",
+      mode: "text/x-mariadb",
       indentWithTabs: true,
       smartIndent: true,
       lineNumbers: true,
@@ -216,8 +181,8 @@ var Query = {
       items: dd,
       onCloseTab: function(me, c, a) {
 
-        //me.closeTab(c);
-        //Boxy.confirm("确定删除？", function() {me.closeTab(c);return true;}, {title: "提示信息"});
+        //me.closeTab(c);        
+        //Boxy.confirm("确定删除？", function() {me.closeTab(c);return true;}, {title: "提示信息"});      
         //$(this).parents(".item").remove();
         //$(".item[name="+c+"]").remove();
         return true;
@@ -238,9 +203,9 @@ var Query = {
 
     delTabs.click(function(){
       //Boxy.confirm("确定删除？", function() {
-        Query.tabs.select('tab0');
+        Query.tabs.select('tab0');    
         Query.tabs.closeTabs();
-      //}, {title: "提示信息"});
+      //}, {title: "提示信息"});            
 
       return false;
     })
@@ -270,34 +235,22 @@ var Query = {
       var main=Query.getCurrentTab();
       $(".progress",main).css("display","none");
       $(".sqlTime",main).html("");
-      $(".sqlRTable > div").hide();
-      $(".sqlRTable div[rel=tab"+i+"]").show()
 
       if(typeof value!=="undefined"){
         Query.editor[i].setOption("value", value);
       }
   },
-  setGrid: function(title,value,id,url,total) {
+  setGrid: function(title,value) {
 
 var values=value,
     column=title;
 var allColumn=[];
-    for (var i=0,l=column.length;i<l;i++){
+    for (var i=0,l=column.length;i<l;i++){ 
       allColumn.push({"sTitle":column[i]});
     }
-    var main=Query.getCurrentTab(),mainName=main.attr("name"),
-        resultHtml='<div rel="'+mainName+'"></div>';
-    if($(".sqlRTable div[rel="+mainName+"]").length>0){
-      $(".sqlRTable div[rel="+mainName+"]").remove();
-    }
-    $(".sqlRTable").append(resultHtml);
-    var currentResult=$(".sqlRTable div[rel="+mainName+"]");
-    currentResult.html($("#tableResult").html());
 
-    $(".sqlDownload",currentResult).attr("data-id",id).attr("data-url",url);
-    Query.setDownQuery(currentResult);
-    $(".sqlTableWrap",currentResult).html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="sqlTable"></table>');
-    $('#sqlTable',currentResult).dataTable({
+    $("#sqlTableWrap").html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="sqlTable"></table>');
+    $('#sqlTable').dataTable({
       "bProcessing": true,
       "sPaginationType": "full_numbers",
       bLengthChange: false,
@@ -306,7 +259,7 @@ var allColumn=[];
       "aoColumns": allColumn,
       sScrollXInner:"110%",
       oLanguage: {
-        "sInfo": "共 "+ total + "条记录 _START_ 到 _END_ ",
+        "sInfo": "共 _TOTAL_ 条记录 _START_ 到 _END_ ",
         "sSearch": "搜索：",
         "sProcessing":"加载中...",
         "sZeroRecords":"无记录",
@@ -320,7 +273,6 @@ var allColumn=[];
     });
 
   },
-
   setPopGrid:function(title,value,poptitle,option){//列名，值，弹窗标题，是否要开启选项
 
 var params={
@@ -333,9 +285,8 @@ var params={
   "version":"版本",
   "操作":"操作",
   "db":"数据库",
-  "submit-time":"查询提交时间",
-  "duration": "耗时"
-}
+  "submit_time":"查询提交时间"
+}    
     var values=value,
         column=title;
     var allColumn=[];
@@ -358,10 +309,10 @@ var params={
         bSort:false,
         oLanguage:{
           "sProcessing":"加载中..."
-        },
+        },      
         "aaData": values,
         "aoColumns":allColumn
-      });
+      });      
     }else{
 
       $('#popGrid').dataTable({
@@ -382,8 +333,8 @@ var params={
             "sLast": "尾页",
             "sNext": "下一页",
             "sPrevious": "上一页"
-          }
-        }
+          }                    
+        }     
       });
 /*      if(allColumn.length==4){
 
@@ -439,7 +390,7 @@ var params={
         return;
       }
 
-
+      
       //if($(this).find(".blockUI").length){console.log(1);return;}
       var pro=Query.getQueryOptions().pro,
           ver=Query.getQueryOptions().ver,
@@ -447,11 +398,11 @@ var params={
           main=Query.getCurrentTab(),
           mainName=main.attr("name"),getResult={};
 
-
+          
       if(pro=="产品"){
           Boxy.alert("请选择产品");
           return false;
-      }
+      }    
       if(ver=="版本"){
           Boxy.alert("请选择版本");
           return false;
@@ -459,7 +410,7 @@ var params={
       if(sql==""){
         Boxy.alert("请输入sql语句");
         return false;
-      }
+      }      
 
       submitT.block({ message: null });
       submitT.data("n",1)
@@ -483,7 +434,7 @@ var params={
                             var id=data.id;
                             var progressN=10;
 
-                            //$("#sqlDownload").attr("data-id",id);
+                            $("#sqlDownload").attr("data-id",id);
 
                               $.ajax({
                                   url: "/sql/queries/"+id+"/",
@@ -498,19 +449,19 @@ var params={
                                   },
                                   statusCode:{
                                     200:function(data){
-
+                                          
                                           $(".sqlLog",main).html("");
                                           if(data.status=="failed"){
                                             submitT.data("n",0);
-                                            submitT.unblock();
+                                            submitT.unblock();                                            
                                             var error=data.error,
                                                 log=data.log;
                                                 $(".progress",main).css("display","none");
-                                                $(".sqlTime",main).html("");
+                                                $(".sqlTime",main).html("");                                                
                                                 $(".sqlLog",main).html(error+"<br/>"+log);
 
                                           }else if(data.status=="running"){
-
+                                            
                                             //var now=Common.getTimes();
                                             Common.getSelectTime(Common.getTimes(),main);
 
@@ -525,7 +476,10 @@ var params={
                                                     var progress=data.progress,
                                                         log=data.log;
 
-                                                    var progressV=Common.toBai(progressN++,100);
+                                                    var progressV=Common.toBai(progressN++,100);       
+
+                						                          //var url ="/sql"+ data.url;
+                                            			    //$("#sqlDownload").attr("data-id",url);
 
                                                     $(".progress",main).css("display","inline-block");
                                                     if(progressN>=95){
@@ -533,26 +487,25 @@ var params={
                                                     }else{
                                                       $(".progress .bar",main).css("width",progressV).text(progressV);
                                                     }
-
+                                                                                          
                                                     $(".sqlLog",main).html($(".sqlLog",main).html()+"<br/>"+log);
                                                     if(data.status=="succeeded"){
                                                       submitT.data("n",0);
                                                       submitT.unblock();
 
 
-                                                      var url = data.url;
+                                                      var url ="/sql"+ data.url;
                                                       $(".progress .bar",main).css("width","100%").text("100%");
                                                       setTimeout(function(){$(".progress",main).css("display","none");},800);
 
-                                                      //$("#sqlDownload").attr("data-url",url);
+                                                      $("#sqlDownload").attr("data-url",url);
 
-
-                                                      //$("#sqlDownload").css("visibility","visible");
+                                                      $("#sqlDownload").css("visibility","visible");
 
                                                       clearInterval(getResult[mainName]);
                                                       clearInterval(Common.timer[mainName]);
-                                                      $(".sqlTime",main).html("本次查询执行时间："+$(".sqlTime",main).html());
-                                                      Query.setGrid(data.result.titles,data.result.values,id,url,data.count);
+                                                      $(".sqlTime",main).html("本次查询执行时间："+$(".sqlTime",main).html());                                
+                                                      Query.setGrid(data.result.titles,data.result.values);
                                                     }else if(data.status=="failed"){
                                                       submitT.data("n",0);
                                                       submitT.unblock();
@@ -564,17 +517,17 @@ var params={
                                                           $(".progress",main).css("display","none");
                                                           $(".sqlTime",main).html("");
                                                           $(".sqlLog",main).html(error+"<br/>"+log);
-
+                                                          
                                                     }
                                                   }else{
                                                       submitT.data("n",0);
                                                       submitT.unblock();
                                                       Boxy.alert("服务器已停止或服务器没有响应");
-                                                  }
+                                                  }    
                                                 },
                                                 "json");
                                             },1000)
-
+                                          
                                           }
                                     },
                                     401:function(){Boxy.alert("用户Id不存在")}
@@ -619,7 +572,7 @@ var params={
       var name=$.trim($(".sqlSaveName").val()),
           pro=Query.getQueryOptions().pro,
           ver=Query.getQueryOptions().ver,
-          sql=Query.getQueryOptions().sql;
+          sql=Query.getQueryOptions().sql; 
 
         if(name==""){
           Boxy.alert("请输入名称");
@@ -628,7 +581,7 @@ var params={
         if(pro=="产品"){
             Boxy.alert("请选择产品");
             return false;
-        }
+        }    
         if(ver=="版本"){
             Boxy.alert("请选择版本");
             return false;
@@ -636,7 +589,7 @@ var params={
         if(sql==""){
           Boxy.alert("请输入sql语句",function(){Query.delBoxy();});
           return false;
-        }
+        }               
         $.ajax({
             url: '/sql/saved/',
             type: 'post',
@@ -660,7 +613,7 @@ var params={
 
         });
 
-      return false;
+      return false;        
     })
     openCommon.live("click",function(){
         $.get(
@@ -682,16 +635,16 @@ var params={
                   delete data[j][i];
                 }else{
                   titles[j].push(i);
-                  v[j].push(data[j][i]);
-                }
+                  v[j].push(data[j][i]);                  
+                }  
 
               }
               var del=Query.getTablesOp("del",data_id[j]),
                   edit=Query.getTablesOp("edit",data[j].query,data[j].app,data[j].version);
-              v[j].push(del+" "+edit);
+              v[j].push(del+" "+edit);              
           }
 
-          titles[0].push("操作");
+          titles[0].push("操作");  
           Query.setPopGrid(titles[0],v,"<span class='sqlIcon tipIcon tipCommonSIcon'></span>常用查询");
         },
         "json");
@@ -704,36 +657,43 @@ var params={
           "timestamp": Common.getTimes()
         },
         function(data,status) {
-          if(!data.length){return;}
-          var titles = ["query", "status", "submit-time", "duration", "操作"];
-          var v=[];
+          if(!data.length){Boxy.alert("暂时没有历史查询");return;}
+          var titles=[],v=[],data_url=[];
 
           for (var j=0,l=data.length;j<l;j++){
+              titles[j]=[];
               v[j]=[];
+              if(data[j]["status"]==1){
+                data[j]["status"]="成功";
+              }else{
+                data[j]["status"]="失败";
+              }
+              //data[j]["submit-time"]=Common.formatTime(data[j]["submit-time"]);
+              for (var i in data[j]){
 
-              v[j].push(data[j].query);
+                if(i=="url"){
+                  data_url.push(data[j][i]);
+                  delete data[j][i];                  
+                }else if(i=="duration" || i=="id"){
+                  delete data[j][i];
+                }else{
+                  titles[j].push(i);
+                  v[j].push(data[j][i]);                  
+                }
 
-              if (data[j].status == "succeeded") {
-                v[j].push("成功");
-              } else if (data[j].status == "failed") {
-                v[j].push("失败");
-              } else {
-                v[j].push("运行中");
               }
 
-              v[j].push(new Date(data[j]["submit-time"]).toLocaleString());
-
-              v[j].push(data[j].duration / 1000);
-
-              var edit=Query.getTablesOp("edit",data[j].query),
-                  download=Query.getTablesOp("download",data[j].url);
+              //var del=Query.getTablesOp("del",data[j].id),
+                  var edit=Query.getTablesOp("edit",data[j].query),
+                  download=Query.getTablesOp("download",data_url[j]);
               v[j].push(edit+" "+download);
           }
-          Query.setPopGrid(titles,v,"<span class='sqlIcon tipIcon tipHistoryIcon'></span>历史查询");
+          titles[0].push("操作");
+          Query.setPopGrid(titles[0],v,"<span class='sqlIcon tipIcon tipHistoryIcon'></span>历史查询");
         },
         "json");
-        return false;
-    })
+        return false;      
+    })    
 
 
   },
@@ -743,35 +703,39 @@ var params={
           "timestamp": Common.getTimes()
         },
         function(data,status) {
-          if(!data.length){return;}
-          var titles = ["query", "status", "submit-time", "duration", "操作"];
-          var v=[];
+          if(!data.length){Boxy.alert("暂时没有历史查询");return;}
+          var titles=[],v=[],data_url=[];;
 
           for (var j=0,l=data.length;j<l;j++){
+              titles[j]=[];
               v[j]=[];
+              data[j]["duration"]=data[j]["duration"]/1000+"秒";
+              if(data[j]["status"]==1){
+                data[j]["status"]="成功";
+              }else{
+                data[j]["status"]="失败";
+              }              
+              for (var i in data[j]){
 
-              v[j].push(data[j].query);
+                if(i=="url"){
+                  data_url.push(data[j][i]);
+                  delete data[j][i];                  
+                }else if(i=="id"){
+                  delete data[j][i];
+                }else{
+                  titles[j].push(i);
+                  v[j].push(data[j][i]);                  
+                }
 
-              if (data[j].status == "succeeded") {
-                v[j].push("成功");
-              } else if (data[j].status == "failed") {
-                v[j].push("失败");
-              } else {
-                v[j].push("运行中");
               }
 
-              v[j].push(new Date(data[j]["submit-time"]).toLocaleString());
-
-              v[j].push(data[j].duration / 1000);
-
-              var edit=Query.getTablesOp("edit",data[j].query),
-                  download=Query.getTablesOp("download",data[j].url);
-              v[j].push(edit+" "+download);
+              var download=Query.getTablesOp("download",data_url[j]);
+              v[j].push(download);
           }
-
+          titles[0].push("操作");
+          //Query.setPopGrid(titles[0],v,"<span class='sqlIcon tipIcon'></span>历史查询");
 var params={
   "id":"查询ID",
-  "item":"item",
   "query":"查询内容",
   "name":"查询名称",
   "status":"查询状态",
@@ -779,11 +743,12 @@ var params={
   "version":"版本",
   "操作":"操作",
   "db":"数据库",
-  "submit-time":"查询提交时间",
-  "duration": "耗时"
-}
+  "duration":"用时",
+
+  "submit-time":"查询时间"
+}    
             var values=v,
-                column=titles;
+                column=titles[0];
             var allColumn=[];
             for (var i=0,l=column.length;i<l;i++){
               allColumn.push({"sTitle":params[column[i]]});
@@ -810,8 +775,8 @@ var params={
                     "sLast": "尾页",
                     "sNext": "下一页",
                     "sPrevious": "上一页"
-                  }
-                }
+                  }                    
+                }     
               });
 
 
@@ -873,7 +838,7 @@ var params={
         }
         Query.delBoxy();
 
-    })
+    })    
     $(".tablesDownload").live("click",function(){
         var url=$(this).attr("rel");
         if(url=="null"){
@@ -882,17 +847,17 @@ var params={
           location.href="/sql/"+url;
         }
 
-    })
+    }) 
   },
-  setDownQuery:function(current){
+  setDownQuery:function(){
     $(".downResult").live("click",function(){
 
-          var qid=$(".sqlDownload",current).attr("data-id");
-          var csv_url=$(".sqlDownload",current).attr("data-url");
+          var qid=$("#sqlDownload").attr("data-id");
+          var csv_url=$("#sqlDownload").attr("data-url");
           if(csv_url=="null"){
             Boxy.alert("无可下载的记录")
           }else{
-            location.href+=csv_url;
+            location.href=csv_url;
           }
 /*          $.ajax({
               url: '/sql/queries/'+qid,
@@ -913,23 +878,34 @@ var params={
 
           });*/
 
-        return false;
+        return false;     
     })
-    $(".downResultLink").live("click",function(){
-        var csv_url=$(".sqlDownload",current).attr("data-url");
-        window.prompt ("请按CTRL+C复制到剪贴板", location.href + csv_url);
-        return false;
-    })
+/*    $(".downResultLink").live("click",function(){
+        var csv_url=$("#sqlDownload").attr("data-url");
+        location.href="mailto:aaa@xxx.com?body="+csv_url;
+        return false;     
+    }) */   
+
+
+      $('.downResultLink').zclip({
+        copy: function() {        
+          return $("#sqlDownload").attr("data-url");
+        },
+        afterCopy:function(){
+          alert("复制成功");
+        }
+      });
+
   },
   setDownload:function(){
-    var sqlDown = $(".sqlDownload"),
+    var sqlDown = $("#sqlDownload"),
         tipHtml='<a class="downResult" href="#">下载结果</a> | <a class="downResultLink" href="javascript:void(0);">获取下载链接</a>';
     //Common.setTooltips(sqlDown,tipHtml);
-    sqlDown.live("mouseenter",function(){
+    sqlDown.mouseenter(function(){
       $(this).find("p").css("visibility","visible");
 
     })
-    sqlDown.live("mouseleave",function(){
+    sqlDown.mouseleave(function(){
       $(this).find("p").css("visibility","hidden");
 
     })
