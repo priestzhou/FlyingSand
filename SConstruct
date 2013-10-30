@@ -400,9 +400,12 @@ def jar(env, dstJar, workdir, kwargs):
     print 'jar %s into %s' % (workdir.path, dstJar.path)
     manifestFile = writeManifest(env, workdir, kwargs)
     installFilesToJar(env, workdir, kwargs)
-    subprocess.check_call(['jar', 'cfm', dstJar.abspath, manifestFile,
+    tmpJar = os.path.join('/dev/shm/build', os.path.basename(dstJar.abspath))
+    subprocess.check_call(['jar', 'cfm', tmpJar, manifestFile,
         '-C', workdir.abspath, '.'])
-    subprocess.check_call(['jar', 'i', dstJar.abspath])
+    subprocess.check_call(['jar', 'i', tmpJar])
+    shutil.copy(tmpJar, dstJar.abspath)
+    os.remove(tmpJar)
 
 def _compileAndJar(target, source, env):
     kwargs = env['kwargs']
@@ -414,6 +417,7 @@ def _compileAndJar(target, source, env):
         if kwargs.get('standalone', False):
             unjar(env, workdir, kwargs)
         jar(env, dstJar, workdir, kwargs)
+        shutil.rmtree(workdir.abspath)
 
 def expandLibs(libs):
     res = set()
@@ -434,7 +438,8 @@ def compileAndJar(env, dstJar, srcDir, **kwargs):
         assert x.exists()
     dstJar = env.File(dstJar)
 
-    workdir = env.Dir(hashlib.md5(dstJar.abspath).hexdigest())
+    workdir = env.Dir('/dev/shm/build')
+    workdir = workdir.Dir(hashlib.md5(dstJar.abspath).hexdigest())
     if os.path.exists(workdir.abspath):
         shutil.rmtree(workdir.abspath)
     kwargs['workdir'] = workdir
@@ -493,24 +498,28 @@ def _compileJs(target, source, env):
             ],
             stdout=fout
         )
+    shutil.rmtree(env['kwargs']['workdir'].abspath)
 
 def compileJs(env, dstJs, srcDir, **kwargs):
     dstJs = env.File(dstJs)
     srcDir = env.Dir(srcDir)
+    workdir = env.Dir('/dev/shm/build')
+    workdir = workdir.Dir(hashlib.md5(dstJs.abspath).hexdigest())
     options = {':optimizations': ':advanced',
-        ':output-dir':
-            '"%s"' % (env.Dir(hashlib.md5(dstJs.abspath).hexdigest()).abspath)
+        ':output-dir': '"%s"' % workdir.abspath,
     }
     options.update(kwargs.get('options', {}))
     libs = expandLibs(env.Flatten(env['CLOJURE_SCRIPT'] + [kwargs.get('libs', [])]))
 
     env = env.Clone()
-    env['kwargs'] = {'options': options,
+    env['kwargs'] = {
+        'options': options,
         'libs': libs,
+        'workdir': workdir
     }
     env.Append(BUILDERS={'_compileJs': Builder(
         action=_compileJs,
-        suffix='.jar')})
+        suffix='.js')})
     env._compileJs(target=dstJs, source=srcDir)
     for f in env.walkDir(srcDir):
         if f.abspath.endswith('.cljs') or f.abspath.endswith('.clj') or f.abspath.endswith('.js'):
