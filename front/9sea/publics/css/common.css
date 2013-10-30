@@ -1,0 +1,780 @@
+body{
+	background:#fff url(../img/re.jpg) repeat-x 0 0;
+	font-size: 12px;
+}
+body#homeBody{
+	background: none;
+}
+html,body{
+	height: 100%;
+}
+#sqlWrap{
+	min-height: 100%;
+}
+#sqlWrapMain{
+	padding-bottom: 47px;
+}
+p{
+	margin:0;
+}
+a:hover{
+	text-decoration: underline;
+}
+
+/* a:active,a:focus{
+	text-decoration: none;
+} */
+/*-----clearFix-----*/
+.clearFix:after{
+	display: block;
+	clear: both;
+	height: 0;
+	visibility: hidden;
+	content: ".";
+}
+.clearFix{ display: inline-block; }
+/* Hides from IE 4-6 \*/
+* html .clearFix{ height: 1%; }
+.clearFix{ display: block; } 
+/* End hide from IE 4-6 */
+.w1000-auto{
+	width: 1000px;
+	margin: 0 auto;
+}
+.sqlBar{
+	height: 40px;
+	line-height: 40px;
+	text-align: right;
+	color: #d8d8d8;
+	padding:0 20px 3px 0;
+	background: transparent url(../img/top.jpg) no-repeat 100% 0;	
+}
+.sqlBarHome{
+	height: 1px;
+	background-color: #db3920;
+	background-position: 100% 100%;
+}
+.sqlBar a{
+	color: #d8d8d8;
+	margin-right: 5px;
+	display: inline-block;
+}
+.sqlBar a span{
+	width: 20px;
+	height: 22px;
+	display: inline-block;
+	vertical-align: middle;
+	margin-right: 3px;	
+}
+.sqlBar .loginInfo{
+	color: #b8b8b8;
+	display: inline-block;
+}
+.sqlIcon{
+	background-image: url(../img/icon.png);
+	background-repeat: no-repeat;
+	display: inline-block;
+}
+
+.sqlSIcon{
+	background-image: url(../img/icon_small.png);
+	background-repeat: no-repeat;
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+	vertical-align: middle;
+	margin-right: 2px;
+}
+.logoIcon{
+	background-position: -382px 0;
+	width: 188px;
+	height: 36px;
+	margin: 10px 0 0 0;
+}
+.selectIcon{
+	background-position: -51px -71px;
+	width: 47px;
+	height: 30px;
+	vertical-align: middle;	
+}
+.topMenu1:hover .selectIcon,.topMenu1.active .selectIcon{
+	background-position: -51px -102px;
+}
+
+.downIcon{
+	background-position: -211px -160px;
+	width: 18px;
+	height: 18px;
+}
+.topMenu1:hover .downIcon,.topMenu1.active .downIcon{
+	background-position: -211px -147px;
+}
+.topMenu1.active{
+	color: #1b9abb;
+}
+.dbIcon{
+	background-position: -7px -71px;
+	width: 44px;
+	height: 30px;
+	vertical-align: middle;
+}
+.breadIcon{
+	background-position: -174px -196px;
+	width: 18px;
+	height: 18px;
+	vertical-align: middle;
+}
+.homeIcon{
+	background-position: -19px -16px;
+}
+.loginOutIcon{
+	background-position: -108px -16px;
+}
+.myIcon{
+	background-position: -211px -16px;
+}
+.helpIcon{
+	background-position: -310px -16px;
+}
+.sqlBar a:hover span{
+	color: #fff;
+}
+.sqlBar a:hover .homeIcon{
+	background-position: -19px -46px;
+}
+.sqlBar a:hover .loginOutIcon{
+	background-position: -108px -46px;
+}
+.sqlBar a:hover .myIcon{
+	background-position: -211px -46px;
+}
+.sqlBar a:hover .helpIcon{
+	background-position: -310px -46px;
+}
+.addIcon{
+	background-position: -7px 1px;
+}
+.delIcon{
+	background-position: -7px -41px;
+}
+a:hover .addIcon{
+	background-position: -125px 1px;
+} 
+a:hover .delIcon{
+	background-position: -125px -41px;
+} 
+.tabOpIcon{
+	width: 30px;
+	height: 25px;
+	margin-top: 3px;
+	background-position: -98px -147px;
+}
+.tabOpIcon:hover{
+	background-position: -98px -178px;
+}
+.sqlCommonIcon{
+	background-position: -6px -407px;
+}
+.oCommonIcon{
+	background-position: -6px -453px;
+}
+.oHIcon{
+	background-position: -6px -500px;	
+
+}
+.selectTen{
+	background-position: -6px -356px;
+}
+a.selectTenL:hover .selectTen{
+	background-position: -126px -356px;
+}
+.ztree li a.selectTenL{
+	margin-left: 5px;
+}
+.tipIcon{
+    background-position: -21px -238px;
+    height: 43px;
+    margin: -21px 10px 0 0;
+    vertical-align: top;
+    width: 45px;
+}
+.tipCommonIcon{
+	background-position: -70px -238px;
+}
+.tipCommonSIcon{
+	background-position: -174px -238px;
+}
+.tipHistoryIcon{
+	background-position: -121px -238px;
+}
+.tipTenIcon{
+	background-position: -227px -238px;
+}
+.tipPerIcon{
+	background-position: -279px -238px;
+}
+.sqlLogLink a{
+	position: absolute;
+	right: 0;
+	margin:0;
+	top: 0;	
+	cursor: pointer;
+	text-decoration: underline;
+	color: #288db0;
+}
+.logIcon{
+	background-position: -6px -674px;
+	height: 23px;
+	width: 20px;
+
+}
+a:hover .logIcon{
+	background-position: -124px -674px;
+}
+a.active .logIcon{
+	background-position: -6px -704px;
+}
+a.active:hover .logIcon{
+	background-position: -124px -704px;
+}
+.topMenu2:hover .dbIcon,.topMenu2.active .dbIcon{
+	background-position: -7px -100px;
+}
+.sqlHeader{
+	height: 53px;
+	background-color: #e9f1f3;	
+}
+.sqlHeader .row-fluid{
+/* 	width: 1000px;
+margin: 0 auto; */
+}
+.topMenu1,.topMenu2{
+	display: block;
+	font-size: 20px;
+	padding-top: 14px;
+	color:#777;
+	font-weight: bold;
+}
+.topMenu1:hover,.topMenu2:hover{
+	text-decoration: none;
+	color: #1b9abb;
+}
+.topMenu2.active{
+	color: #1b9abb;
+}
+
+.sqlBread{
+	border-left: 4px solid #de8533;
+	border-bottom: 1px solid #D4D8DB;
+	height: 34px;
+	line-height: 34px;
+	padding-left: 10px;
+}
+.sqlBread a{
+	color: #333;
+	border-bottom: 1px dotted #333;
+}
+.sqlBread a.current{
+	color: #dc3721;
+	border: none;
+	cursor: default;
+}
+.sqlBread a:hover{
+	text-decoration: none;
+}
+.treeOp{
+	padding-left: 10px;
+	height: 35px;
+	line-height: 35px;
+	margin:0;
+	border-bottom:1px solid #D4D8DB;
+-webkit-box-shadow: 0 3px 3px #d6d6d6;
+-moz-box-shadow: 0 3px 3px #d6d6d6;
+box-shadow: 0 3px 3px #d6d6d6;	
+position: relative;
+}
+.treeOp a{
+	color: #dc8633;
+}
+.sqlTabControl{
+	width: 30px;
+	float: left;
+	position: absolute;
+	margin-left: 3px;
+}
+.tabOpMenu{
+	border:1px solid #666;
+	top: 26px;
+	left: 1px;
+}
+.tabOpMenu a:hover{
+	background: #666!important;
+}
+
+
+.boxShadowStyle{
+  -webkit-box-shadow: 0 3px 3px #d6d6d6;
+     -moz-box-shadow: 0 3px 3px #d6d6d6;
+          box-shadow: 0 3px 3px #d6d6d6;
+}
+[class*="span"]{
+	margin-left: 0;
+}
+
+.table-bordered{
+	border-radius: 0;
+	border-collapse:collapse;
+}
+#sqlBox{
+	width: 100%;
+	border-radius: 0;
+	border:none;
+	padding: 0;
+	margin:0;
+	box-shadow:none;
+}
+
+.sqlMain{
+	width: 100%;
+	padding-top: 4px;
+	height: 495px;
+/* 	overflow: hidden; */
+}
+.sqlRow{
+	padding-left: 220px;
+	border-bottom: 1px solid #d4d8db;	
+}
+.sqlSider{
+	margin-left: -221px;
+	height: 538px;
+	border-right:1px solid #D4D8DB;
+}
+#sqlTree{
+	height: 492px;
+	overflow: auto;
+	background: #f3f3f3;
+}
+.container{
+/* 	width:1000px;
+margin: 0 auto; */
+	width: auto;
+	border-left: 1px solid #d4d8db;
+	border-right: 1px solid #d4d8db;
+	padding-bottom: 10px;
+}
+.sqlBoxDiv{
+	border:1px solid #CCC;
+/* 	padding: 4px 6px; */
+	margin-bottom: 5px;
+	border-left: 0;
+	border-right: 0;		
+}
+[class^="icon-"], [class*=" icon-"]{
+	background-image: url("http://qinliang760.github.io/cdn/img/glyphicons-halflings.png");
+}
+.tooltip-inner a{
+	color: #333;
+}
+.tooltip-inner a:hover{
+	text-decoration: underline;
+}
+
+#sqlDownload{
+	/* display: none; */
+	position: relative;
+	left: 22px;
+	padding-left: 15px;
+	padding-right: 15px;
+	visibility: hidden;
+}
+#sqlDownload p{
+	position: absolute;
+	width: 167px;
+	height: 46px;
+	top: 22px;
+	left: 50%;
+	line-height: 46px;
+	margin-left: -83px;
+	visibility: hidden;
+	background: url(../img/f_bg.png) no-repeat 0 0;
+}
+#sqlDownload p a{
+	display: inline-block;
+	color: #555;
+	text-decoration: underline;
+}
+#sqlDownload p a:hover,#sqlDownload p a.hover{
+	color: #499fef;
+}
+.sqlDownloadWrap{
+	padding:10px;
+	/* display: none; */
+	position: absolute;
+	z-index: 2;
+/* 	border-bottom: 1px solid #D4D8DB; */
+}
+.sqlCollectors{
+	display: block;
+}
+
+#titleTip{
+position:absolute;
+width:140px;
+z-index:9999;
+background:#fbffbf;
+padding:5px;
+color:#5f5f5f;
+line-height:normal;
+}
+
+.floatL{
+	float: left;
+}
+.floatR{
+	float: right;
+}
+
+
+
+#footer{
+	height: 47px;
+	line-height: 47px;
+	background-color: #090909;
+	text-align: center;
+	position: relative; 
+	margin-top: -47px;
+}
+
+
+.btn_green{
+	height: 20px;
+	line-height: 20px;
+	background-color: #76b94f;
+	color: #fefeff;
+	border: 1px solid #f3f3f3;
+	display: inline-block;
+	text-align: center;
+	padding: 2px 5px;
+}
+.btn_blue,.answers input{
+	height: 20px;
+	line-height: 20px;
+	background-color: #51b2d3;
+	color: #fefeff;
+	border: 1px solid #449bb7;
+	display: inline-block;
+	text-align: center;
+	padding: 2px 5px;	
+}
+.answers input{
+	padding:0 20px;
+}
+.btn_blue:hover{
+	background-color:#55a7f4;
+	border-color: #3992ec;
+	text-decoration: none; 
+}
+.btn_blue_long{
+	background: #1898ba;
+	border-radius: 5px;
+	color: #fff;
+	height: 32px;
+	width: 256px;
+	display: inline-block;
+	text-align: center;
+	line-height: 32px;
+	font-size: 16px;
+}
+.btn_blue_long:hover{
+	background: #06b9e2;
+	text-decoration: none;
+}
+
+.sqlLogWrap{
+	padding:0 10px;
+}
+.sqlLogWrap .sqlLog{
+	padding: 9px 15px;
+	height: 130px;
+	overflow: auto;
+
+}
+.sqlLogLink{
+	display: block;
+	padding:5px 15px;
+	position: relative;
+	border-bottom: 1px solid #D4D8DB;
+	color: #0088cc;
+	font-weight: bold;	
+}
+a.sqlLogLink{
+	text-decoration: none;
+}
+.progress{
+	display: none;
+}
+
+#popGrid{
+	width: 700px;
+}
+#popGrid thead th{
+	background: #4a9ff0;
+	border:1px solid #2e83e0;
+	color: #fff;
+	font-weight: bold;
+	text-align: left;
+}
+#pop{
+	height: 400px;
+	width: 900px;
+}
+#popGrid td{
+	border:1px solid #d3d8db;
+}
+#sqlTableWrap .dataTables_wrapper{
+/* 	height: 400px; */	
+	overflow-x:scroll;
+}
+#pop th{
+	background: #4a9ff0;
+/* 	border:1px solid #2e83e0; */
+	border: none;
+	color: #fff;
+	font-weight: bold;
+	text-align: left;
+	vertical-align: top;
+	min-width: 100px;
+}
+.vm{
+	display: inline-block;
+	vertical-align: top;
+}
+
+.sqlSave,.openCommon,.openHistory{
+	padding-top: 3px;
+	margin-left: 15px;
+	text-decoration: underline;
+	color: #51b2d3;
+
+}
+.sqlSave:hover,.openCommon:hover,.openHistory:hover{
+	color:#0088cc; 
+}
+#sqlSelect{
+	margin-left: 15px;
+}
+.sqlTime{
+	padding:5px 15px;
+	display: inline-block;
+	vertical-align: middle;
+}
+#sqlTableWrap{
+	padding-top: 7px;
+
+}
+#sqlTable th{
+	border:1px solid #6ba846;
+	text-align: left;
+	color: #fff;
+	font-weight: bold;
+}
+#sqlTable td{
+	border:1px solid #d3d8db;
+}
+
+.boxy-wrapper .title-bar h2{
+	color: #435059;
+	font-weight: bold;
+}
+.sqlRTable{
+	position: relative;
+}
+table.dataTable{
+	margin-bottom: 10px;
+
+	max-width: none!important;
+}
+table.dataTable td{
+	border: 1px solid #D3D8DB;
+}
+#sqlSaveBtn{
+	margin:0 auto;
+	display: block;
+}
+
+.dataTables_scrollHeadInner{
+	height: 26px;
+}
+
+#sqlTableWrap.colTable th{
+    background: none repeat scroll 0 0 #4A9FF0;
+    border: 1px solid #2E83E0;
+    color: #FFFFFF;
+    font-weight: bold;
+    text-align: left;
+    vertical-align: top;
+}
+.dataTables_scroll{
+	overflow: auto;
+}
+
+/* tree selectTenL*/
+.ztree li a.selectTenL{
+/* 	display: none; */
+}
+.treeDown{
+	margin-right: 10px;
+}
+.select_pro{
+	margin-left: 3px;
+	margin-right: 10px;
+}
+.select_ver{
+	margin-right: 15px;
+}
+.progress{
+	width: 350px;
+	display: none;
+	vertical-align: middle;
+	margin-bottom: 0;
+}
+.tooltip-inner{
+	width: 130px;
+}
+.downResultLink{
+	display: block;
+}
+
+
+
+/* home */
+#homeContact{
+	width: 125px;
+	float: right;
+	padding-top: 17px;
+
+}
+#homeContact a{
+	color: #fff;
+	height: 21px;
+	line-height: 21px;
+	padding: 0 10px;
+	/* padding: 5px; */
+	display: inline-block;
+}
+#homeContact a.contact1{
+	background-color: #ff5741;
+	border-right: 1px solid #fff;
+
+}
+#homeContact a.contact2{
+	background-color: #a1a1a1;
+}
+.homeSlide{
+	width: 1000px;
+	margin: 0 auto;
+	padding-top: 60px;
+	color: #333;
+	height: 480px;
+	overflow: hidden;
+}
+.banner1{
+	height: 480px;
+	width: 1000px;
+	overflow: hidden;
+	background: url(../img/home_banner1.jpg) no-repeat right 0;
+}
+.banner2{
+	height: 480px;
+	width: 1000px;
+	display: none;
+	overflow: hidden;
+	background: url(../img/home_banner2.jpg) no-repeat 0 0;
+}
+.banner2 .banner2Right{
+	float: right;
+	width: 296px;
+}
+.banner2 .bannerList .bannerListCon{
+	padding-left: 65px;
+	position: relative;
+	padding-bottom: 36px;
+}
+.banner2 .bannerList .bannerListCon .bannerListT{
+	padding-bottom: 10px;
+}
+.banner2 .bannerList .bannerListCon span{
+	background: url(../img/login.png) no-repeat -18px -291px;
+	display: block;
+	position: absolute;
+	width: 50px;
+	height: 50px;
+	left: 0;
+	top: 0
+}
+.banner2 .bannerList .bannerListCon span.homeListIcon1{
+	background-position: -18px -342px;
+}
+.banner2 .bannerList .bannerListCon span.homeListIcon2{
+	background-position: -18px -391px;
+}
+.banner2 .bannerList .bannerListCon span.homeListIcon3{
+	background-position: -18px -442px;
+}
+.banner2 .bannerList .bannerListCon p{
+	color: #666;
+	font-size: 15px;
+}
+.banner2 .bannerList .bannerListCon p.bannerListT{
+	color: #333;
+	font-size: 18px;
+	font-weight: bold;
+}
+.banner1 p{
+	font-size: 30px;
+
+}
+.banner1 .banner1ConT{
+	font-size: 60px;
+	padding-top: 110px;
+	padding-bottom: 40px;
+
+}
+.loginBox{
+	padding-top: 20px;
+}
+.loginBox a{
+	display: inline-block;
+	font-size: 18px;
+	color: #666;
+	vertical-align: middle;
+	padding:0 1px 0 14px;
+}
+.loginBox .loginBtn{
+	width: 178px;
+	height: 58px;
+	background: url(../img/login.png) no-repeat -15px -47px;
+}
+.loginBox .loginReg{
+	border-left: 2px solid #666;
+}
+.loginBox .loginBtn:hover{
+	background-position: -15px -123px;
+}
+.bannerNav{
+	text-align: center;
+}
+.bannerNav a{
+	display: inline-block;
+	background: url(../img/login.png) no-repeat -43px -8px;
+	width: 20px;
+	height: 22px;
+}
+.bannerNav a:hover,.bannerNav a.active{
+	background-position: -18px -8px;
+}
+input.popInput{
+	width: 240px;
+	display: block;
+	margin: 0 auto 10px;
+}

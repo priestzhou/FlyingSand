@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="application/javascript" src="collector_admin.js"></script>
+</head>
+
+<body onload="collector_admin.core.on_load()">
+
+<section>
+    <table>
+        <caption>Collector Administration</caption>
+        <thead>
+            <tr>
+                <th>collector name</th>
+                <th>recent sync</th>
+                <th>total synced data</th>
+                <th>status</th>
+                <th>url</th>
+            </tr>
+        </thead>
+        <tbody id="collectors">
+        </tbody>
+    </table>
+</section>
+
+<section>
+    <form>
+        <fieldset>
+            <legend>Edit</legend>
+            <label for="cids">id</label>
+            <select id="cids"></select>
+            <label for="name">name:</label>
+            <input type="text" id="name">
+            <label for="url">url:</label>
+            <input type="text" id="url">
+            <button type="button" id="add">add</button>
+            <button type="button" id="delete">delete</button>
+            <button type="button" id="edit">edit</button>
+        </fieldset>
+    </form>
+</section>
+
+</body>
+</html>

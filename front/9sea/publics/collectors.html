@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>datawize</title>
+	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="all"/>
+	<link rel="stylesheet" href="css/jquery.dataTables.css" type="text/css" media="all"/>
+	<link rel="stylesheet" href="css/boxy.css" type="text/css" media="all"/>
+	<link rel="stylesheet" href="css/common.css" type="text/css" media="all"/>		
+
+</head>
+
+<body>
+	<div id="sqlWrap">
+		<div id="sqlWrapMain">
+
+	<div class="sqlBar">
+		<span class="loginInfo">尊敬的***，欢迎您！</span>
+		<a href="#"><span class="sqlIcon homeIcon"></span>首页</a>｜
+		<a href="#"><span class="sqlIcon myIcon"></span>个人中心</a>｜
+		<a href="#"><span class="sqlIcon loginOutIcon"></span>退出登录</a>｜
+		<a href="#"><span class="sqlIcon helpIcon"></span>帮助</a>
+	</div>
+
+	<div class="sqlHeader boxShadowStyle">
+
+			<div class="row-fluid">
+				<div class="span4">
+					<a class="sqlIcon logoIcon" href="#"></a>
+				</div>
+				<div class="span8" style="width:315px;float:right;">
+					<div class="btn-group" style="float:left;">
+						<a class="topMenu1" href="index.html" data-toggle="dropdown">
+							<span class="sqlIcon selectIcon"></span>
+							数据查询
+							<span class="sqlIcon downIcon"></span>
+						</a>
+						<ul class="dropdown-menu" style="margin-left:40px;">
+							<li>
+								<a style="margin-left:0;" class="openCommon" href="#">打开常用查询</a>
+							</li>
+							<li>
+								<a href="history.html" target="_blank">打开历史查询</a>
+							</li>
+
+						</ul>
+					</div>
+
+					<a style="float:left;" class="topMenu2 active" href="collectors.html"><span class="sqlIcon dbIcon"></span>收集器管理</a>
+				</div>									
+			</div>
+
+
+	</div>
+
+	<div class="container">
+			<div class="sqlBread boxShadowStyle">
+				<a href="#">数据收集器</a>
+			</div>
+
+
+
+
+		<!-- sqlTable start-->
+	<div class="sqlRTable">	
+		<p class="sqlDownloadWrap sqlCollectors">
+			<a id="addCollectors" href="#" class="btn_blue">添加数据收集器</a>
+			<a id="checkCollectors" href="history.html" target="_blank" class="btn_blue">查看历史操作</a>
+		</p>
+
+
+		<div id="sqlTableWrap" class="colTable">
+		</div>
+	</div>	
+		<!-- sqlTable end-->
+
+	</div><!-- container -->
+
+	</div>
+	</div>
+	
+	<div id="footer">
+		Copyright &copy; 2013 WhaleMiner
+	</div>
+	<script src="js/jquery-1.7.2.min.js" language="javascript"></script>
+	<script src="js/jquery.cookie.js" language="javascript"></script>
+	<script src="js/bootstrap.min.js" language="javascript"></script>
+	<script src="js/jquery.placeholder.js" language="javascript"></script>	
+	<script src="js/jquery.ztree.all-3.5.min.js" language="javascript"></script>
+	<script src="js/magic/core.js" language="javascript"></script>
+	<script src="js/magic/tabs.js" language="javascript"></script>
+	<script src="js/jquery.dataTables.js" language="javascript"></script>		
+	<script src="js/jquery.boxy.js" language="javascript"></script>
+	<script src="js/jquery.blockUI.js" language="javascript"></script>
+	<script src="js/codemirror.js" language="javascript"></script>
+	<script src="js/sql.js" language="javascript"></script>
+	<script src="js/jquery.tooltips.js" language="javascript"></script>
+	<script src="js/common.js" language="javascript"></script>	
+	<script src="js/query.js" language="javascript"></script>	
+	<script src="js/collectors.js" language="javascript"></script>	
+<script>
+
+
+$(function(){		
+	Collectors.init();
+})
+</script>
+
+
+</body>
+</html>
