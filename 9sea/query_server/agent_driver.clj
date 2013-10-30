@@ -214,6 +214,7 @@
     )
     (when (check-table (:namespace dataset))
         (do 
+            (ha/create-table (:hiveName dataset) (:cols dataset))
             (add-record "TblMetaStore"
                 (:namespace dataset)
                 appname 
@@ -222,7 +223,6 @@
                 (:tablename dataset)
                 (:hiveName dataset)
             )
-            (ha/create-table (:hiveName dataset) (:cols dataset))
         )
     )
 )
