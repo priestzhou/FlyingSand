@@ -3,3 +3,4 @@ run
 build/
 res/
 .sconsign.dblite
+agent/jre1.7.0_40
