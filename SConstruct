@@ -507,6 +507,7 @@ def compileJs(env, dstJs, srcDir, **kwargs):
     workdir = workdir.Dir(hashlib.md5(dstJs.abspath).hexdigest())
     options = {':optimizations': ':advanced',
         ':output-dir': '"%s"' % workdir.abspath,
+        ':externs': ["\"%s\"" % (env.File('front/resources/js/goog.extern.js').abspath)],
     }
     options.update(kwargs.get('options', {}))
     libs = expandLibs(env.Flatten(env['CLOJURE_SCRIPT'] + [kwargs.get('libs', [])]))
