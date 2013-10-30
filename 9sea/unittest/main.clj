@@ -1,5 +1,9 @@
 (ns unittest.main
     (:use testing.core)
+    (:require 
+        unittest.query-server.main
+        unittest.agent.main
+    )
     (:gen-class)
 )
 
@@ -7,6 +11,7 @@
     (->> 
         (load-cases 
             'unittest.agent.main
+            'unittest.query-server.main
         )
         (main args)
     )

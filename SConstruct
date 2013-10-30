@@ -267,6 +267,12 @@ libDependencies = {
         env.File('$EXTLIB/lib-for-hadoop/jackson-core-asl-1.8.8.jar'),
         env.File('$EXTLIB/lib-for-hadoop/jackson-mapper-asl-1.8.8.jar'),
     ],
+    env.File('$EXTLIB/korma-0.3.0-RC6.jar'): [
+        env.File('$EXTLIB/mysql-connector-java-5.1.6.jar'),
+        env.File('$EXTLIB/lib-for-shark/java.jdbc-0.2.3.jar'),
+        env.File('$EXTLIB/c3p0-0.9.2.1.jar'),
+	env.File('$EXTLIB/mchange-commons-java-0.2.3.4.jar'),
+    ],
 }
 
 def parseClojurePackage(src):

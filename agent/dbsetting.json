@@ -1,0 +1,17 @@
+{
+    "version":"0.1",
+    "app":"倚天屠龙记",
+    "appversion":"第一回",
+    "database":[
+        {
+            "dbconnstr":"\/\/localhost:3306\/test?characterEncoding=utf8",
+            "dbuser":"root",
+            "dbpassword":"fs123",
+            "tables":[
+            {"tablename":"acter_statistics_new","hasTimestamp":"false","selcols":"*"},
+            {"tablename":"acter","hasTimestamp":"false","timestampCol":"createtime","selcols":"id,userID,`name`,`class`,`sex`,`level`,money,gift,gold,fastPay,faction,createtime"},
+            {"tablename":"user","hasTimestamp":"true","timestampCol":"dt","selcols":"`id`,`username`,`dt`"}
+            ]
+        }
+    ]
+}

@@ -11,7 +11,7 @@
             {
                 tablename:"t1",
                 hasTimestamp:"true",
-                timestampCol:"timestamp"
+                timestampCol:"id"
             },
             {
                 tablename:"t2",
