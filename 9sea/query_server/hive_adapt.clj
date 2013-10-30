@@ -145,7 +145,7 @@
     (let [mainSql (str "DESCRIBE " tn )
             res (qc/run-shark-query' "" mainSql)
         ]
-      (debug "get-hive-cols" res)
+;      (println "get-hive-cols" res)
       (map #(select-keys % [:col_name :data_type]) res)
     )
 )
@@ -155,7 +155,7 @@
   (let [hive-table (get schema :hive_name)
         table-name (get schema :TableName)
         cols (transform-cols (get-hive-cols hive-table))]
-    (debug "table column" cols)
+;    (println "table column" cols)
     {
      :type "table"
      :name table-name

@@ -228,7 +228,7 @@
 
 (defn make-app-tree
   [app-name ver-db-tables]
-  (debug "make-app-tree" :app-name app-name :ver-db-tables ver-db-tables)
+;  (debug "make-app-tree" :app-name app-name :ver-db-tables ver-db-tables)
   (let [group-vec [:AppVersion]
         app-tree {:type "namespace" :name app-name}
         group-data (group-by :AppName ver-db-tables)
@@ -241,8 +241,10 @@
 )
 
 (defn select-meta
-  [app-name]
-  (let [res (orm/select mysql/TblMetaStore (orm/where {:AppName app-name}))]
+  [app-name account-id]
+  (let [account-prefix (str account-id ".%")
+        res (orm/select mysql/TblMetaStore 
+                        (orm/where {:AppName app-name :NameSpace [like account-prefix]}))]
     (prn "meta ret:" res)
     (if(empty? res)
       nil
@@ -252,9 +254,10 @@
 )
 
 (defn app-mapper
-  [app]
+  [app account-id]
   (let [app-name (get app :AppName)
-        tree (make-app-tree app-name (select-meta app-name))
+        _ (prn "app-mapper: account-id is" account-id)
+        tree (make-app-tree app-name (select-meta app-name account-id))
         ]
     ; (debug "app-tree" :tree tree)
     tree
@@ -270,7 +273,7 @@
        ; get tree structure of all applications
       (do
         (prn "app is" apps)
-        (let[ret (map app-mapper apps)]
+        (let[ret (map (fn [i] (app-mapper i account-id)) apps)]
           (prn "metastore-tree ret" ret)
           ret
         )
