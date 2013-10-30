@@ -37,25 +37,21 @@ def scanModules(env):
     mods = [x for x in mods if x != env['BUILD_DIR']]
     return mods
 
-def getBuildInfo_OneModule(mod):
+def getBuildInfo():
     if not os.path.isdir(env['BUILD_DIR'].abspath):
         os.makedirs(env['BUILD_DIR'].abspath)
-    out = os.path.abspath(os.path.join('build', hashlib.md5(mod.abspath).hexdigest()))
+    out = os.path.abspath(os.path.join(env['BUILD_DIR'].abspath, 'buildinfo'))
     try:
         with open(out, 'w') as f:
-            subprocess.check_call(['git', 'show', '--format=%H'], 
-                stdout=f, stderr=subprocess.STDOUT,
-                cwd=mod.abspath)
+            subprocess.check_call(['git', 'show', '--format=%H'],
+                stdout=f, stderr=subprocess.STDOUT)
         with open(out) as f:
             for x in f:
-                return mod.path, x.strip()
+                return x.strip()
     except:
-        return mod.path, 'unknown'
+        return 'unknown'
 
-def getBuildInfo(mods):
-    return dict(getBuildInfo_OneModule(x) for x in mods)
-
-env['BUILD_INFO'] = getBuildInfo(scanModules(env))
+env['BUILD_INFO'] = getBuildInfo()
 
 def cleanLinks(builddir):
     for rt, dirs, files in os.walk(builddir):
@@ -115,9 +111,9 @@ prepareBuildDir(env)
 env['EXTLIB'] = env['BUILD_DIR'].Dir('common/extlib')
 env['CLOJURE'] = env['EXTLIB'].File('clojure-1.5.1.jar')
 env['SCALA'] = [env['EXTLIB'].File(x) for x in [
-        'scalacheck.jar', 
+        'scalacheck.jar',
         'scala-compiler.jar',
-        'scala-dbc.jar', 
+        'scala-dbc.jar',
         'scala-library.jar',
         'scala-partest.jar',
         'scalap.jar',
@@ -140,11 +136,12 @@ env['CLOJURE_SCRIPT'] = [env['EXTLIB'].File(x) for x in [
         'dommy-0.1.2-SNAPSHOT.jar',
     ]]
 
-env['MANIFEST'] = {'Manifest-Version': '1.0',
-        'Built-By': 'FlyingSand.com',
-        'Created-By': 'scons 2.3.0',
-    }
-env['MANIFEST'].update(env['BUILD_INFO'])
+env['MANIFEST'] = {
+    'Manifest-Version': '1.0',
+    'Built-By': 'FlyingSand.com',
+    'Created-By': 'scons 2.3.0',
+    'Build-Info': env['BUILD_INFO'],
+}
 
 libDependencies = {
     env.File('$EXTLIB/clj-time-0.5.2.jar'): [
@@ -205,9 +202,9 @@ libDependencies = {
         env.File('$EXTLIB/lib-for-spark/jetty-server-7.6.8.v20121106.jar'),
         env.File('$EXTLIB/lib-for-spark/jetty-util-7.6.8.v20121106.jar'),
         env.File('$EXTLIB/lib-for-spark/jetty-http-7.6.8.v20121106.jar'),
-        env.File('$EXTLIB/lib-for-spark/jetty-io-7.6.8.v20121106.jar'),        
+        env.File('$EXTLIB/lib-for-spark/jetty-io-7.6.8.v20121106.jar'),
         env.File('$EXTLIB/serializable-fn-0.0.3.jar'),
-        env.File('$EXTLIB/lib-for-spark/jetty-continuation-7.6.8.v20121106.jar'),        
+        env.File('$EXTLIB/lib-for-spark/jetty-continuation-7.6.8.v20121106.jar'),
         env.File('$EXTLIB/lib-for-spark/scala-2.9.3-library.jar'),
         env.File('$EXTLIB/lib-for-spark/mesos-0.9.0-incubating.jar'),
         env.File('$EXTLIB/lib-for-spark/hadoop-core-2.0.0-mr1-cdh4.3.0.jar'),
@@ -239,7 +236,7 @@ libDependencies = {
         env.File('$EXTLIB/lib-for-spark/hadoop-auth-2.0.0-cdh4.3.0.jar'),
         env.File('$EXTLIB/lib-for-spark/hadoop-client-2.0.0-mr1-cdh4.3.0.jar'),
         env.File('$EXTLIB/lib-for-spark/commons-cli-1.2.jar'),
-    ],    
+    ],
     env.File('$BUILD_DIR/kfktools.jar'): [
         env.File('$EXTLIB/kafka-client-0.8.0-beta1.jar'),
         env.File('$BUILD_DIR/utilities.jar'),
@@ -284,12 +281,12 @@ def compileClojure(env, workdir, root, cljs, kwargs):
     if cljs:
         print 'compile clojures in %s into %s' % (root.path, workdir.path)
         warnOnReflection = 'true' if kwargs.get('warnOnReflection', False) else 'false'
-        subprocess.check_call(['java', 
-            '-cp', '%s' % 
+        subprocess.check_call(['java',
+            '-cp', '%s' %
                 (':'.join(
-                    [root.abspath, workdir.abspath] + 
+                    [root.abspath, workdir.abspath] +
                     [x.abspath for x in kwargs['libs']]
-                )), 
+                )),
             '-Dclojure.compile.path=%s' % workdir.abspath,
             '-Dclojure.compile.warn-on-reflection=%s' % warnOnReflection,
             'clojure.lang.Compile',
@@ -300,10 +297,10 @@ def compileClojure(env, workdir, root, cljs, kwargs):
 def compileScala(env, workdir, root, scalas, javas, kwargs):
     if scalas:
         print 'compile scalas in %s into %s' % (root.path, workdir.path)
-        subprocess.check_call(['java', 
+        subprocess.check_call(['java',
             '-cp', '%s' %
                 (':'.join(
-                    [root.abspath, workdir.abspath] + 
+                    [root.abspath, workdir.abspath] +
                     [x.abspath for x in kwargs['libs']]
                 )),
             '-Dscala.home=%s' % env['EXTLIB'].abspath,
@@ -322,10 +319,10 @@ def compileScala(env, workdir, root, scalas, javas, kwargs):
 def compileJava(env, workdir, root, javas, kwargs):
     if javas:
         print 'compile javas in %s into %s' % (root.path, workdir.path)
-        subprocess.check_call(['javac', '-g', '-d', workdir.abspath, 
-                '-cp', '%s' % 
+        subprocess.check_call(['javac', '-g', '-d', workdir.abspath,
+                '-cp', '%s' %
                     (':'.join(
-                        [root.abspath, workdir.abspath] + 
+                        [root.abspath, workdir.abspath] +
                         [x.abspath for x in kwargs['libs']]
                     )),
                 '-Xlint:unchecked',
@@ -403,7 +400,7 @@ def jar(env, dstJar, workdir, kwargs):
     print 'jar %s into %s' % (workdir.path, dstJar.path)
     manifestFile = writeManifest(env, workdir, kwargs)
     installFilesToJar(env, workdir, kwargs)
-    subprocess.check_call(['jar', 'cfm', dstJar.abspath, manifestFile, 
+    subprocess.check_call(['jar', 'cfm', dstJar.abspath, manifestFile,
         '-C', workdir.abspath, '.'])
     subprocess.check_call(['jar', 'i', dstJar.abspath])
 
@@ -485,9 +482,9 @@ def _compileJs(target, source, env):
     src = source[0]
     root = env.Dir(os.path.dirname(src.path))
     with open(dst.abspath, 'w') as fout:
-        subprocess.check_call(['java', 
+        subprocess.check_call(['java',
                 '-cp', '%s' % (
-                    ':'.join([root.abspath] + 
+                    ':'.join([root.abspath] +
                         [x.abspath for x in env['kwargs']['libs']])),
                 'clojure.main',
                 env['EXTLIB'].File('cljsc.clj').abspath,
@@ -501,7 +498,7 @@ def compileJs(env, dstJs, srcDir, **kwargs):
     dstJs = env.File(dstJs)
     srcDir = env.Dir(srcDir)
     options = {':optimizations': ':advanced',
-        ':output-dir': 
+        ':output-dir':
             '"%s"' % (env.Dir(hashlib.md5(dstJs.abspath).hexdigest()).abspath)
     }
     options.update(kwargs.get('options', {}))
