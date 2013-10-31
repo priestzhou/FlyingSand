@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="9seatest" default="build">
+
+  <property name="git.branch" value="9sea/1"/>
+  <property name="git.dir" value="/home/admin/zhangjun/FlyingSand"/>
+
+
+  <target name="build" >
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;git checkout ${git.branch}&quot;" />
+    </exec>    
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;git pull &quot;" />
+    </exec>
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;scons -j3 build/query_server.jar&quot;" />
+    </exec>
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;scons -j3 build/agent.jar&quot;" />
+    </exec>    
+  </target>
+</project>
