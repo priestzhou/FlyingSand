@@ -6,8 +6,6 @@ var Collectors = {
     this.delCollectors();
     this.editCollectors();
     Common.delCookie();
-    Common.login();
-
   },
   addCollectors:function(){
     var add=$("#addCollectors");
@@ -61,28 +59,27 @@ var Collectors = {
                 401:function(){alert("暂时没有结果")},
                 200:function(data){
                   if(!data.length){return;}
-                  var titles=["name", "url", "status", "recent-sync", "synced-data"];
-
-                  for (var j=0,l=data.length;j<l;j++){
-                      if(data[j].status=="no-sync"){
-                        data[j]["recent-sync"]="--";
-                        data[j]["synced-data"]="--";
-                      }
-                  }
+                  var titles=["name", "url", "status", "recent-sync", "操作"];
                   var v=[];
                   for (var j=0,l=data.length;j<l;j++){
                       v[j] = [];
-                      for (var i in titles) {
-                        i = titles[i];
-                        if (data[j][i] == "no-sync") {
-                          v[j].push("未同步");
-                        } else if (data[j][i] == "running") {
-                          v[j].push("运行中");
-                        } else if (data[j][i] == "stopped") {
-                          v[j].push("已停止");
-                        } else {
-                          v[j].push(data[j][i]);
-                        }
+                      v[j].push(data[j].name);
+                      v[j].push(data[j].url);
+
+                      if (data[j].status == "no-sync") {
+                        v[j].push("待同步");
+                      } else if (data[j].status == "running") {
+                        v[j].push("运行中");
+                      } else if (data[j].status == "stopped") {
+                        v[j].push("已停止");
+                      } else if (data[j].status == "abandoned") {
+                        v[j].push("已废弃");
+                      }
+
+                      if (data[j]["recent-sync"] == undefined || data[j]["recent-sync"] == null) {
+                        v[j].push('--');
+                      } else {
+                        v[j].push(new Date(data[j]["recent-sync"]).toLocaleString())
                       }
 
                       var del=Collectors.getTablesOp("del",data[j].id);
@@ -93,7 +90,7 @@ var Collectors = {
                       v[j].push(del+" "+edit);
                   }
 
-                  titles.push("操作");
+                  titles.push();
                   Common.setGrid(titles,v,"<span class='sqlIcon tipIcon'></span>常用查询");
                 }
               }
@@ -138,55 +135,53 @@ var Collectors = {
 
         var id=data[0],name=data[1],url=data[2];
 
-      var html='<input class="colName popInput" type="text" value="'+name+'"/><input class="colUrl popInput" type="text" value="'+url+'"/><p><a id="colEditBtn" class="btn_blue_long" href="javascript:void(0);">确定</a></p>';
+      var html='<input type="hidden" id="colEditId" value="'+id+'"><input class="colName popInput" type="text" value="'+name+'"/><input class="colUrl popInput" type="text" value="'+url+'"/><p><a id="colEditBtn" class="btn_blue_long" href="javascript:void(0);">确定</a></p>';
       Common.setPop("<span class='sqlIcon tipIcon'></span>修改路径",html);
+    });
 
-       $("#colEditBtn").one("click",function(){
-          $.ajax({
-                url: "/sql/collectors/"+id,
-                type: 'put',
-                data:{
-                          "name": $(".colName").val(),
-                          "url": $(".colUrl").val()
-                },
-                dataType: 'json',
-                error: function(){},
-                success: function(data){
+     $("#colEditBtn").live("click",function(){
+        $.ajax({
+              url: "/sql/collectors/"+ $("#colEditId").val(),
+              type: 'put',
+              data:{
+                        "name": $(".colName").val(),
+                        "url": $(".colUrl").val()
+              },
+              dataType: 'json',
+              error: function(){},
+              success: function(data){
 
+              },
+              statusCode:{
+                404:function(){
+                  Boxy.alert("该收集器不存在");
                 },
-                statusCode:{
-                  404:function(){
-                    Boxy.alert("该收集器不存在");
-                  },
-                  401:function(){},
-                  403:function(){},
-                  409:function(){
-                    Boxy.alert("重复的收集器名称或url");
-                  },
-                  200:function(data){
-                    Query.delBoxy();
-                    Collectors.getCollectors();
-                  },
-                  500:function(){
-                    Boxy.alert("服务器错误");
-                  }
+                401:function(){},
+                403:function(){},
+                409:function(){
+                  Boxy.alert("重复的收集器名称或url");
+                },
+                200:function(data){
+                  Query.delBoxy();
+                  Collectors.getCollectors();
+                },
+                500:function(){
+                  Boxy.alert("服务器错误");
                 }
+              }
 
-            });
+          });
 
-       })
-
-    })
-
+     });
 
   },
   getTablesOp:function(type,value){
     var opName="",cls="";
     if(type=="del"){
-      opName="删除";
+      opName="废弃";
       cls="collectorDel";
     }else if(type=="edit"){
-      opName="修改路径";
+      opName="修改";
       cls="collectorEdit";
     }
     var html='<a class='+cls+' rel="'+value+'" href="javascript:void(0);">'+opName+'</a>';

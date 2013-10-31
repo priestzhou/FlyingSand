@@ -45,16 +45,10 @@ var Common={
 	  },
 	delCookie:function(){
 		var delLink=$(".loginOut");
-		    var uid=$.cookie("user_id");
-		    if(uid){
-		      delLink.find("strong").html('退出登录');
-		    }else{
-		    	delLink.find("strong").html('<a href="#" class="loginBtn">登录</a>');
-		    }
 
 		delLink.click(function(){
-			$(this).find("strong").html('<a href="#" class="loginBtn">登录</a>');
 			$.cookie("user_id",null);
+            window.location.assign(".");
 		})
 	},
 	getTimes:function(){
