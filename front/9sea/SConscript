@@ -7,8 +7,6 @@ env.install(env.compileJs('query_server.js', 'query_server',
     env.File('$BUILD_DIR/jsutilities.jar'),
     ],
     options={":optimizations": ":simple", ":pretty-print": True,
-        ":externs": ["\"%s\"" % (env.File('resources/js/goog.extern.js').abspath),
-        ],
     }
 ))
 
@@ -19,8 +17,6 @@ env.install(env.compileJs('collector_admin.js', 'collector_admin',
     env.File('$BUILD_DIR/jsutilities.jar'),
     ],
     options={":optimizations": ":simple", ":pretty-print": True,
-        ":externs": ["\"%s\"" % (env.File('resources/js/goog.extern.js').abspath),
-        ],
     }
 ))
 

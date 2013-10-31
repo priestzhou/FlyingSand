@@ -10,10 +10,7 @@ env.install(env.compileAndJar('jsutilities.jar', 'utilities',
 env.install(env.compileJs('front_unittest.js', 'unittest',
     libs=[env.File('$BUILD_DIR/jsutilities.jar'),
     ],
-    options={":optimizations": ":simple", ":pretty-print": True,
-        ":externs": ["\"%s\"" % (env.File('resources/js/goog.extern.js').abspath),
-        ],
-    }
+    options={":optimizations": ":simple", ":pretty-print": True}
 ))
 
 env.SConscript(dirs=['9sea'], exports='env')
