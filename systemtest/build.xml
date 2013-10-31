@@ -44,6 +44,11 @@
       command="cd /home/admin/stage/agent;./start_agent.sh >/dev/null 2>&amp;1 "/>
   </target>
 
+  <target name="clear">
+    <exec executable = "sh" dir="${git.dir}/9sea/query_server/scripts/">
+      <arg line="-c &quot;./clear-env.sh&quot;" />
+    </exec>     
+  </target>
   <target name="build" >
     <exec executable = "sh" dir="${git.dir}">
       <arg line="-c &quot;git checkout ${git.branch}&quot;" />
