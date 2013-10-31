@@ -7,12 +7,41 @@
   <property name="front.from" value="${git.dir}/front/9sea/publics"/>
 
   <property name="server.todir" value="admin@192.168.9.102:/home/admin/stage/9sea/"/>
+  <property name="server.host" value="192.168.9.102" />
   <property name="front.todir" value="${server.todir}/front"/>
   <property name="agent.todir" value="admin@192.168.9.102:/home/admin/stage/agent/"/>
 
   <target name="all" >
     <antcall target="build"/>
     <antcall target="sendJar"/>
+  </target>
+
+  <target name="stop_all">
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      command="sh /home/admin/stage/9sea/kill_query_server.sh"/>
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      command="sh /home/admin/stage/agent/stop_fs.sh"/>      
+  </target>
+
+  <target name="start_all">
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      timeout="10000"
+      command="cd /home/admin/stage/9sea;./start_query_server.sh >/dev/null 2>&amp;1 "/>
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      timeout="10000"
+      command="cd /home/admin/stage/agent;./start_agent.sh >/dev/null 2>&amp;1 "/>
   </target>
 
   <target name="build" >
@@ -51,6 +80,5 @@
        trust="true">
       <fileset dir="${front.from}"/>
     </scp>
-    
   </target>
 </project>
