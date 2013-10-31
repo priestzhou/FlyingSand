@@ -2,7 +2,7 @@
 
 <project name="9seatest" default="build">
 
-  <property name="git.branch" value="9sea/1"/>
+  <property name="git.branch" value="zhangjun/stage2/1"/>
   <property name="git.dir" value="/home/admin/zhangjun/FlyingSand"/>
   <property name="front.from" value="${git.dir}/front/9sea/publics"/>
 
@@ -14,6 +14,9 @@
   <target name="all" >
     <antcall target="build"/>
     <antcall target="sendJar"/>
+    <antcall target="stop_all"/>
+    <antcall target="clear"/>
+    <antcall target="start_all"/>
   </target>
 
   <target name="stop_all">
@@ -45,9 +48,9 @@
   </target>
 
   <target name="clear">
-    <exec executable = "sh" dir="${git.dir}/9sea/query_server/scripts/">
+    <exec executable = "sh" dir="${git.dir}/query_server/scripts/">
       <arg line="-c &quot;./clear-env.sh&quot;" />
-    </exec>     
+    </exec>
   </target>
   <target name="build" >
     <exec executable = "sh" dir="${git.dir}">
