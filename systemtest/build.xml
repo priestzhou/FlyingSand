@@ -49,7 +49,7 @@
 
   <target name="clear">
     <exec executable = "sh" dir="${git.dir}/query_server/scripts/">
-      <arg line="-c &quot;./clear-env.sh&quot;" />
+      <arg line="-c &quot;sh ./clear-env.sh&quot;" />
     </exec>
   </target>
   <target name="build" >
