@@ -1,8 +1,8 @@
-(ns unittest.utilities.shutil
+(ns puretest.utilities.shutil
     (:use testing.core
         utilities.shutil
     )
-    (:import 
+    (:import
         java.nio.file.Path
         java.io.StringReader
     )

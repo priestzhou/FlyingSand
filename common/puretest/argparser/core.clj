@@ -1,4 +1,4 @@
-(ns unittest.argparser.core
+(ns puretest.argparser.core
     (:use testing.core)
     (:require
         [argparser.core :as arg]

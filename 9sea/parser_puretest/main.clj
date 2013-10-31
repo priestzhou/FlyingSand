@@ -1,16 +1,16 @@
-(ns parser-unittest.main
+(ns parser-puretest.main
     (:require
-        parser-unittest.parser.sql-2003
-        parser-unittest.parser.translator
+        parser-puretest.parser.sql-2003
+        parser-puretest.parser.translator
     )
     (:use testing.core)
     (:gen-class)
 )
 
 (defn -main [& args]
-    (->> (load-cases 
-            'parser-unittest.parser.sql-2003
-            'parser-unittest.parser.translator
+    (->> (load-cases
+            'parser-puretest.parser.sql-2003
+            'parser-puretest.parser.translator
         )
         (main args)
     )
