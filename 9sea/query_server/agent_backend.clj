@@ -21,7 +21,7 @@
 ;(:import [org.apache.hadoop.hive.ql.parse ParseDriver])
 )
 
-(def agent-status ["nil" "no-sync" "running" "stopped"])
+(def agent-status ["nil" "no-sync" "running" "stopped" "abandoned"])
 
 (defloggers debug info warn error)
 
@@ -53,20 +53,21 @@
 (defn select-agent
   [account-id]
   (let [rs (orm/select mysql/TblAgent (orm/fields :id [:AgentState :status] [:AgentUrl :url]
-                                                   [:LastSyncTime :recent-sync] [:DataSize :synced-data]
-                                                   [:AgentName :name])
+                                                   [:LastSyncTime :recent-sync] [:AgentName :name])
                         (orm/where {:AccountID account-id}))]
   (for [
         x rs
         :let [i (:status x)]
         ]
+        
         (assoc x :status (get agent-status i))
   ))
 )
 
 (defn delete-agent
   [agent-id]
-  (orm/delete mysql/TblAgent (orm/where {:id agent-id}))
+  ; set the status to abandon
+  (orm/update mysql/TblAgent (orm/set-fields {:AgentState 4}) (orm/where {:id agent-id}))
 )
 
 

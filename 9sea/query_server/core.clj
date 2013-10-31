@@ -164,8 +164,8 @@
                         (mysql/status-convert stats)
                         error
                         url
-                        (unparse (with-zone (formatters :date-hour-minute-second) 
-                                  (time/time-zone-for-offset +8))(from-long end-time))
+                        (unparse (formatters :date-hour-minute-second) 
+                                  (from-long end-time))
                         duration
                         q-id
                 )]

@@ -68,7 +68,7 @@
                         (mysql/status-convert stats) 
                         error 
                         url
-                        (unparse (with-zone (formatters :date-hour-minute-second)(time/time-zone-for-offset +8))
+                        (unparse (formatters :date-hour-minute-second)
                                    (from-long end-time))
                         duration
                         q-id
@@ -99,9 +99,10 @@
        ]
        (for [
         x rs
-        :let [i (:status x)]
+        :let [_ (prn "select-history:" (:submit_time x)) i (:status x) 
+              s_time (to-long (parse (formatter "yyyy-MM-dd H:mm:ss") (:submit_time x)))]
         ]
-        (assoc x :status (get mysql/query-status i))
+        (assoc x :status (get mysql/query-status i) :submit_time s_time)
        )
     )
 )
@@ -163,8 +164,7 @@
     
     ;insert into history query
     (let [submit-time (System/currentTimeMillis)
-          submit-date (unparse (with-zone (formatters :date-hour-minute-second) 
-                                 (time/time-zone-for-offset +8))
+          submit-date (unparse (formatters :date-hour-minute-second) 
                                  (from-long submit-time))
          ; query-id (hash start-time)]
           query-id (log-query query-str user-id submit-date)
