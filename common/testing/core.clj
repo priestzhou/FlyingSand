@@ -27,7 +27,7 @@
         ]
         (throw-if-not (= expect actual)
             AssertionError.
-            (apply format "%s expects %s, but %s actually" 
+            (apply format "%s expects %s, but %s actually"
                 (map pr-str [expr expect actual])
             )
         )
@@ -40,7 +40,7 @@
         ]
         (throw-if-not (= actual expect)
             AssertionError.
-            (apply format "apply %s to %s expects %s, but %s actually" 
+            (apply format "apply %s to %s expects %s, but %s actually"
                 (str/join ", " (map pr-str args))
                 (map pr-str [expr expect actual])
             )
@@ -59,11 +59,11 @@
 
 (defn- test-throw [expr actual expect & args]
     (let [e (test-throw* actual args)]
-        (cond 
+        (cond
             (nil? e)
-                (throw (AssertionError. 
+                (throw (AssertionError.
                     (if args
-                        (apply format "apply %s to %s expects %s, but nothing happen" 
+                        (apply format "apply %s to %s expects %s, but nothing happen"
                             (str/join ", " (map pr-str args))
                             (map pr-str [expr expect])
                         )
@@ -73,9 +73,9 @@
                     )
                 ))
             (not (instance? expect e))
-                (throw (AssertionError. 
+                (throw (AssertionError.
                     (if args
-                        (apply format "apply %s to %s expects %s" 
+                        (apply format "apply %s to %s expects %s"
                             (str/join ", " (map pr-str args))
                             (map pr-str [expr expect])
                         )
@@ -92,9 +92,9 @@
 (defn- test-throw-nothing [expr actual & args]
     (let [e (test-throw* actual args)]
         (if-not (nil? e)
-            (throw (AssertionError. 
+            (throw (AssertionError.
                 (if args
-                    (format "apply %s to %s expects no exception" 
+                    (format "apply %s to %s expects no exception"
                         (str/join ", " (map pr-str args))
                         (pr-str expr)
                     )
@@ -125,7 +125,7 @@
 (defn- one-fact [testbench fact]
     (let [[_ cs expr rel expect] fact]
         (case rel
-            :is 
+            :is
                 (do
                     (throw-if (fn? expr)
                         IllegalArgumentException.
@@ -136,15 +136,15 @@
                         ":is requires no fn after it"
                     )
                     `(def ~(symbol (format "--testcase-%s" (str cs)))
-                        (#'partial ~testbench 
-                            (#'partial #'test-is '~expr 
-                                ~(eval (list #'fn '[] expr)) 
+                        (#'partial ~testbench
+                            (#'partial #'test-is '~expr
+                                ~(eval (list #'fn '[] expr))
                                 ~(eval (list #'fn '[] expect))
                             )
                         )
                     )
                 )
-            :eq 
+            :eq
                 (do
                     (throw-if-not (fn? (eval expr))
                         IllegalArgumentException.
@@ -156,7 +156,7 @@
                     )
                     `(def ~(symbol (format "--testcase-%s" (str cs)))
                         (#'partial ~testbench
-                            (#'partial #'test-eq '~expr 
+                            (#'partial #'test-eq '~expr
                                 ~(eval expr)
                                 ~(eval expect)
                             )
@@ -176,14 +176,14 @@
                     (if (= :nothing expect)
                         `(def ~(symbol (format "--testcase-%s" (str cs)))
                             (#'partial ~testbench
-                                (#'partial #'test-throw-nothing '~expr 
+                                (#'partial #'test-throw-nothing '~expr
                                     ~(eval expr)
                                 )
                             )
                         )
                         `(def ~(symbol (format "--testcase-%s" (str cs)))
                             (#'partial ~testbench
-                                (#'partial #'test-throw '~expr 
+                                (#'partial #'test-throw '~expr
                                     ~(eval expr) '~expect
                                 )
                             )
@@ -199,11 +199,11 @@
         IllegalArgumentException. "require :testbench under \"suite\""
     )
     (throw-if-not (= 2 (count testbench))
-        IllegalArgumentException. 
+        IllegalArgumentException.
         "there must be exactly one testbench function following :testbench"
     )
     (throw-if-not (ifn? (eval (nth testbench 1)))
-        IllegalArgumentException. 
+        IllegalArgumentException.
         "it must be testbench function which is following :testbench"
     )
     (doseq [[fact _ _ rel _] facts]
@@ -211,7 +211,7 @@
             IllegalArgumentException. "require :fact under \"suite\""
         )
         (throw-if-not (some #(= rel %) [:is :eq :throws])
-            IllegalArgumentException. 
+            IllegalArgumentException.
             "require :is, :eq or :throws between exprs in \"fact\""
         )
     )
@@ -221,7 +221,7 @@
 )
 
 (defmacro suite [description & facts]
-    (throw-if-not (string? description) 
+    (throw-if-not (string? description)
         IllegalArgumentException. "missing description"
     )
     (if (first facts)
@@ -238,7 +238,7 @@
             (let [cs-name (str cs-symb)]
                 (if (.startsWith cs-name "--testcase-")
                     [
-                        (format "%s.%s" (str ns) 
+                        (format "%s.%s" (str ns)
                             (.substring cs-name (.length "--testcase-"))
                         )
                         cs-fn
@@ -303,8 +303,6 @@
         arg-spec {
             :usage "Usage: [options] [case]"
             :args [
-                (arg/opt :help
-                    "-h|--help" "show this help message")
                 (arg/opt :show-cases
                     "--show-cases" "show all cases and exit")
                 (arg/opt :else
@@ -313,10 +311,6 @@
         }
         opts (arg/transform->map (arg/parse arg-spec args))
         ]
-        (when (:help opts)
-            (println (arg/default-doc arg-spec))
-            (System/exit 0)
-        )
         (when (:show-cases opts)
             (->> (for [[cs-name _] cases] cs-name)
                 (sort)
