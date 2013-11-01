@@ -29,6 +29,10 @@ def walkDir(env, dir):
 env.AddMethod(walkDir)
 
 env['BUILD_DIR'] = env.Dir('build')
+if os.path.exists('/dev/shm'):
+    env['WORK_DIR'] = env.Dir('/dev/shm/build')
+else:
+    env['WORK_DIR'] = env['BUILD_DIR']
 
 def scanModules(env):
     mods = [x for x in os.listdir('.') if os.path.isdir(x)]
@@ -400,7 +404,8 @@ def jar(env, dstJar, workdir, kwargs):
     print 'jar %s into %s' % (workdir.path, dstJar.path)
     manifestFile = writeManifest(env, workdir, kwargs)
     installFilesToJar(env, workdir, kwargs)
-    tmpJar = os.path.join('/dev/shm/build', os.path.basename(dstJar.abspath))
+    tmpJar = env['WORK_DIR'].File('%s.jar' % os.path.basename(workdir.abspath))
+    tmpJar = tmpJar.abspath
     subprocess.check_call(['jar', 'cfm', tmpJar, manifestFile,
         '-C', workdir.abspath, '.'])
     subprocess.check_call(['jar', 'i', tmpJar])
@@ -438,8 +443,7 @@ def compileAndJar(env, dstJar, srcDir, **kwargs):
         assert x.exists()
     dstJar = env.File(dstJar)
 
-    workdir = env.Dir('/dev/shm/build')
-    workdir = workdir.Dir(hashlib.md5(dstJar.abspath).hexdigest())
+    workdir = env['WORK_DIR'].Dir(hashlib.md5(dstJar.abspath).hexdigest())
     if os.path.exists(workdir.abspath):
         shutil.rmtree(workdir.abspath)
     kwargs['workdir'] = workdir
@@ -503,8 +507,7 @@ def _compileJs(target, source, env):
 def compileJs(env, dstJs, srcDir, **kwargs):
     dstJs = env.File(dstJs)
     srcDir = env.Dir(srcDir)
-    workdir = env.Dir('/dev/shm/build')
-    workdir = workdir.Dir(hashlib.md5(dstJs.abspath).hexdigest())
+    workdir = env['WORK_DIR'].Dir(hashlib.md5(dstJs.abspath).hexdigest())
     options = {':optimizations': ':advanced',
         ':output-dir': '"%s"' % workdir.abspath,
         ':externs': ["\"%s\"" % (env.File('front/resources/js/goog.extern.js').abspath)],
