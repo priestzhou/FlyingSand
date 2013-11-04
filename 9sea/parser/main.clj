@@ -4,7 +4,7 @@
         [argparser.core :as arg]
     )
     (:use
-        [parser.translator :only (sql-2003->hive)]
+        [parser.translator :only (dump-hive parse-sql)]
     )
     (:gen-class)
 )
@@ -31,11 +31,11 @@
             (System/exit 0)
         )
         (util/throw-if-not (:context opts)
-            IllegalArgumentException. 
+            IllegalArgumentException.
             "require context"
         )
         (util/throw-if (and (nil? (:query opts)) (nil? (:query-file opts)))
-            IllegalArgumentException. 
+            IllegalArgumentException.
             "require query or --query"
         )
         opts
@@ -55,7 +55,7 @@
             (:query-file)
             (first)
         )
-        query (if qf 
+        query (if qf
             (slurp qf)
             (->> opts
                 (:query)
@@ -64,7 +64,7 @@
         )
         ]
         (println
-            (sql-2003->hive context query)
+            (dump-hive (parse-sql context query))
         )
     )
 )
