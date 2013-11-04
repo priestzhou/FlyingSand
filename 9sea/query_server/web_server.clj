@@ -294,7 +294,7 @@
         _ (println (format "POST saved/?name=%s&app=%s&version=%s&db=%s&query=%s %s" app version db qname query (pr-str {:UserId user-id})))
         r-qid (backend/check-query-name qname)
         s-time (unparse (formatters :date-hour-minute-second)
-                          (from-long (System/currentTimeMillis)))
+                          (from-long (time/now)))
         ]
         (prn "qname:" qname)
         (prn "r-qid:" r-qid)
