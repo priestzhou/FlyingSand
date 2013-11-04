@@ -1197,6 +1197,25 @@
     )
 )
 
+(defn sql [stream]
+    (let [
+        [strm prsd] (->> stream
+            (prs/str->stream)
+            (prs/positional-stream)
+            ((prs/choice*
+                second (prs/chain
+                    blank*
+                    query
+                    blank*
+                    (prs/expect-eof)
+                )
+            ))
+        )
+        ]
+        prsd
+    )
+)
+
 
 (defn- paren:no-transparent [parser stream]
     (let [

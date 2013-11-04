@@ -14,8 +14,6 @@
         arg-spec {
             :usage "Usage: [options] exejar ..."
             :args [
-                (arg/opt :help
-                     "-h|--help" "show this help message")
                 (arg/opt :context
                      "--context file" "context file")
                 (arg/opt :query-file
@@ -26,10 +24,6 @@
         }
         opts (arg/transform->map (arg/parse arg-spec args))
         ]
-        (when (:help opts)
-            (println (arg/default-doc arg-spec))
-            (System/exit 0)
-        )
         (util/throw-if-not (:context opts)
             IllegalArgumentException.
             "require context"
@@ -64,7 +58,10 @@
         )
         ]
         (println
-            (dump-hive (parse-sql context query))
+            (->> query
+                (parse-sql context)
+                (dump-hive context)
+            )
         )
     )
 )

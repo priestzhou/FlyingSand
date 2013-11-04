@@ -678,8 +678,13 @@
     )
 )
 
-(defn dump-hive [dfg]
-    (let [hive (dump-hive:value-expr dfg)]
+(defn dump-hive [context dfg]
+    (let [
+        dfg (case (:type dfg)
+            dfg
+        )
+        hive (dump-hive:value-expr dfg)
+        ]
         (info "dump hive" :hive hive)
         hive
     )
@@ -688,18 +693,7 @@
 (defn parse-sql [context sql-text]
     (info "start parsing" :sql sql-text :context (str context))
     (let [
-        [_ ast] (->> sql-text
-            (prs/str->stream)
-            (prs/positional-stream)
-            ((prs/choice*
-                second (prs/chain
-                    sql/blank*
-                    sql/query
-                    sql/blank*
-                    (prs/expect-eof)
-                )
-            ))
-        )
+        ast (sql/sql sql-text)
         dfg (analyze-sql context ast)
         ]
         dfg

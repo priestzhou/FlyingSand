@@ -271,7 +271,7 @@
    (debug "run-shark-query" :qid q-id)
     (let [
       dfg (trans/parse-sql context query-str)
-      hive-query (trans/dump-hive dfg)
+      hive-query (trans/dump-hive context dfg)
           ret-rs (execute-query hive-query)]
       (future (execute-count-query q-id hive-query))
       (process-query q-id ret-rs)
