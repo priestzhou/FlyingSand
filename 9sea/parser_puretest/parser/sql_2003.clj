@@ -1274,7 +1274,7 @@
         }]
     )
     (:fact select:group-by
-        (->> "SELECT * FROM tbl GROUP BY col, 1"
+        (->> "SELECT * FROM tbl GROUP BY tbl.col, col, 1"
             (prs/str->stream)
             (sql/query)
             (extract-result)
@@ -1284,7 +1284,8 @@
             :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
             :group-by [
-                {:type :identifier, :value "col"}
+                {:type :dotted-identifier, :value ["tbl" "col"]}
+                {:type :dotted-identifier, :value ["col"]}
                 {:type :numeric-literal, :value "1"}
             ]
         }]
