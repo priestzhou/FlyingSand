@@ -214,3 +214,9 @@
     )
 )
 
+(defn extract-with-default [opts kw proc default]
+    (if-let [v (get opts kw)]
+        (assoc opts kw (proc v))
+        (assoc opts kw default)
+    )
+)

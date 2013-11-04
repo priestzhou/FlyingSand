@@ -1,5 +1,5 @@
-(ns unittest.utilities.parse
-    (:use 
+(ns puretest.utilities.parse
+    (:use
         testing.core
     )
     (:require
@@ -16,8 +16,8 @@
         (prs/str->stream "ab")
         :is
         [
-            [\a {:gen-ISE prs/default-ISE}] 
-            [\b {:gen-ISE prs/default-ISE}] 
+            [\a {:gen-ISE prs/default-ISE}]
+            [\b {:gen-ISE prs/default-ISE}]
             [:eof {:gen-ISE prs/default-ISE}]
         ]
     )
@@ -31,8 +31,8 @@
         )
         :is
         [
-            [\a {:gen-ISE prs/default-ISE}] 
-            [\b {:gen-ISE prs/default-ISE}] 
+            [\a {:gen-ISE prs/default-ISE}]
+            [\b {:gen-ISE prs/default-ISE}]
             [:eof {:gen-ISE prs/default-ISE}]
         ]
     )
@@ -129,7 +129,7 @@
 )
 
 (suite "digit"
-    (:testbench 
+    (:testbench
         (fn [test]
             (doseq [x (range 128)]
                 (test (char x))
@@ -148,7 +148,7 @@
 )
 
 (suite "letter"
-    (:testbench 
+    (:testbench
         (fn [test]
             (doseq [x (range 128)]
                 (test (char x))
@@ -302,8 +302,8 @@
     (:fact choice*:first
         (->> "a"
             (prs/str->stream)
-            ((prs/choice* 
-                {\a :a, \b :b} (prs/expect-char \a) 
+            ((prs/choice*
+                {\a :a, \b :b} (prs/expect-char \a)
                 {\a :a, \b :b} (prs/expect-char \b)
             ))
             (extract-result)
@@ -314,8 +314,8 @@
     (:fact choice*:second
         (->> "b"
             (prs/str->stream)
-            ((prs/choice* 
-                {\a :a, \b :b} (prs/expect-char \a) 
+            ((prs/choice*
+                {\a :a, \b :b} (prs/expect-char \a)
                 {\a :a, \b :b} (prs/expect-char \b)
             ))
             (extract-result)
@@ -326,8 +326,8 @@
     (:fact choice*:default
         (->> "c"
             (prs/str->stream)
-            ((prs/choice* 
-                {\a :a, \b :b} (prs/expect-char \a) 
+            ((prs/choice*
+                {\a :a, \b :b} (prs/expect-char \a)
                 {\a :a, \b :b} (prs/expect-char \b)
                 :default
             ))
@@ -340,8 +340,8 @@
         (fn []
             (->> "c"
                 (prs/str->stream)
-                ((prs/choice* 
-                    {\a :a, \b :b} (prs/expect-char \a) 
+                ((prs/choice*
+                    {\a :a, \b :b} (prs/expect-char \a)
                     {\a :a, \b :b} (prs/expect-char \b)
                 ))
             )
@@ -554,7 +554,7 @@
 (defn expression [stream]
     (let [recursive-expression (prs/left-recursive expression)
         [strm1 prsd1] (->> stream
-            ((prs/choice 
+            ((prs/choice
                 (partial plus-rule recursive-expression)
                 char-rule
             ))

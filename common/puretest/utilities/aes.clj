@@ -1,4 +1,4 @@
-(ns unittest.utilities.aes
+(ns puretest.utilities.aes
     (:use
         [testing.core :only (suite)]
     )
