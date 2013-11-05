@@ -5,7 +5,7 @@
         [query-server.web-server :as web]
         [query-server.agent-scheduler :as as]
         [query-server.config :as config]
-        [query-server.core :as hive]
+        [query-server.hive-adapt :as hive]
         [query-server.mysql-connector :as mysql]
     )
     (:gen-class)
