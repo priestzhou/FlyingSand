@@ -14,6 +14,7 @@
         [hdfs.core :as hc]
         [query-server.mysql-connector :as mysql]
         [utilities.aes :as aes]
+        [query-server.config :as config]
     )
     (:gen-class)
 )
@@ -262,7 +263,6 @@
                     (debug " add TblApplication fail " :except (except->str e))
                 )
             )
-
             (doall 
                 (map 
                     (partial create-table agentid appname appversion) 
@@ -304,7 +304,14 @@
 
 (defn- save-inc-data [location inlist metalist]
     (let [ts (System/currentTimeMillis)
-            filepath (str location "/" (get-group-time 3600000 ts) ".txt")
+            filepath (str 
+                    location "/" 
+                    (get-group-time 
+                        (config/get-key :inc-data-group-time) 
+                        ts
+                    ) 
+                    ".txt"
+                )
             filecontext (if (hc/exists? filepath)
                 (hc/read-lines filepath)
                 []

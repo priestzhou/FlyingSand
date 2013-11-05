@@ -1,6 +1,7 @@
 (ns query-server.agent-scheduler
     (:require 
         [query-server.agent-driver :as ad]
+        [query-server.config :as config]
     )
     (:use
         [utilities.core :only (except->str)]
@@ -49,7 +50,7 @@
         )
     )
     
-    (Thread/sleep 600000)
+    (Thread/sleep (config/get-key :new-agent-check-interval))
     (recur)
 )
 
@@ -72,7 +73,7 @@
         )        
     )
 
-    (Thread/sleep 300000)
+    (Thread/sleep (config/get-key :inc-data-check-interval))
     (recur)
 )
 
@@ -94,6 +95,6 @@
             (error " all-data-check fail " :except (except->str e))
         )          
     )
-    (Thread/sleep 86400000)
+    (Thread/sleep (config/get-key :all-data-check-interval))
     (recur)
 )
