@@ -11,6 +11,8 @@
   [parser.translator :as trans]
   [clojure.data.csv :as csv]
   [utilities.core :as util]
+  [query-server.agent-driver :as ad]
+  [query-server.hive-adapt :as hive]
   )
 (:import [com.mchange.v2.c3p0 ComboPooledDataSource DataSources PooledDataSource]
          [java.io IOException]
@@ -32,6 +34,7 @@
   [clojure.set]
   [clj-time.format]
   [clojure.java.shell :only [sh]]
+  [query-server.agent-driver :only (sha1-hash)]
 )
 ;; (:use [logging.core :only [deffloggers]])
 )
@@ -40,36 +43,6 @@
 
 (def ^:private result-map (atom {}))
 (def ^:private result-count-map (atom {}))
-
-(def ^:private hive-db (ref {:classname "org.apache.hadoop.hive.jdbc.HiveDriver"
-                             :subprotocol "hive"
-                             :user ""
-                             :password ""
-                            }
-                       )
-)
-
-(def ^:private hive-conn-str (ref ""))
-
-(defn set-hive-db
-  [host port]
-  (dosync
-    (alter hive-db conj {:subname (format "//%s:%s" host port)})
-    (ref-set hive-conn-str (format "jdbc:hive://%s:%s" host port))
-  )
-  (prn "hive-db" @hive-db)
-  (prn "hive-conn-str" @hive-conn-str)
-)
-
-(defn get-hive-db
-  []
-  (-> @hive-db)
-)
-
-(defn get-hive-conn-str
-  []
-  (-> @hive-conn-str)
-)
 
 (defn pooled-spec
   "return pooled conn spec.
@@ -102,7 +75,7 @@
   [q-id sql-str]
   (try
     (let [count-sql-str (str "select count(*) cnt from (" sql-str ") a")
-          conn (get-hive-conn (get-hive-conn-str) "" "")
+          conn (get-hive-conn (hive/get-hive-conn-str) "" "")
           ^Statement stmt (.createStatement conn)
           ^ResultSet rs-count (.executeQuery stmt count-sql-str)
           row-count (if (.next rs-count) (.getInt rs-count "cnt") 0)
@@ -118,7 +91,7 @@
 
 (defn execute-query
   [sql-str]
-    (let [conn (get-hive-conn (get-hive-conn-str) "" "")
+    (let [conn (get-hive-conn (hive/get-hive-conn-str) "" "")
         result-size (config/get-key :max-result-size)
         _ (prn "result-size:" result-size)
         ^Statement stmt (.createStatement conn)
@@ -249,33 +222,106 @@
   )
 )
 
-(defn run-shark-query'
-  [q-id query-str]
+(defn add-view-or-ctas
+  [q-id context-info hql view-or-ctas]
   (try
-   (debug "run-shark-query" :qid q-id)
-    (prn (str "query-str:" query-str))
-  ( sql/with-connection (get-hive-db)
-    (sql/with-query-results rs [query-str]
-      (doall rs)
-      ))
-  (catch Exception exception
-    (error "run shark query:" (util/except->str exception))
-    ; we should seperate exception
-    (update-result-map q-id "failed" nil exception)
-    ))
+    (let [ns (str (:accountid context-info) "." (:appname context-info)  
+                  "." (:appversion context-info) "." (:database context-info) "." (:tablename context-info))
+        ;  hive-name (if (= view-or-ctas 0)(str "vn_" (ad/sha1-hash (str ns))) (str "tn_" (ad/sha1-hash (str ns)))
+          hive-name (:hive_name context-info)
+         ]
+    
+      (cond
+        (= view-or-ctas :view)
+        (do
+          (hive/create-view hive-name hql)
+          (orm/insert mysql/TblMetaStore (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
+                                             :DBName (:database context-info) :TableName (:table context-info) 
+                                             :hive_name (:hive-name context-info) :NameSpaceType 3}]))
+        )
+        (= view-or-ctas :ctas)
+        (do
+          (hive/create-CTAS hive-name hql)
+          (orm/insert mysql/TblMetaStore (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
+                                             :DBName (:database context-info) :TableName (:table context-info) 
+                                             :hive_name hive-name :NameSpaceType 2}]))
+        )
+      )
+    )
+    (update-result-map q-id "succeeded" nil nil nil)
+  (catch SQLException sql-ex
+    (error "can't create view/table" (util/except->str sql-ex))
+    (update-result-map q-id "failed" nil (str "can't create view/table " (:hive-name context-info)) nil)
+  )
+  )
 )
 
+(defn drop-view-or-ctas
+  [q-id context-info view-or-ctas]
+  (try
+    (let [ns (str (:accountid context-info) "." (:appname context-info)
+                  "." (:appversion context-info) "." (:database context-info) "." (:tablename context-info))
+          ns-type (orm/select mysql/TblMetaStore (orm/fields [:NameSpaceType]) (orm/where {:NameSpace ns}))
+          drop-violate? (if (= (:NameSpace (first ns-type)) 2) true false)
+          ]
+      (if drop-violate? 
+        (update-result-map q-id "failed" nil (str "can't drop raw table " (:tablename context-info)) nil )
+        (do
+          (when (= :view view-or-ctas) 
+            (hive/drop-view (:hive-name context-info))
+
+          )
+          (when (= :ctas view-or-ctas)
+        ;we need to check if it is a raw mysql table
+            (hive/drop-CTAS (:hive-name context-info))
+            (orm/delete mysql/TblMetaStore (orm/where {:NameSpace ns}))
+          )
+          (update-result-map q-id "succeeded" nil nil nil)
+       )
+     )
+   )
+  (catch SQLException sql-ex
+    (error "can't drop view/table" (util/except->str sql-ex))
+    (update-result-map q-id "failed" nil (str "can't drop view/table " (:hive-name context-info)) nil)
+  ))
+) 
+
 (defn run-shark-query
-  [context q-id query-str]
+  [context q-id account-id query-str]
   (try
    (debug "run-shark-query" :qid q-id)
-    (let [
-      dfg (trans/parse-sql context query-str)
-      hive-query (trans/dump-hive context dfg)
-          ret-rs (execute-query hive-query)]
-      (future (execute-count-query q-id hive-query))
-      (process-query q-id ret-rs)
-    )
+    (let [ table-name ()
+           hive-name ()
+           hql ()
+           select-clause? ()
+           create-clause? ()
+           drop-clause? ()
+           is-view-or-ctas ()
+           context-info {
+                         :accountid account-id
+                         :appname (first (:default-ns context))
+                         :appversion (second (:default-ns context))
+                         :DBName "test"
+                         :TableName table-name
+                         :hive-name hive-name
+                        }
+
+
+          hive-query (trans/sql-2003->hive context query-str)
+         ]
+     (when (select-clause? )
+       (let [ret-rs (execute-query hive-query)]
+         (future (execute-count-query q-id hive-query))
+         (process-query q-id ret-rs)
+       )
+     )
+     (when (create-clause? ) 
+       (future (add-view-or-ctas q-id context-info hql is-view-or-ctas))
+     )
+     (when (drop-clause? )
+       (future (drop-view-or-ctas q-id context-info is-view-or-ctas))
+     )
+  )
   (catch Exception ex
   (do
    (error "can't execute shark query:" (util/except->str ex))
@@ -285,12 +331,12 @@
 )
 
 (defn submit-query
-  [context q-id query-str]
+  [context q-id account-id query-str]
  ;; {:pre [not (str/blank? query-str)]}
   ;; TODO add query syntax check, only allow select clause
   (debug "submit-query" :qid q-id :query query-str)
   (update-result-map q-id "running" {} nil nil)
-  (future (run-shark-query context q-id query-str))
+  (future (run-shark-query context q-id account-id query-str))
 )
 
 (defn get-result
