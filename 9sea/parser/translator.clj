@@ -299,13 +299,18 @@
             ]
             (assoc ast :as new-as)
         )
-        #{:drop-view} (let [
+        #{:drop-view :drop-ctas} (let [
             vw (:value (:name ast))
             hiveview (normalize-table context vw)
+            format-vw (str/join "." (for [x vw] (quoted \` x)))
             ]
-            (util/throw-if-not (= (:type hiveview) "view")
-                InvalidSyntaxException.
-                (format "DROP VIEW expects a view: %s" vw)
+            (cond
+                (and (= (:type ast) :drop-view) (not= (:type hiveview) "view"))
+                (throw (InvalidSyntaxException.
+                    (str "DROP VIEW expects a view: " format-vw)))
+                (and (= (:type ast) :drop-ctas) (not= (:type hiveview) "ctas"))
+                (throw (InvalidSyntaxException.
+                    (str "DROP TABLE expects a table: " format-vw)))
             )
             (assoc ast :name hiveview)
         )
@@ -725,8 +730,11 @@
                     )
                 )
             )
-            #{:drop-view} (let [hiveview (:name dfg)]
-                (format "DROP VIEW %s" (:hive-name hiveview))
+            #{:drop-view :drop-ctas} (let [hiveview (:name dfg)]
+                (case (:type dfg)
+                    :drop-view (format "DROP VIEW %s" (:hive-name hiveview))
+                    :drop-ctas (format "DROP TABLE %s" (:hive-name hiveview))
+                )
             )
             (dump-hive:value-expr dfg)
         )

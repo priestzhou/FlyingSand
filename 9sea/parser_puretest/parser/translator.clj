@@ -518,6 +518,24 @@
     :default-ns ["app"]
 })
 
+(def ctas-context {
+    :ns [{
+        :type "namespace"
+        :name "app"
+        :children [{
+            :type "ctas"
+            :name "ctas"
+            :hive-name "hivectas"
+            :children [
+                {
+                    :name "cc"
+                }
+            ]
+        }]
+    }]
+    :default-ns ["app"]
+})
+
 (defn- insert-view' [ty nz default-nz view-name]
     (if (empty? default-nz)
         (conj (:children nz) {
@@ -633,5 +651,15 @@
         )
         :is
         "CREATE TABLE hivectas AS SELECT * FROM hivetbl"
+    )
+    (:fact drop:ctas
+        (sql->hive ctas-context "DROP TABLE ctas")
+        :is
+        "DROP TABLE hivectas"
+    )
+    (:fact drop:ctas:ns
+        (sql->hive ctas-context "DROP TABLE app.ctas")
+        :is
+        "DROP TABLE hivectas"
     )
 )

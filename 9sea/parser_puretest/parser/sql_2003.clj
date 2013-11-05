@@ -3825,4 +3825,15 @@
             }
         }]
     )
+    (:fact drop:ctas
+        (->> "DROP TABLE vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-ctas
+            :name {:type :dotted-identifier, :value ["vw"]}
+        }]
+    )
 )

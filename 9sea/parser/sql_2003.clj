@@ -1239,12 +1239,15 @@
             ((prs/chain
                 (expect-string-ignore-case "DROP")
                 blank+
-                (expect-string-ignore-case "VIEW")
+                (prs/choice*
+                    (constantly :drop-view) (expect-string-ignore-case "VIEW")
+                    (constantly :drop-ctas) (expect-string-ignore-case "TABLE")
+                )
                 blank+
                 dotted-identifier
             ))
         )
-        res {:type :drop-view, :name (last prsd)}
+        res {:type (nth prsd 2), :name (last prsd)}
         ]
         [strm res]
     )
