@@ -5,7 +5,6 @@
     )
     (:require 
         [org.httpkit.client :as client]
-        [query-server.query-backend :as qb]
         [query-server.hive-adapt :as ha]
         [clojure.java.jdbc :as jdbc]
         [clojure.data.json :as js]

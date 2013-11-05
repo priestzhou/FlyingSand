@@ -1,7 +1,9 @@
 (ns query-server.hive-adapt
     (:require
         [clojure.string :as cs]
-        [query-server.core :as qc]
+        [query-server.mysql-connector :as mysql]
+        [clojure.java.jdbc :as sql]
+        [utilities.core :as util]
     )
     (:use
         [clojure.set]
@@ -32,6 +34,36 @@
 
 (def ^:parivate splitStr "\t")
 
+(def ^:private hive-db (ref {:classname "org.apache.hadoop.hive.jdbc.HiveDriver"
+                             :subprotocol "hive"
+                             :user ""
+                             :password ""
+                            }
+                       )
+)
+
+(def ^:private hive-conn-str (ref ""))
+
+(defn set-hive-db
+  [host port]
+  (dosync
+    (alter hive-db conj {:subname (format "//%s:%s" host port)})
+    (ref-set hive-conn-str (format "jdbc:hive://%s:%s" host port))
+  )
+  (prn "hive-db" @hive-db)
+  (prn "hive-conn-str" @hive-conn-str)
+)
+
+(defn get-hive-db
+  []
+  (-> @hive-db)
+)
+
+(defn get-hive-conn-str
+  []
+  (-> @hive-conn-str)
+)
+
 (defn- mysql-type-to-hive [colType]
     (->>
         colType
@@ -50,6 +82,64 @@
     )
 )
 
+(defn run-shark-query'
+  [q-id query-str]
+  (try
+   (debug "run-shark-query" :qid q-id)
+    (prn (str "query-str:" query-str))
+  ( sql/with-connection (get-hive-db)
+    (sql/with-query-results rs [query-str]
+      (doall rs)
+      ))
+  (catch Exception exception
+    (error "run shark query:" (util/except->str exception))
+    ; we should seperate exception
+;    (update-result-map q-id "failed" nil exception)
+    ))
+)
+
+(defn create-CTAS
+  [table-name table-query]
+  (let [hive-sql (str " CREATE TABLE " table-name
+                      " AS " table-query
+                 )
+        rs (run-shark-query' "" hive-sql)
+       ]
+    rs
+  )
+)
+
+(defn create-view
+  [view-name view-query]
+  (let [hive-sql (str " CREATE VIEW " view-name
+                      " AS " view-query
+                 )
+        rs (run-shark-query' "" hive-sql)
+        ]
+
+    rs
+  )
+)
+
+(defn drop-view
+  [view-name]
+  (let [hive-sql (str "DROP VIEW " view-name)
+        rs (run-shark-query' "" hive-sql)
+       ]
+    rs
+  )
+)
+
+(defn drop-CTAS
+  [ctas-name]
+  (let [hive-sql (str "DROP TABLE " ctas-name)
+        rs (run-shark-query' "" hive-sql)
+       ]
+    rs
+  )
+)
+     
+
 (defn create-table [tn collist]
     (let [coll (map  get-column collist)
             colsql (reduce #(str %1 "," %2) coll)
@@ -59,7 +149,7 @@
                 ") PARTITIONED BY ("partStr" STRING) "
                 "ROW FORMAT DELIMITED FIELDS TERMINATED BY \"\\1\"" 
                 )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         res
     )
@@ -67,7 +157,7 @@
 
 (defn check-partition [tn pn]
     (let [mainSql (str "SHOW PARTITIONS " tn " PARTITION (" partStr "=\"" pn "\")")
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         (cond
             (nil? res) false
@@ -79,7 +169,7 @@
 
 (defn add-partition [tn pn]
     (let [mainSql (str "alter table " tn " add PARTITION (" partStr "=\"" pn "\")")
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         res
     )
@@ -89,7 +179,7 @@
     (let [mainSql (str "show table extended like " 
                     tn " PARTITION (" partStr "=\"" pn "\")"
                 )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
             flist (filter 
                     #(->>
                     (re-find #"^location:" (:tab_name %))
@@ -111,7 +201,7 @@
 
 (defn get-hive-clos [tn]
     (let [mainSql (str "DESCRIBE " tn )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         (->>
             res
@@ -143,7 +233,7 @@
 
 (defn get-hive-cols [tn]
     (let [mainSql (str "DESCRIBE " tn )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
 ;      (println "get-hive-cols" res)
       (map #(select-keys % [:col_name :data_type]) res)

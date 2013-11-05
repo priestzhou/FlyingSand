@@ -196,7 +196,7 @@
 
 (defn get-hive-cols [tn]
     (let [mainSql (str "DESCRIBE " tn )
-            res (shark/run-shark-query' "" mainSql)
+            res (hive/run-shark-query' "" mainSql)
         ]
       (prn "get-hive-cols" res)
       (map #(select-keys % [:col_name :data_type]) res)
