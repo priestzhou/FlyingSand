@@ -12,7 +12,7 @@ CREATE TABLE supplier (S_SUPPKEY BIGINT,
                            S_ADDRESS STRING,
                            S_NATIONKEY BIGINT,
                            S_PHONE STRING,
-                           S_ACCTBAL INT,
+                           S_ACCTBAL DOUBLE,
                            S_COMMENT STRING)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY "|";
 
@@ -29,7 +29,7 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY "|";
 CREATE TABLE orders (O_ORDERKEY BIGINT,
                         O_CUSTKEY BIGINT,
                         O_ORDERSTATUS STRING,
-                        O_TOTALPRICE INT,
+                        O_TOTALPRICE DOUBLE:,
                         O_ORDERDATE STRING,
                         O_ORDERPRIORITY STRING,
                         O_CLERK STRING,
@@ -44,14 +44,14 @@ CREATE TABLE part (P_PARTKEY BIGINT,
                        P_TYPE STRING,
                        P_SIZE BIGINT,
                        P_CONTAINER STRING,
-                       P_RETAILPRICE INT,
+                       P_RETAILPRICE DOUBLE,
                        P_COMMENT STRING)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY "|";
 
 CREATE TABLE partsupp (PS_PARTKEY BIGINT,
                            PS_SUPPKEY BIGINT,
                            PS_AVAILQTY BIGINT,
-                           PS_SUPPLYCOST INT,
+                           PS_SUPPLYCOST DOUBLE,
                            PS_COMMENT STRING)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY "|";
 
@@ -60,9 +60,9 @@ CREATE TABLE lineitem (L_ORDERKEY  BIGINT,
                            L_SUPPKEY BIGINT,
                            L_LINEINT  BIGINT,
                            L_QUANTITY INT,
-                           L_EXTENDEDPRICE   INT,
-                           L_DISCOUNT INT,
-                           L_TAX  INT,
+                           L_EXTENDEDPRICE   DOUBLE,
+                           L_DISCOUNT DOUBLE,
+                           L_TAX  DOUBLE,
                            L_RETURNFLAG  STRING,
                            L_LINESTATUS STRING,
                            L_SHIPDATE  STRING,
