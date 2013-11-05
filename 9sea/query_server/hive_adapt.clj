@@ -42,8 +42,11 @@
 
 (def ^:private hive-conn-str (ref ""))
 
+<<<<<<< HEAD
 (def ^:private table-type ["" "table" "ctas" "view"])
 
+=======
+>>>>>>> add view/ctas
 (defn set-hive-db
   [host port]
   (dosync
@@ -85,6 +88,7 @@
 (defn run-shark-query'
   [q-id query-str]
   (try
+<<<<<<< HEAD
     (debug "run-shark-query" :qid q-id)
     (prn (str "query-str:" query-str))
     (sql/with-connection (get-hive-db)
@@ -103,6 +107,19 @@
     (sql/with-query-results rs [query-str]
       (doall rs))
   )
+=======
+   (debug "run-shark-query" :qid q-id)
+    (prn (str "query-str:" query-str))
+  ( sql/with-connection (get-hive-db)
+    (sql/with-query-results rs [query-str]
+      (doall rs)
+      ))
+  (catch Exception exception
+    (error "run shark query:" (util/except->str exception))
+    ; we should seperate exception
+;    (update-result-map q-id "failed" nil exception)
+    ))
+>>>>>>> add view/ctas
 )
 
 (defn create-CTAS
@@ -110,7 +127,11 @@
   (let [hive-sql (str " CREATE TABLE " table-name
                       " AS " table-query
                  )
+<<<<<<< HEAD
         rs (run-shark-query-with-except-throw hive-sql)
+=======
+        rs (run-shark-query' "" hive-sql)
+>>>>>>> add view/ctas
        ]
     rs
   )
@@ -121,7 +142,11 @@
   (let [hive-sql (str " CREATE VIEW " view-name
                       " AS " view-query
                  )
+<<<<<<< HEAD
         rs (run-shark-query-with-except-throw hive-sql)
+=======
+        rs (run-shark-query' "" hive-sql)
+>>>>>>> add view/ctas
         ]
 
     rs
@@ -131,7 +156,11 @@
 (defn drop-view
   [view-name]
   (let [hive-sql (str "DROP VIEW " view-name)
+<<<<<<< HEAD
         rs (run-shark-query-with-except-throw hive-sql)
+=======
+        rs (run-shark-query' "" hive-sql)
+>>>>>>> add view/ctas
        ]
     rs
   )
@@ -140,7 +169,11 @@
 (defn drop-CTAS
   [ctas-name]
   (let [hive-sql (str "DROP TABLE " ctas-name)
+<<<<<<< HEAD
         rs (run-shark-query-with-except-throw hive-sql)
+=======
+        rs (run-shark-query' "" hive-sql)
+>>>>>>> add view/ctas
        ]
     rs
   )

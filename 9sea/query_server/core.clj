@@ -257,6 +257,7 @@
   (catch SQLException sql-ex
     (error "can't create view/table" (util/except->str sql-ex))
     (update-result-map q-id "failed" nil (str "can't create view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
+    (update-result-map q-id "failed" nil (str "can't create view/table " (:hive-name context-info)) nil)
   )
   )
 )
@@ -352,7 +353,6 @@
     }
   )
 )
-
 
 (defn run-shark-query
   [context q-id account-id query-str]
