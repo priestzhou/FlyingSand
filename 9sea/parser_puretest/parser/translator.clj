@@ -46,7 +46,10 @@
 })
 
 (defn- sql->hive [context sql-text]
-    (trans/dump-hive (trans/parse-sql context sql-text))
+    (->> sql-text
+        (trans/parse-sql context)
+        (trans/dump-hive context)
+    )
 )
 
 (suite "quoted"
@@ -494,5 +497,109 @@
         (sql->hive context "SELECT from_unixtime(col) FROM tbl")
         :is
         "SELECT FROM_UNIXTIME(col) FROM hivetbl"
+    )
+)
+
+(def viewed-context {
+    :ns [{
+        :type "namespace"
+        :name "app"
+        :children [{
+            :type "view"
+            :name "vw"
+            :hive-name "hiveview"
+            :children [
+                {
+                    :name "cc"
+                }
+            ]
+        }]
+    }]
+    :default-ns ["app"]
+})
+
+(defn- insert-view' [nz default-nz view-name]
+    (if (empty? default-nz)
+        (conj (:children nz) {
+            :type "view"
+            :name view-name
+            :hive-name "hiveview"
+        })
+        (let [
+            [x & xs] default-nz
+            new-nz (for [c nz]
+                (if-not (= (:name c) x)
+                    c
+                    (assoc c :children (insert-view' (:children c) xs view-name))
+                )
+            )
+            ]
+            new-nz
+        )
+    )
+)
+
+(defn- insert-view [context dfg]
+{
+    :pre [
+        (= (:type dfg) :create-view)
+    ]
+}
+    (let [
+        view-refer (:value (:name dfg))
+        view-nz (drop-last view-refer)
+        view-name (last view-refer)
+        default-nz (:default-ns context)
+        default-nz-prefix (drop-last (count view-nz) default-nz)
+        nz (insert-view' (:ns context)
+            (concat default-nz-prefix view-nz)
+            view-name
+        )
+        ]
+        {
+            :default-ns (:default-ns context)
+            :ns nz
+        }
+    )
+)
+
+(suite "view"
+    (:fact view:create
+        (let [
+            dfg (trans/parse-sql context "CREATE VIEW vw AS select * from tbl")
+            viewed-context (insert-view context dfg)
+            r (trans/dump-hive viewed-context dfg)
+            ]
+            r
+        )
+        :is
+        "CREATE VIEW hiveview AS SELECT * FROM hivetbl"
+    )
+    (:fact view:create:ns
+        (let [
+            dfg (trans/parse-sql context "CREATE VIEW ver.vw AS select * from tbl")
+            viewed-context (insert-view context dfg)
+            r (trans/dump-hive viewed-context dfg)
+            ]
+            r
+        )
+        :is
+        "CREATE VIEW hiveview AS SELECT * FROM hivetbl"
+    )
+    (:fact view:create:col
+        (let [
+            dfg (trans/parse-sql context "CREATE VIEW vw(cc) AS select * from tbl")
+            viewed-context (insert-view context dfg)
+            r (trans/dump-hive viewed-context dfg)
+            ]
+            r
+        )
+        :is
+        "CREATE VIEW hiveview(cc) AS SELECT * FROM hivetbl"
+    )
+    (:fact select:from:view
+        (sql->hive viewed-context "SELECT * FROM vw WHERE vw.cc<>0")
+        :is
+        "SELECT * FROM hiveview WHERE hiveview.cc <> 0"
     )
 )

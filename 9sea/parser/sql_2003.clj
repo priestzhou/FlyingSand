@@ -1197,6 +1197,38 @@
     )
 )
 
+(defn create-view [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "CREATE")
+                blank+
+                (expect-string-ignore-case "VIEW")
+                blank+
+                dotted-identifier
+                (prs/choice*
+                    last (prs/chain
+                        blank*
+                        paren-column-list
+                    )
+                    nil
+                )
+                blank+
+                (expect-string-ignore-case "AS")
+                blank+
+                query
+            ))
+        )
+        view-name (nth prsd 4)
+        cl (nth prsd 5)
+        q (last prsd)
+        res {:type :create-view, :name view-name, :as q}
+        res (if-not cl res (assoc res :column-list (:value cl)))
+        ]
+        [strm res]
+    )
+)
+
 (defn sql [stream]
     (let [
         [strm prsd] (->> stream
@@ -1205,7 +1237,10 @@
             ((prs/choice*
                 second (prs/chain
                     blank*
-                    query
+                    (prs/choice
+                        query
+                        create-view
+                    )
                     blank*
                     (prs/expect-eof)
                 )

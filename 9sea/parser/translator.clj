@@ -2,6 +2,7 @@
     (:require
         [clojure.string :as str]
         [utilities.parse :as prs]
+        [utilities.core :as util]
         [parser.sql-2003 :as sql]
     )
     (:use
@@ -101,7 +102,7 @@
         x (concat nz refered)
         r (search-table nss x)
         ]
-        (if (= (:type r) "table")
+        (if (#{"table" "view"} (:type r) )
             r
             (if-not (empty? nz)
                 (recur nss (drop-last nz) refered)
@@ -292,7 +293,12 @@
 )
 
 (defn analyze-sql [context ast]
-    (analyze-sql:value-expr context ast)
+    (case (:type ast)
+        :create-view (let [new-as (analyze-sql:value-expr context (:as ast))]
+            (assoc ast :as new-as)
+        )
+        (analyze-sql:value-expr context ast)
+    )
 )
 
 
@@ -624,7 +630,6 @@
         )
 
         #{:select} (->> dfg (dump-hive:select))
-
         #{:union} (do
             (assert (= (:qualifier dfg) :all))
             (str/join " UNION ALL "
@@ -680,10 +685,31 @@
 
 (defn dump-hive [context dfg]
     (let [
-        dfg (case (:type dfg)
-            dfg
+        hive (case (:type dfg)
+            :create-view (let [
+                nm (:value (:name dfg))
+                vw (normalize-table context nm)
+                _ (util/throw-if-not vw
+                    InvalidSyntaxException. (format "unknown view name: %s" nm)
+                )
+                _ (util/throw-if-not (= (:type vw) "view")
+                    InvalidSyntaxException. (format "%s is not a view" nm)
+                )
+                view-name (:hive-name vw)
+                subq (dump-hive:value-expr (:as dfg))
+                cl (:column-list dfg)
+                ]
+                (if-not cl
+                    (format "CREATE VIEW %s AS %s" view-name subq)
+                    (format "CREATE VIEW %s(%s) AS %s"
+                        view-name
+                        (str/join ", " cl)
+                        subq
+                    )
+                )
+            )
+            (dump-hive:value-expr dfg)
         )
-        hive (dump-hive:value-expr dfg)
         ]
         (info "dump hive" :hive hive)
         hive

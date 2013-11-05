@@ -3766,3 +3766,37 @@
         }]
     )
 )
+
+(suite "view"
+    (:fact view:create
+        (->> "CREATE VIEW vw AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+    (:fact view:create:col
+        (->> "CREATE VIEW vw(col) AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :column-list ["col"]
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+)
