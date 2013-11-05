@@ -97,6 +97,16 @@
     )
 )
 
+(defn chage-agent-config [id appname version confighash]
+    (let [sstr (get agent-stat-map state)
+            sql (str "update TblAgent set AppName='" appversion "',"
+                    " Version='" version "',ConfigHash where id ='" id "'"
+                )
+        ]
+        (runupdate sql)
+    )
+)
+
 (defn get-agent-list [state]
     (get-agent-list' (get agent-stat-map state))
 )
@@ -263,6 +273,7 @@
                     (debug " add TblApplication fail " :except (except->str e))
                 )
             )
+            (chage-agent-config agentid appname appversion hashcode)
             (doall 
                 (map 
                     (partial create-table agentid appname appversion) 
@@ -273,10 +284,12 @@
 )
 
 (defn- query-agent-schema [agentid]
-    (let [sql (str "select *  from TblSchema a  left join TblMetaStore b " 
-                " on a.Namespace = b.Namespace   where agentid ='" agentid "'"
-                " and a.Namespace is not null and b.Namespace is not null"
-            )
+    (let [sql (str "select *  from TblAgent c left join TblSchema a on c.agentid=a.agentid 
+                left join TblMetaStore b " 
+                " on c.AppName=b.AppName and c.AppVersion=b.AppVersion and 
+                a.Namespace = b.Namespace   where agentid ='" agentid "'"
+                " and a.Namespace is not null and b.Namespace is not null")
+;add app version in agent
             res (runsql sql)
         ]
         (debug "query-agent-schema" :res (str res) )
