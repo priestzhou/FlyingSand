@@ -102,7 +102,7 @@
         x (concat nz refered)
         r (search-table nss x)
         ]
-        (if (#{"table" "view"} (:type r) )
+        (if (#{"table" "view" "ctas"} (:type r) )
             r
             (if-not (empty? nz)
                 (recur nss (drop-last nz) refered)
@@ -293,11 +293,13 @@
 )
 
 (defn analyze-sql [context ast]
-    (case (:type ast)
-        :create-view (let [new-as (analyze-sql:value-expr context (:as ast))]
+    (condp contains? (:type ast)
+        #{:create-view :create-ctas} (let [
+            new-as (analyze-sql:value-expr context (:as ast))
+            ]
             (assoc ast :as new-as)
         )
-        :drop-view (let [
+        #{:drop-view} (let [
             vw (:value (:name ast))
             hiveview (normalize-table context vw)
             ]
@@ -695,30 +697,35 @@
 
 (defn dump-hive [context dfg]
     (let [
-        hive (case (:type dfg)
-            :create-view (let [
+        hive (condp contains? (:type dfg)
+            #{:create-view :create-ctas} (let [
+                op (case (:type dfg)
+                    :create-view "VIEW"
+                    :create-ctas "TABLE"
+                )
                 nm (:value (:name dfg))
                 vw (normalize-table context nm)
                 _ (util/throw-if-not vw
-                    InvalidSyntaxException. (format "unknown view name: %s" nm)
+                    InvalidSyntaxException. (format "unknown %s: %s" op nm)
                 )
-                _ (util/throw-if-not (= (:type vw) "view")
-                    InvalidSyntaxException. (format "%s is not a view" nm)
+                _ (util/throw-if-not (#{"view" "ctas"} (:type vw))
+                    InvalidSyntaxException. (format "%s is not a %s" nm op)
                 )
                 view-name (:hive-name vw)
                 subq (dump-hive:value-expr (:as dfg))
                 cl (:column-list dfg)
                 ]
                 (if-not cl
-                    (format "CREATE VIEW %s AS %s" view-name subq)
-                    (format "CREATE VIEW %s(%s) AS %s"
+                    (format "CREATE %s %s AS %s" op view-name subq)
+                    (format "CREATE %s %s(%s) AS %s"
+                        op
                         view-name
                         (str/join ", " cl)
                         subq
                     )
                 )
             )
-            :drop-view (let [hiveview (:name dfg)]
+            #{:drop-view} (let [hiveview (:name dfg)]
                 (format "DROP VIEW %s" (:hive-name hiveview))
             )
             (dump-hive:value-expr dfg)

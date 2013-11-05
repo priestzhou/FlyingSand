@@ -518,19 +518,19 @@
     :default-ns ["app"]
 })
 
-(defn- insert-view' [nz default-nz view-name]
+(defn- insert-view' [ty nz default-nz view-name]
     (if (empty? default-nz)
         (conj (:children nz) {
-            :type "view"
+            :type (case ty :create-view "view" :create-ctas "ctas")
             :name view-name
-            :hive-name "hiveview"
+            :hive-name (case ty :create-view "hiveview" :create-ctas "hivectas")
         })
         (let [
             [x & xs] default-nz
             new-nz (for [c nz]
                 (if-not (= (:name c) x)
                     c
-                    (assoc c :children (insert-view' (:children c) xs view-name))
+                    (assoc c :children (insert-view' ty (:children c) xs view-name))
                 )
             )
             ]
@@ -542,7 +542,7 @@
 (defn- insert-view [context dfg]
 {
     :pre [
-        (= (:type dfg) :create-view)
+        (#{:create-view :create-ctas} (:type dfg))
     ]
 }
     (let [
@@ -551,7 +551,7 @@
         view-name (last view-refer)
         default-nz (:default-ns context)
         default-nz-prefix (drop-last (count view-nz) default-nz)
-        nz (insert-view' (:ns context)
+        nz (insert-view' (:type dfg) (:ns context)
             (concat default-nz-prefix view-nz)
             view-name
         )
@@ -611,5 +611,27 @@
         (sql->hive viewed-context "DROP VIEW app.vw")
         :is
         "DROP VIEW hiveview"
+    )
+    (:fact create:ctas
+        (let [
+            dfg (trans/parse-sql context "CREATE TABLE ctas AS select * from tbl")
+            viewed-context (insert-view context dfg)
+            r (trans/dump-hive viewed-context dfg)
+            ]
+            r
+        )
+        :is
+        "CREATE TABLE hivectas AS SELECT * FROM hivetbl"
+    )
+    (:fact create:ctas:ns
+        (let [
+            dfg (trans/parse-sql context "CREATE TABLE ver.ctas AS select * from tbl")
+            viewed-context (insert-view context dfg)
+            r (trans/dump-hive viewed-context dfg)
+            ]
+            r
+        )
+        :is
+        "CREATE TABLE hivectas AS SELECT * FROM hivetbl"
     )
 )

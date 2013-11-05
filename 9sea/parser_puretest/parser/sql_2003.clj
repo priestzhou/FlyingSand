@@ -3810,4 +3810,19 @@
             :name {:type :dotted-identifier, :value ["vw"]}
         }]
     )
+    (:fact create:ctas
+        (->> "CREATE TABLE vw AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-ctas
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
 )

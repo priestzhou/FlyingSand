@@ -1203,7 +1203,10 @@
             ((prs/chain
                 (expect-string-ignore-case "CREATE")
                 blank+
-                (expect-string-ignore-case "VIEW")
+                (prs/choice*
+                    (constantly :create-view) (expect-string-ignore-case "VIEW")
+                    (constantly :create-ctas) (expect-string-ignore-case "TABLE")
+                )
                 blank+
                 dotted-identifier
                 (prs/choice*
@@ -1219,10 +1222,11 @@
                 query
             ))
         )
+        op (nth prsd 2)
         view-name (nth prsd 4)
         cl (nth prsd 5)
         q (last prsd)
-        res {:type :create-view, :name view-name, :as q}
+        res {:type op, :name view-name, :as q}
         res (if-not cl res (assoc res :column-list (:value cl)))
         ]
         [strm res]
