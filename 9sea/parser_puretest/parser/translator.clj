@@ -602,4 +602,14 @@
         :is
         "SELECT * FROM hiveview WHERE hiveview.cc <> 0"
     )
+    (:fact drop:view
+        (sql->hive viewed-context "DROP VIEW vw")
+        :is
+        "DROP VIEW hiveview"
+    )
+    (:fact drop:view:ns
+        (sql->hive viewed-context "DROP VIEW app.vw")
+        :is
+        "DROP VIEW hiveview"
+    )
 )

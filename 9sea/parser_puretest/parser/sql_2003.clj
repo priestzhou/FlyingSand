@@ -3799,4 +3799,15 @@
             }
         }]
     )
+    (:fact view:drop
+        (->> "DROP VIEW vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+        }]
+    )
 )

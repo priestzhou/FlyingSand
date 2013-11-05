@@ -297,6 +297,16 @@
         :create-view (let [new-as (analyze-sql:value-expr context (:as ast))]
             (assoc ast :as new-as)
         )
+        :drop-view (let [
+            vw (:value (:name ast))
+            hiveview (normalize-table context vw)
+            ]
+            (util/throw-if-not (= (:type hiveview) "view")
+                InvalidSyntaxException.
+                (format "DROP VIEW expects a view: %s" vw)
+            )
+            (assoc ast :name hiveview)
+        )
         (analyze-sql:value-expr context ast)
     )
 )
@@ -707,6 +717,9 @@
                         subq
                     )
                 )
+            )
+            :drop-view (let [hiveview (:name dfg)]
+                (format "DROP VIEW %s" (:hive-name hiveview))
             )
             (dump-hive:value-expr dfg)
         )

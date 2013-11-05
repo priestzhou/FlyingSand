@@ -1229,6 +1229,23 @@
     )
 )
 
+(defn drop-view [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "DROP")
+                blank+
+                (expect-string-ignore-case "VIEW")
+                blank+
+                dotted-identifier
+            ))
+        )
+        res {:type :drop-view, :name (last prsd)}
+        ]
+        [strm res]
+    )
+)
+
 (defn sql [stream]
     (let [
         [strm prsd] (->> stream
@@ -1240,6 +1257,7 @@
                     (prs/choice
                         query
                         create-view
+                        drop-view
                     )
                     blank*
                     (prs/expect-eof)
