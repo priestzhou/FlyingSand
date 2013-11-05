@@ -30,8 +30,6 @@
 
 (def ^:parivate partStr "fs_agent")
 
-(def ^:parivate splitStr "\t")
-
 (defn- mysql-type-to-hive [colType]
     (->>
         colType
