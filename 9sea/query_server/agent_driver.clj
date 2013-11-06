@@ -98,8 +98,8 @@
 )
 
 (defn chage-agent-config [id appname version confighash]
-    (let [sstr (get agent-stat-map state)
-            sql (str "update TblAgent set AppName='" appversion "',"
+    (let [
+            sql (str "update TblAgent set AppName='" appname "',"
                     " AppVersion='" version "',ConfigHash where id ='" id "'"
                 )
         ]
@@ -351,8 +351,9 @@
             sql (str "update TblAgent set LastSyncTime=\"" nowstr"\" "
                     " where id =" agentid
                 )
+            res (runupdate sql)
         ]
-        res (runupdate sql)
+        res
     )
 )
 
