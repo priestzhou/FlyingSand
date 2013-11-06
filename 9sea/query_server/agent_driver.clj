@@ -592,7 +592,7 @@
         ]
         (new-agent agentid agentname agenturl accountid)
         (debug "the agent renewed" :agentname agentname)
-        (chage-agent-stat "normal")
+        (chage-agent-stat agentid "normal")
     )
 )
 
