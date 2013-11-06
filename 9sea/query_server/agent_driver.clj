@@ -100,7 +100,7 @@
 (defn chage-agent-config [id appname version confighash]
     (let [sstr (get agent-stat-map state)
             sql (str "update TblAgent set AppName='" appversion "',"
-                    " Version='" version "',ConfigHash where id ='" id "'"
+                    " AppVersion='" version "',ConfigHash where id ='" id "'"
                 )
         ]
         (runupdate sql)
@@ -392,6 +392,7 @@
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
+            configHash(:confighash tableinfo)
             res (httpget 
                     agenturl 
                     :get-table-inc-data 
@@ -399,6 +400,7 @@
                         "?dbname=" dbname 
                         "&tablename=" tablename 
                         "&keynum=" position
+                        "&confighash=" configHash
                     )
                 )
             status (:status res)
@@ -457,12 +459,14 @@
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
+            configHash(:confighash tableinfo)
             res (httpget 
                     agenturl 
                     :get-table-all-data 
                     (str 
                         "?dbname=" dbname 
                         "&tablename=" tablename 
+                        "&confighash=" configHash
                     )
                 )
             status (:status res)
