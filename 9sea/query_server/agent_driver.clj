@@ -579,6 +579,21 @@
     )
 )
 
+(defn mismatch-agent-check [agentid appname appversion agentname agenturl 
+    accountid]
+    (let [setting (js/read-str 
+                    (get-decrypt-body (httpget agenturl :get-setting))
+                    :key-fn keyword
+                )
+            newhashcode (:hashcode setting)
+            newappname (:app setting)
+            newappversion (:appversion setting)
+        ]
+        (new-agent agentid agentname agenturl accountid)
+        (debug "the agent renewed" :agentname agentname)
+        (chage-agent-stat "normal")
+    )
+)
 
 (defn -main [& args]
     (let [arg-spec 

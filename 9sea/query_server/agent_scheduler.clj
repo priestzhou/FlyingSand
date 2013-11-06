@@ -41,7 +41,7 @@
     (info "new-agent-check")
     (try 
         (let [agent-list (ad/get-agent-list "new")
-            _ (println agent-list)
+            
             ]
             (doall (map new-agent-run agent-list))
         )
@@ -93,8 +93,31 @@
         )
         (catch Exception e 
             (error " all-data-check fail " :except (except->str e))
-        )          
+        )
     )
     (Thread/sleep (config/get-key :all-data-check-interval))
+    (recur)
+)
+
+(defn mismatch-agent-check []
+    (try 
+        (let [agent-list (ad/get-agent-list "mismatch")]
+            (doall (map  
+                #(ad/check-mismatch-agent
+                    (:id %)
+                    (:appname %) 
+                    (:appversion %)
+                    (:agentname %) 
+                    (:agenturl %)
+                    (:accountid %)                    
+                )
+                agent-list
+            ))
+        )
+        (catch Exception e 
+            (error " mismatch-agent-check fail " :except (except->str e))
+        )          
+    )
+    (Thread/sleep (config/get-key :mismatch-agent-check-interval))
     (recur)
 )
