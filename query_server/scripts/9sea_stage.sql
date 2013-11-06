@@ -29,6 +29,8 @@ CREATE TABLE `TblAgent` (
   `LastSyncTime` datetime DEFAULT NULL,
   `DataSize` int(11) DEFAULT NULL,
   `AgentUrl` varchar(80) DEFAULT NULL,
+  `AppName` varchar(30) DEFAULT NULL,
+  `AppVersion` varchar(30) DEFAULT NULL,  
   `ConfigHash` varchar(50) DEFAULT NULL,
   `AgentState` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
