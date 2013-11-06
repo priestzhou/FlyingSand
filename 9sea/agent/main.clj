@@ -42,8 +42,9 @@
 )
 
 (defn web-response [dataFunc params dba]
-    (let [hc (hash dba)
-            confighash(:confighash params)
+    (let [hc (str (hash dba))
+            confighash (:confighash params)
+            _ (debug confighash)
 
         ]
         (if (= hc confighash)
