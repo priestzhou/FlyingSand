@@ -351,6 +351,7 @@
 (defn- updata-agent-sync-time [agentid]
     (let [now (System/currentTimeMillis)
             nowstr (get-group-time now 1000)
+            _ (debug "updatetime" nowstr)
             sql (str "update TblAgent set LastSyncTime=\"" nowstr"\" "
                     " where id =" agentid
                 )

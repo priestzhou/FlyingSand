@@ -72,6 +72,9 @@
                 (as/all-data-check)
             )
         )
+        (future 
+            (as/mismatch-agent-check)
+        )        
         (web/start opts)
     )
 )
