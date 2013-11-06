@@ -60,6 +60,9 @@
       <arg line="-c &quot;git pull &quot;" />
     </exec>
     <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;git checkout ${git.branch}&quot;" />
+    </exec>      
+    <exec executable = "sh" dir="${git.dir}">
       <arg line="-c &quot;scons -j3 build/query_server.jar&quot;" />
     </exec>
     <exec executable = "sh" dir="${git.dir}">
