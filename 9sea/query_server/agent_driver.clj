@@ -579,7 +579,7 @@
     )
 )
 
-(defn mismatch-agent-check [agentid appname appversion agentname agenturl 
+(defn check-mismatch-agent [agentid appname appversion agentname agenturl 
     accountid]
     (let [setting (js/read-str 
                     (get-decrypt-body (httpget agenturl :get-setting))
