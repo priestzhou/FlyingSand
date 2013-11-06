@@ -148,6 +148,20 @@
     )
 )
 
+(defn- filter-key [kstr]
+    (->>
+        kstr
+        (#(if (= \` (first %))
+            (reduce str (rest %))
+            %
+        ))
+        (#(if (= \` (last %))
+            (reduce str (butlast %))
+            %
+        ))        
+    )
+)
+
 (defn get-table-inc-data [dbsetting db tb qnum]
     (let [flag (check-meta dbsetting db tb)
         ]
@@ -158,7 +172,7 @@
                     (:get-table-inc-data *db-func-map*) 
                     (:db flag) 
                     (:table flag) 
-                    (:key flag)
+                    (filter-key (:key flag))
                     qnum
                     (:selcols flag)
                 )

@@ -214,6 +214,7 @@
     )
     (when (check-table (:namespace dataset))
         (do 
+            (ha/create-table (:hiveName dataset) (:cols dataset))
             (add-record "TblMetaStore"
                 (:namespace dataset)
                 appname 
@@ -222,7 +223,6 @@
                 (:tablename dataset)
                 (:hiveName dataset)
             )
-            (ha/create-table (:hiveName dataset) (:cols dataset))
         )
     )
 )
@@ -274,7 +274,9 @@
 
 (defn- query-agent-schema [agentid]
     (let [sql (str "select *  from TblSchema a  left join TblMetaStore b " 
-            " on a.Namespace = b.Namespace   where agentid ='" agentid "'")
+                " on a.Namespace = b.Namespace   where agentid ='" agentid "'"
+                " and a.Namespace is not null and b.Namespace is not null"
+            )
             res (runsql sql)
         ]
         (debug "query-agent-schema" :res (str res) )
@@ -323,6 +325,17 @@
     )
 )
 
+(defn- updata-agent-sync-time [agentid]
+    (let [now (System/currentTimeMillis)
+            nowstr (get-group-time now 1000)
+            sql (str "update TblAgent set LastSyncTime=\"" nowstr"\" "
+                    " where id =" agentid
+                )
+        ]
+        res (runupdate sql)
+    )
+)
+
 (defn- get-inc-data' [res agentid agentname tableinfo]
     (let [
             hiveName (:hive_name tableinfo)
@@ -344,6 +357,7 @@
                 (:namespace tableinfo)
                 agentid
             )
+            (updata-agent-sync-time agentid )
         )
     )
 )
@@ -434,7 +448,11 @@
             status (:status res)
         ]
         (cond 
-            (= 200 status) (get-all-data' res agentname tableinfo)
+            (= 200 status) 
+            (do
+                (get-all-data' res agentname tableinfo)
+                (updata-agent-sync-time agentid )
+            )
             :else 
             (error "The http response's status is not 200" 
                 :agenturl agenturl
@@ -442,7 +460,6 @@
                 :response res
             )
         )
-
     )
 )
 

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="9seatest" default="build">
+
+  <property name="git.branch" value="zhangjun/stage2/1"/>
+  <property name="git.dir" value="/home/admin/zhangjun/FlyingSand"/>
+  <property name="front.from" value="${git.dir}/front/9sea/publics"/>
+
+  <property name="server.todir" value="admin@192.168.9.102:/home/admin/stage/9sea/"/>
+  <property name="server.host" value="192.168.9.102" />
+  <property name="front.todir" value="${server.todir}/front"/>
+  <property name="agent.todir" value="admin@192.168.9.102:/home/admin/stage/agent/"/>
+
+  <target name="all" >
+    <antcall target="build"/>
+    <antcall target="sendJar"/>
+    <antcall target="stop_all"/>
+    <antcall target="clear"/>
+    <antcall target="start_all"/>
+  </target>
+
+  <target name="stop_all">
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      command="sh /home/admin/stage/9sea/kill_query_server.sh"/>
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      command="sh /home/admin/stage/agent/stop_fs.sh"/>      
+  </target>
+
+  <target name="start_all">
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      timeout="10000"
+      command="cd /home/admin/stage/9sea;./start_query_server.sh >/dev/null 2>&amp;1 "/>
+    <sshexec host="${server.host}"
+      username="admin"
+      keyfile="~/.ssh/id_rsa"
+      trust="true"
+      timeout="10000"
+      command="cd /home/admin/stage/agent;./start_agent.sh >/dev/null 2>&amp;1 "/>
+  </target>
+
+  <target name="clear">
+    <exec executable = "sh" dir="${git.dir}/query_server/scripts/">
+      <arg line="-c &quot;sh ./clear-env.sh&quot;" />
+    </exec>
+  </target>
+  <target name="build" >
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;git checkout ${git.branch}&quot;" />
+    </exec>    
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;git pull &quot;" />
+    </exec>
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;scons -j3 build/query_server.jar&quot;" />
+    </exec>
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;scons -j3 build/agent.jar&quot;" />
+    </exec>    
+  </target>
+  <target name="sendJar" >
+    <scp file="${git.dir}/build/query_server.jar"
+       todir="${server.todir}" 
+       keyfile="~/.ssh/id_rsa"
+       trust="true"
+    />
+    <scp file="${git.dir}/build/agent.jar"
+       todir="${agent.todir}" 
+       keyfile="~/.ssh/id_rsa"
+       trust="true"
+    />
+    <scp file="${git.dir}/build/monitor.jar"
+       todir="${agent.todir}" 
+       keyfile="~/.ssh/id_rsa"
+       trust="true"
+    />
+    <scp  
+       todir="${front.todir}" 
+       keyfile="~/.ssh/id_rsa"
+       trust="true">
+      <fileset dir="${front.from}"/>
+    </scp>
+  </target>
+</project>
