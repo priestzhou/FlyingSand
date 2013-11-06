@@ -77,6 +77,8 @@
     {
         "new" 1
         "normal" 2
+        "stop" 3
+        "mismatch" 8
         "delete" 9
     }
 )
@@ -407,7 +409,21 @@
             status (:status res)
         ]
         (cond 
-            (= 200 status) (get-inc-data' res agentid agentname tableinfo)
+            (= 200 status) 
+            (do 
+                (updata-agent-sync-time agentid )
+                (get-inc-data' res agentid agentname tableinfo)
+            )
+            (and 
+                (= 503 status)
+                (= 2001 (get (js/read-str (get-decrypt-body res)) "errCode"))
+            )
+            (do
+                (warn "The agent is mismatched" 
+                    :agentname agentname
+                )
+                (chage-agent-stat "mismatch")
+            )
             :else 
             (error 
                 "The http response's status in get-inc-data is not 200" 
@@ -478,6 +494,16 @@
                 (get-all-data' res agentname tableinfo)
                 (updata-agent-sync-time agentid )
             )
+            (and 
+                (= 503 status)
+                (= 2001 (get (js/read-str (get-decrypt-body res)) "errCode"))
+            )
+            (do
+                (warn "the agent mismatched" 
+                    :agentname agentname
+                )
+                (chage-agent-stat "mismatch")
+            )            
             :else 
             (error "The http response's status is not 200" 
                 :agenturl agenturl
