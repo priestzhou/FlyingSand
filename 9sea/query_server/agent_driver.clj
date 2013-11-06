@@ -511,8 +511,6 @@
             :else 
             (error "The http response's status is not 200" 
                 :agenturl agenturl
-                :tableinfo tableinfo
-                :response res
             )
         )
     )
