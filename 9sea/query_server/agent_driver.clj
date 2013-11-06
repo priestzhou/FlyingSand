@@ -102,7 +102,8 @@
 (defn chage-agent-config [id appname version confighash]
     (let [
             sql (str "update TblAgent set AppName='" appname "',"
-                    " AppVersion='" version "',ConfigHash where id ='" id "'"
+                    " AppVersion='" version "',ConfigHash='"confighash
+                    "' where id ='" id "'"
                 )
         ]
         (runupdate sql)
