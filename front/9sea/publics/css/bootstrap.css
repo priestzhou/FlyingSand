@@ -1094,7 +1094,7 @@ input[type="color"],
 input,
 textarea,
 .uneditable-input {
-  width: 206px;
+/*   width: 206px; */
 }
 
 textarea {
@@ -1169,7 +1169,7 @@ input[type="reset"],
 input[type="button"],
 input[type="radio"],
 input[type="checkbox"] {
-  width: auto;
+  /* width: auto; */
 }
 
 select,
