@@ -20,9 +20,9 @@
 	<div class="sqlBar">
 		<span class="loginInfo"></span>
 		<a href="#"><span class="sqlIcon homeIcon"></span>首页</a>｜
-		<a href="#"><span class="sqlIcon myIcon"></span>个人中心</a>｜
+		<a href="user.html" target="_blank"><span class="sqlIcon myIcon"></span>个人中心</a>｜
 		<a class="loginOut" href="#"><span class="sqlIcon loginOutIcon"></span><strong>退出登录</strong></a>｜
-		<a href="#"><span class="sqlIcon helpIcon"></span>帮助</a>
+		<a href="help.html" target="_blank"><span class="sqlIcon helpIcon"></span>帮助</a>
 	</div>
 
 	<div class="sqlHeader boxShadowStyle">
@@ -36,11 +36,15 @@
 						<a class="topMenu1 active" href="index.html" data-toggle="dropdown">
 							<span class="sqlIcon selectIcon"></span>
 							数据查询
+							<span href="#" class="sqlIcon downIcon"></span>
 						</a>
-						<a href="#" class="sqlIcon downIcon active" data-toggle="dropdown"></a>
-						<ul class="dropdown-menu" style="margin-left:40px;">
+
+						<ul class="dropdown-menu selectMenu" style="margin-left:40px;">
 							<li>
-								<a href="history.html" target="_blank">打开历史查询</a>
+								<a href="/sql/" target="_blank"><span class="sqlSIcon xunIcon"></span>查询操作</a>
+							</li>
+							<li>
+								<a href="history.html" target="_blank"><span class="sqlSIcon hisIcon"></span>历史查询</a>
 							</li>
 
 						</ul>
@@ -55,13 +59,13 @@
 
 	<div class="container">
 			<div class="sqlBread boxShadowStyle">
-				<a href="/sql/">数据查询</a><span class="sqlIcon breadIcon"></span><a class="current" href="#">查询操作</a>
+				<a class="borderActive" href="/sql/">数据查询</a><span class="sqlIcon breadIcon"></span><a class="current" href="#">查询操作</a>
 			</div>
 
 		<div class="row sqlRow">
 			<div class="span3 sqlSider">
 				<p class="treeOp">
-					<a class="treeDown" href="javascript:void(0);"><span class="sqlSIcon addIcon"></span>全部展开</a></li>
+					<a class="treeDown" href="javascript:void(0);"><span class="sqlSIcon addIcon"></span>全部展开</a>
 					<a class="treeUp" href="javascript:void(0);"><span class="sqlSIcon delIcon"></span>全部收缩</a>
 				</p>
 
@@ -114,7 +118,6 @@
 	</div>
 	<script src="js/jquery-1.7.2.min.js" language="javascript"></script>
 	<script src="js/jquery.cookie.js" language="javascript"></script>
-	<script src="js/jquery.zclip.js" language="javascript"></script>
 	<script src="js/bootstrap.min.js" language="javascript"></script>
 	<script src="js/jquery.placeholder.js" language="javascript"></script>
 	<script src="js/jquery.ztree.all-3.5.min.js" language="javascript"></script>
@@ -132,6 +135,7 @@
 
 
 $(function(){
+	Common.timer={};
 	Query.init();
 })
 </script>
@@ -164,10 +168,14 @@ $(function(){
 						<textarea rows="10" id="sqlBox" class="sqlArea"></textarea>
 					</div>
 					<!-- sqlBoxDiv -->
-					<div class="sqlTime"></div>
-					<div class="progress progress-striped active" style="margin-left:10px;margin-right:10px">
-						<div class="bar" style="width: 0;"></div>
+
+					<div class="sqlTimeWrap boxShadowStyle clearFix">
+						<div class="sqlTime"></div>
+						<div class="progress progress-striped active" style="margin-left:10px;margin-right:10px">
+							<div class="bar" style="width: 0;"></div>
+						</div>
 					</div>
+
 
 					<div class="sqlLogWrap">
 						<div class="sqlLogLink">日志<a href="#"><span class="sqlSIcon logIcon"></span><strong>收起日志</strong></a>

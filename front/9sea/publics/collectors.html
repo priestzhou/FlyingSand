@@ -17,9 +17,9 @@
 	<div class="sqlBar">
 		<span class="loginInfo"></span>
 		<a href="#"><span class="sqlIcon homeIcon"></span>首页</a>｜
-		<a href="#"><span class="sqlIcon myIcon"></span>个人中心</a>｜
+		<a href="user.html" target="_blank"><span class="sqlIcon myIcon"></span>个人中心</a>｜
 		<a class="loginOut" href="#"><span class="sqlIcon loginOutIcon"></span><strong>退出登录</strong></a>｜
-		<a href="#"><span class="sqlIcon helpIcon"></span>帮助</a>
+		<a href="help.html" target="_blank"><span class="sqlIcon helpIcon"></span>帮助</a>
 	</div>
 
 	<div class="sqlHeader boxShadowStyle">
@@ -30,14 +30,18 @@
 				</div>
 				<div class="span8" style="width:330px;float:right;">
 					<div class="btn-group" style="float:left;">
-						<a class="topMenu1" href="/sql/">
+						<a class="topMenu1" href="index.html" data-toggle="dropdown">
 							<span class="sqlIcon selectIcon"></span>
 							数据查询
+							<span href="#" class="sqlIcon downIcon"></span>
 						</a>
-						<a href="#" class="sqlIcon downIcon" data-toggle="dropdown"></a>
-						<ul class="dropdown-menu" style="margin-left:40px;">
+
+						<ul class="dropdown-menu selectMenu" style="margin-left:40px;">
 							<li>
-								<a href="history.html" target="_blank">打开历史查询</a>
+								<a href="/sql/" target="_blank"><span class="sqlSIcon xunIcon"></span>查询操作</a>
+							</li>
+							<li>
+								<a href="history.html" target="_blank"><span class="sqlSIcon hisIcon"></span>历史查询</a>
 							</li>
 
 						</ul>
@@ -52,7 +56,11 @@
 
 	<div class="container">
 			<div class="sqlBread boxShadowStyle">
+				<p class="colTips">
+
+				</p>
 				<a href="#">数据收集器</a>
+
 			</div>
 
 
@@ -62,7 +70,7 @@
 	<div class="sqlRTable">
 		<p class="sqlDownloadWrap sqlCollectors">
 			<a id="addCollectors" href="#" class="btn_blue">添加数据收集器</a>
-			<a id="checkCollectors" href="history.html" target="_blank" class="btn_blue">查看历史操作</a>
+			<a id="checkCollectors" href="#" class="btn_blue">查看历史操作</a>
 		</p>
 
 
@@ -100,6 +108,7 @@
 
 $(function(){
 	Collectors.init();
+	Common.uiInit();
 })
 </script>
 
