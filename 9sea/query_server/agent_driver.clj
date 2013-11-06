@@ -89,7 +89,7 @@
     )
 )
 
-(defn chage-agent-stat [id state]
+(defn change-agent-stat [id state]
     (let [sstr (get agent-stat-map state)
             sql (str "update TblAgent set agentState='" sstr "'"
                     " where id ='" id "'"
@@ -99,7 +99,7 @@
     )
 )
 
-(defn chage-agent-config [id appname version confighash]
+(defn change-agent-config [id appname version confighash]
     (let [
             sql (str "update TblAgent set AppName='" appname "',"
                     " AppVersion='" version "',ConfigHash='"confighash
@@ -276,7 +276,7 @@
                     (debug " add TblApplication fail " :except (except->str e))
                 )
             )
-            (chage-agent-config agentid appname appversion hashcode)
+            (change-agent-config agentid appname appversion hashcode)
             (doall 
                 (map 
                     (partial create-table agentid appname appversion) 
@@ -424,7 +424,7 @@
                 (warn "The agent is mismatched" 
                     :agentname agentname
                 )
-                (chage-agent-stat agentid "mismatch")
+                (change-agent-stat agentid "mismatch")
                 (throw (Exception. "the agent mismatched"))
             )
             :else 
@@ -505,7 +505,7 @@
                 (warn "the agent mismatched" 
                     :agentname agentname
                 )
-                (chage-agent-stat agentid "mismatch")
+                (change-agent-stat agentid "mismatch")
                 (throw (Exception. "the agent mismatched"))
             )            
             :else 
@@ -592,7 +592,7 @@
         ]
         (new-agent agentid agentname agenturl accountid)
         (debug "the agent renewed" :agentname agentname)
-        (chage-agent-stat agentid "normal")
+        (change-agent-stat agentid "normal")
     )
 )
 
