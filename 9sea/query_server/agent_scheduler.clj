@@ -27,7 +27,7 @@
             (:agenturl agentMap)
             "both"
         )
-        (ad/chage-agent-stat
+        (ad/change-agent-stat
             (:id agentMap)
             "normal"
         )
