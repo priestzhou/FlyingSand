@@ -1,6 +1,7 @@
 (ns query-server.agent-scheduler
     (:require 
         [query-server.agent-driver :as ad]
+        [query-server.config :as config]
     )
     (:use
         [utilities.core :only (except->str)]
@@ -40,7 +41,7 @@
     (info "new-agent-check")
     (try 
         (let [agent-list (ad/get-agent-list "new")
-            _ (println agent-list)
+            
             ]
             (doall (map new-agent-run agent-list))
         )
@@ -49,7 +50,7 @@
         )
     )
     
-    (Thread/sleep 600000)
+    (Thread/sleep (config/get-key :new-agent-check-interval))
     (recur)
 )
 
@@ -72,7 +73,7 @@
         )        
     )
 
-    (Thread/sleep 300000)
+    (Thread/sleep (config/get-key :inc-data-check-interval))
     (recur)
 )
 
@@ -92,8 +93,31 @@
         )
         (catch Exception e 
             (error " all-data-check fail " :except (except->str e))
+        )
+    )
+    (Thread/sleep (config/get-key :all-data-check-interval))
+    (recur)
+)
+
+(defn mismatch-agent-check []
+    (try 
+        (let [agent-list (ad/get-agent-list "mismatch")]
+            (doall (map  
+                #(ad/check-mismatch-agent
+                    (:id %)
+                    (:appname %) 
+                    (:appversion %)
+                    (:agentname %) 
+                    (:agenturl %)
+                    (:accountid %)                    
+                )
+                agent-list
+            ))
+        )
+        (catch Exception e 
+            (error " mismatch-agent-check fail " :except (except->str e))
         )          
     )
-    (Thread/sleep 86400000)
+    (Thread/sleep (config/get-key :mismatch-agent-check-interval))
     (recur)
 )

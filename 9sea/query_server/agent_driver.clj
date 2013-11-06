@@ -14,6 +14,7 @@
         [hdfs.core :as hc]
         [query-server.mysql-connector :as mysql]
         [utilities.aes :as aes]
+        [query-server.config :as config]
     )
     (:gen-class)
 )
@@ -76,6 +77,8 @@
     {
         "new" 1
         "normal" 2
+        "stop" 3
+        "mismatch" 8
         "delete" 9
     }
 )
@@ -86,10 +89,21 @@
     )
 )
 
-(defn chage-agent-stat [id state]
+(defn change-agent-stat [id state]
     (let [sstr (get agent-stat-map state)
             sql (str "update TblAgent set agentState='" sstr "'"
                     " where id ='" id "'"
+                )
+        ]
+        (runupdate sql)
+    )
+)
+
+(defn change-agent-config [id appname version confighash]
+    (let [
+            sql (str "update TblAgent set AppName='" appname "',"
+                    " AppVersion='" version "',ConfigHash='"confighash
+                    "' where id ='" id "'"
                 )
         ]
         (runupdate sql)
@@ -262,7 +276,7 @@
                     (debug " add TblApplication fail " :except (except->str e))
                 )
             )
-
+            (change-agent-config agentid appname appversion hashcode)
             (doall 
                 (map 
                     (partial create-table agentid appname appversion) 
@@ -273,10 +287,12 @@
 )
 
 (defn- query-agent-schema [agentid]
-    (let [sql (str "select *  from TblSchema a  left join TblMetaStore b " 
-                " on a.Namespace = b.Namespace   where agentid ='" agentid "'"
-                " and a.Namespace is not null and b.Namespace is not null"
-            )
+    (let [sql (str "select *  from TblAgent c left join TblSchema a on c.id=a.agentid 
+                left join TblMetaStore b " 
+                " on c.AppName=b.AppName and c.AppVersion=b.AppVersion and 
+                a.Namespace = b.Namespace   where agentid ='" agentid "'"
+                " and a.Namespace is not null and b.Namespace is not null")
+;add app version in agent
             res (runsql sql)
         ]
         (debug "query-agent-schema" :res (str res) )
@@ -304,7 +320,14 @@
 
 (defn- save-inc-data [location inlist metalist]
     (let [ts (System/currentTimeMillis)
-            filepath (str location "/" (get-group-time 3600000 ts) ".txt")
+            filepath (str 
+                    location "/" 
+                    (get-group-time 
+                        (config/get-key :inc-data-group-time) 
+                        ts
+                    ) 
+                    ".txt"
+                )
             filecontext (if (hc/exists? filepath)
                 (hc/read-lines filepath)
                 []
@@ -328,11 +351,13 @@
 (defn- updata-agent-sync-time [agentid]
     (let [now (System/currentTimeMillis)
             nowstr (get-group-time now 1000)
+            _ (debug "updatetime" nowstr)
             sql (str "update TblAgent set LastSyncTime=\"" nowstr"\" "
                     " where id =" agentid
                 )
+            res (runupdate sql)
         ]
-        res (runupdate sql)
+        res
     )
 )
 
@@ -372,6 +397,7 @@
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
+            configHash(:confighash tableinfo)
             res (httpget 
                     agenturl 
                     :get-table-inc-data 
@@ -379,12 +405,28 @@
                         "?dbname=" dbname 
                         "&tablename=" tablename 
                         "&keynum=" position
+                        "&confighash=" configHash
                     )
                 )
             status (:status res)
         ]
         (cond 
-            (= 200 status) (get-inc-data' res agentid agentname tableinfo)
+            (= 200 status) 
+            (do 
+                (updata-agent-sync-time agentid )
+                (get-inc-data' res agentid agentname tableinfo)
+            )
+            (and 
+                (= 503 status)
+                (= 2001 (get (js/read-str (get-decrypt-body res)) "errCode"))
+            )
+            (do
+                (warn "The agent is mismatched" 
+                    :agentname agentname
+                )
+                (change-agent-stat agentid "mismatch")
+                (throw (Exception. "the agent mismatched"))
+            )
             :else 
             (error 
                 "The http response's status in get-inc-data is not 200" 
@@ -437,12 +479,14 @@
     (let [dbname (:dbname tableinfo)
             tablename (:tablename tableinfo)
             position (:timestampposition tableinfo)
+            configHash(:confighash tableinfo)
             res (httpget 
                     agenturl 
                     :get-table-all-data 
                     (str 
                         "?dbname=" dbname 
                         "&tablename=" tablename 
+                        "&confighash=" configHash
                     )
                 )
             status (:status res)
@@ -453,11 +497,20 @@
                 (get-all-data' res agentname tableinfo)
                 (updata-agent-sync-time agentid )
             )
+            (and 
+                (= 503 status)
+                (= 2001 (get (js/read-str (get-decrypt-body res)) "errCode"))
+            )
+            (do
+                (warn "the agent mismatched" 
+                    :agentname agentname
+                )
+                (change-agent-stat agentid "mismatch")
+                (throw (Exception. "the agent mismatched"))
+            )            
             :else 
             (error "The http response's status is not 200" 
                 :agenturl agenturl
-                :tableinfo tableinfo
-                :response res
             )
         )
     )
@@ -527,6 +580,21 @@
     )
 )
 
+(defn check-mismatch-agent [agentid appname appversion agentname agenturl 
+    accountid]
+    (let [setting (js/read-str 
+                    (get-decrypt-body (httpget agenturl :get-setting))
+                    :key-fn keyword
+                )
+            newhashcode (:hashcode setting)
+            newappname (:app setting)
+            newappversion (:appversion setting)
+        ]
+        (new-agent agentid agentname agenturl accountid)
+        (debug "the agent renewed" :agentname agentname)
+        (change-agent-stat agentid "normal")
+    )
+)
 
 (defn -main [& args]
     (let [arg-spec 

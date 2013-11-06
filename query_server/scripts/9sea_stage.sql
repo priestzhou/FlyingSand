@@ -29,6 +29,8 @@ CREATE TABLE `TblAgent` (
   `LastSyncTime` datetime DEFAULT NULL,
   `DataSize` int(11) DEFAULT NULL,
   `AgentUrl` varchar(80) DEFAULT NULL,
+  `AppName` varchar(30) DEFAULT NULL,
+  `AppVersion` varchar(30) DEFAULT NULL,  
   `ConfigHash` varchar(50) DEFAULT NULL,
   `AgentState` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -41,7 +43,7 @@ CREATE TABLE `TblAgent` (
 
 LOCK TABLES `TblAgent` WRITE;
 /*!40000 ALTER TABLE `TblAgent` DISABLE KEYS */;
-INSERT INTO `TblAgent` VALUES (19,5,'s3',NULL,NULL,'http://192.168.9.102:8081',NULL,1);
+INSERT INTO `TblAgent` VALUES (19,5,'s3',NULL,NULL,'http://192.168.9.102:8081',NULL,NULL,NULL,1);
 /*!40000 ALTER TABLE `TblAgent` ENABLE KEYS */;
 UNLOCK TABLES;
 
