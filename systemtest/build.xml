@@ -2,7 +2,7 @@
 
 <project name="9seatest" default="build">
 
-  <property name="git.branch" value="zhangjun/stage2/1"/>
+  <property name="git.branch" value="9sea/2"/>
   <property name="git.dir" value="/home/admin/zhangjun/FlyingSand"/>
   <property name="front.from" value="${git.dir}/front/9sea/publics"/>
 
@@ -55,6 +55,9 @@
   <target name="build" >
     <exec executable = "sh" dir="${git.dir}">
       <arg line="-c &quot;git checkout ${git.branch}&quot;" />
+    </exec>    
+    <exec executable = "sh" dir="${git.dir}">
+      <arg line="-c &quot;git reset --hard &quot;" />
     </exec>    
     <exec executable = "sh" dir="${git.dir}">
       <arg line="-c &quot;git pull &quot;" />
