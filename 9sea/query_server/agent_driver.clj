@@ -425,6 +425,7 @@
                     :agentname agentname
                 )
                 (chage-agent-stat agentid "mismatch")
+                (throw (Exception. "the agent mismatched"))
             )
             :else 
             (error 
@@ -505,6 +506,7 @@
                     :agentname agentname
                 )
                 (chage-agent-stat agentid "mismatch")
+                (throw (Exception. "the agent mismatched"))
             )            
             :else 
             (error "The http response's status is not 200" 
