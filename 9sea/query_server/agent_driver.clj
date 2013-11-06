@@ -287,7 +287,7 @@
 )
 
 (defn- query-agent-schema [agentid]
-    (let [sql (str "select *  from TblAgent c left join TblSchema a on c.agentid=a.agentid 
+    (let [sql (str "select *  from TblAgent c left join TblSchema a on c.id=a.agentid 
                 left join TblMetaStore b " 
                 " on c.AppName=b.AppName and c.AppVersion=b.AppVersion and 
                 a.Namespace = b.Namespace   where agentid ='" agentid "'"
