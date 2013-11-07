@@ -71,6 +71,7 @@
         ]
         (if (= -1 s_time)
           (assoc x :status (get agent-status i) )
+
           (assoc x :status (get agent-status i) :recent-sync s_time)
         )
   ))
