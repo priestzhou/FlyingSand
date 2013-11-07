@@ -15,6 +15,7 @@
         [query-server.mysql-connector :as mysql]
         [utilities.aes :as aes]
         [query-server.config :as config]
+        [clj-time.core :as time]
     )
     (:gen-class)
 )
@@ -349,10 +350,9 @@
 )
 
 (defn- updata-agent-sync-time [agentid]
-    (let [now (System/currentTimeMillis)
-            nowstr (get-group-time 1000 now)
-            _ (debug "updatetime" nowstr)
-            sql (str "update TblAgent set LastSyncTime=\"" nowstr"\" "
+    (let [now (time/date-time (time/now))
+            _ (debug "updatetime" now)
+            sql (str "update TblAgent set LastSyncTime=\"" now "\" "
                     " where id =" agentid
                 )
             res (runupdate sql)
