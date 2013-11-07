@@ -240,14 +240,16 @@
         (= view-or-ctas :view)
         (do
           (hive/create-view hive-name hql)
-          (orm/insert mysql/TblMetaStore (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
+          (orm/insert mysql/TblMetaStore 
+                      (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
                                              :DBName (:database context-info) :TableName (:tablename context-info) 
                                              :hive_name (:hive-name context-info) :NameSpaceType 3}]))
         )
         (= view-or-ctas :ctas)
         (do
           (hive/create-CTAS hive-name hql)
-          (orm/insert mysql/TblMetaStore (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
+          (orm/insert mysql/TblMetaStore 
+                      (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
                                              :DBName (:database context-info) :TableName (:tablename context-info) 
                                              :hive_name hive-name :NameSpaceType 2}]))
         )
@@ -255,11 +257,12 @@
       (update-result-map 
         q-id "succeeded" {:count 1 :titles nil :values nil} nil nil :log-message log-message)
     )
-  (catch SQLException sql-ex
-    (error "can't create view/table" (util/except->str sql-ex))
-    (update-result-map 
-      q-id "failed" nil (str "can't create view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
-  )
+    (catch SQLException sql-ex
+      (error "can't create view/table" (util/except->str sql-ex))
+      (update-result-map 
+        q-id "failed" nil 
+        (str "can't create view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
+    )
   )
 )
 
@@ -294,7 +297,8 @@
    )
   (catch SQLException sql-ex
     (error "can't drop view/table" (util/except->str sql-ex))
-    (update-result-map q-id "failed" nil (str "can't drop view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
+    (update-result-map 
+      q-id "failed" nil (str "can't drop view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
   ))
 ) 
 
