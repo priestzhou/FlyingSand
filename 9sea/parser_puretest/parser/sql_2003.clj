@@ -1274,7 +1274,7 @@
         }]
     )
     (:fact select:group-by
-        (->> "SELECT * FROM tbl GROUP BY col, 1"
+        (->> "SELECT * FROM tbl GROUP BY tbl.col, col, 1"
             (prs/str->stream)
             (sql/query)
             (extract-result)
@@ -1284,7 +1284,8 @@
             :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
             :group-by [
-                {:type :identifier, :value "col"}
+                {:type :dotted-identifier, :value ["tbl" "col"]}
+                {:type :dotted-identifier, :value ["col"]}
                 {:type :numeric-literal, :value "1"}
             ]
         }]
@@ -3762,6 +3763,77 @@
                 {:type :numeric-literal, :value "1"}
                 {:type :numeric-literal, :value "2"}
             ]
+        }]
+    )
+)
+
+(suite "view"
+    (:fact view:create
+        (->> "CREATE VIEW vw AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+    (:fact view:create:col
+        (->> "CREATE VIEW vw(col) AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :column-list ["col"]
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+    (:fact view:drop
+        (->> "DROP VIEW vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+        }]
+    )
+    (:fact create:ctas
+        (->> "CREATE TABLE vw AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-ctas
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+    (:fact drop:ctas
+        (->> "DROP TABLE vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-ctas
+            :name {:type :dotted-identifier, :value ["vw"]}
         }]
     )
 )

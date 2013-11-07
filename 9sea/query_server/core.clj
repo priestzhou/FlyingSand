@@ -1,5 +1,5 @@
 (ns query-server.core
-(:require 
+(:require
   [clojure.java.jdbc :as sql]
   [clojure.string :as str]
   [query-server.config :as config]
@@ -127,7 +127,7 @@
         idxs (range 1 (inc (.getColumnCount rsmeta)))
         col-name (->> idxs (map (fn[i] (.getColumnLabel rsmeta i))))
         row-values (fn [] (map (fn [i] (.getString rs i)) idxs))
-        rows (fn rowfn [] (when (.next rs) 
+        rows (fn rowfn [] (when (.next rs)
                             (cons (vec (row-values)) (lazy-seq (rowfn)))))
         result-4-save (doall (take result-size (rows)))
         _ (debug (str result-4-save))
@@ -136,7 +136,7 @@
     {:titles (vec col-name)
      :values result-4-save
     }
-   
+
   )
 )
 
@@ -164,7 +164,7 @@
                         (mysql/status-convert stats)
                         error
                         url
-                        (unparse (formatters :date-hour-minute-second) 
+                        (unparse (formatters :date-hour-minute-second)
                                   (from-long end-time))
                         duration
                         q-id
@@ -199,14 +199,14 @@
         duration (if (nil? start-time) 0 (- cur-time start-time))
         ]
     (case stats
-     "running" (swap! result-map update-in [q-id] assoc 
-             :status stats 
+     "running" (swap! result-map update-in [q-id] assoc
+             :status stats
              :submit-time cur-time
              :progress [0 1]
              :log "query is running"
              :result ret-result)
-     "succeeded"(swap! result-map  update-in [q-id] assoc 
-             :status stats 
+     "succeeded"(swap! result-map  update-in [q-id] assoc
+             :status stats
              :end-time cur-time
              :progress [1 1]
              :log "query is succeeded!"
@@ -215,7 +215,7 @@
              :count  (ret-result :count)
              :result (select-keys ret-result [:titles :values]))
      "failed" (swap! result-map  update-in [q-id] assoc
-             :status stats 
+             :status stats
              :end-time cur-time
              :progress [1 1]
              :log "query is failed!"
@@ -232,7 +232,7 @@
   (while (nil? (:count (@result-count-map qid))))
   (-> (:count (@result-count-map qid)))
 )
-      
+
 (defn process-query
   [q-id rs]
   (let [{{q-time :submit-time} q-id} @result-map
@@ -269,7 +269,9 @@
   [context q-id query-str]
   (try
    (debug "run-shark-query" :qid q-id)
-    (let [hive-query (trans/sql-2003->hive context query-str)
+    (let [
+      dfg (trans/parse-sql context query-str)
+      hive-query (trans/dump-hive context dfg)
           ret-rs (execute-query hive-query)]
       (future (execute-count-query q-id hive-query))
       (process-query q-id ret-rs)
@@ -290,12 +292,12 @@
   (update-result-map q-id "running" {} nil nil)
   (future (run-shark-query context q-id query-str))
 )
-      
+
 (defn get-result
   [q-id]
   (get @result-map q-id)
 )
-  
+
 (defn clear-result-map
   [q-id]
   (swap! result-map dissoc [q-id])

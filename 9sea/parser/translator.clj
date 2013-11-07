@@ -2,13 +2,14 @@
     (:require
         [clojure.string :as str]
         [utilities.parse :as prs]
+        [utilities.core :as util]
         [parser.sql-2003 :as sql]
     )
     (:use
         [clojure.set :only (union)]
         [logging.core :only (defloggers)]
     )
-    (:import 
+    (:import
         utilities.parse.InvalidSyntaxException
     )
 )
@@ -70,7 +71,7 @@
 )
 
 (defn search-name-in-ns [nss nm]
-    (first 
+    (first
         (for [
             sub nss
             :when (= nm (:name sub))
@@ -101,7 +102,7 @@
         x (concat nz refered)
         r (search-table nss x)
         ]
-        (if (= (:type r) "table")
+        (if (#{"table" "view" "ctas"} (:type r) )
             r
             (if-not (empty? nz)
                 (recur nss (drop-last nz) refered)
@@ -113,7 +114,7 @@
 (defn normalize-table [context refered]
     (if-let [res (normalize-table' (:ns context) (:default-ns context) refered)]
         res
-        (throw (InvalidSyntaxException. 
+        (throw (InvalidSyntaxException.
             (format "unknown table: %s" (pr-str refered))
         ))
     )
@@ -147,7 +148,7 @@
             [res {[nm] res}]
         )
         #{:join, :cross-join, :outer-join} (let [
-            [left left-aliases] (->> ast 
+            [left left-aliases] (->> ast
                 (:left)
                 (analyze-sql:within-from context)
             )
@@ -156,7 +157,7 @@
                 (analyze-sql:within-from context)
             )
             final-aliases (merge-with conflict-alias left-aliases right-aliases)
-            on-cond (->> ast 
+            on-cond (->> ast
                 (:on)
                 (analyze-sql:value-expr
                     (assoc context :table-aliases final-aliases)
@@ -232,7 +233,7 @@
             (:order-by)
             (map (partial analyze-sql:value-expr context-with-table-aliases))
         )
-        dfg (assoc ast 
+        dfg (assoc ast
             :select-list select-list
             :from-clause from-clause
         )
@@ -247,8 +248,8 @@
 (defn- analyze-sql:value-expr [context ast]
     (cond
         (nil? ast) nil
-        (sequential? ast) (map 
-            (partial analyze-sql:value-expr context) 
+        (sequential? ast) (map
+            (partial analyze-sql:value-expr context)
             ast
         )
         (= (:type ast) :select) (analyze-sql:select
@@ -259,7 +260,7 @@
             ]
             (if-let [r ((:table-aliases context) rname)]
                 (assoc ast :refer r)
-                (throw (InvalidSyntaxException. 
+                (throw (InvalidSyntaxException.
                     (format "unknown table name: %s" rname)
                 ))
             )
@@ -292,7 +293,29 @@
 )
 
 (defn analyze-sql [context ast]
-    (analyze-sql:value-expr context ast)
+    (condp contains? (:type ast)
+        #{:create-view :create-ctas} (let [
+            new-as (analyze-sql:value-expr context (:as ast))
+            ]
+            (assoc ast :as new-as)
+        )
+        #{:drop-view :drop-ctas} (let [
+            vw (:value (:name ast))
+            hiveview (normalize-table context vw)
+            format-vw (str/join "." (for [x vw] (quoted \` x)))
+            ]
+            (cond
+                (and (= (:type ast) :drop-view) (not= (:type hiveview) "view"))
+                (throw (InvalidSyntaxException.
+                    (str "DROP VIEW expects a view: " format-vw)))
+                (and (= (:type ast) :drop-ctas) (not= (:type hiveview) "ctas"))
+                (throw (InvalidSyntaxException.
+                    (str "DROP TABLE expects a table: " format-vw)))
+            )
+            (assoc ast :name hiveview)
+        )
+        (analyze-sql:value-expr context ast)
+    )
 )
 
 
@@ -351,7 +374,7 @@
             join-str (case (:type dfg)
                 :cross-join "CROSS JOIN"
                 :join "JOIN"
-                :outer-join (format "%s JOIN" 
+                :outer-join (format "%s JOIN"
                     (case (:join-type dfg)
                         :left "LEFT"
                         :right "RIGHT"
@@ -362,7 +385,7 @@
             ]
             (if-not join-cond
                 (format "%s %s %s" left join-str right)
-                (format "%s %s %s ON %s" left join-str right 
+                (format "%s %s %s ON %s" left join-str right
                     (dump-hive:value-subexpr join-cond)
                 )
             )
@@ -490,9 +513,9 @@
     (let [res (dump-hive:value-expr dfg)]
         (if (contains? #{
                     :numeric-literal :hex-string-literal :date-literal
-                    :interval-literal :national-string-literal 
-                    :character-string-literal :boolean-literal :identifier 
-                    :dotted-identifier :null-literal :asterisk :binary :cast 
+                    :interval-literal :national-string-literal
+                    :character-string-literal :boolean-literal :identifier
+                    :dotted-identifier :null-literal :asterisk :binary :cast
                     :distinct-count :distinct-sum :distinct-avg :func-call
                 }
                 (:type dfg)
@@ -567,7 +590,7 @@
         #{:null-literal} "NULL"
 
         #{:numeric-literal :boolean-literal :hex-string-literal :date-literal
-            :time-literal :timestamp-literal :interval-literal 
+            :time-literal :timestamp-literal :interval-literal
             :national-string-literal :character-string-literal
         }
         (:value dfg)
@@ -578,8 +601,8 @@
             ; Hive does not support BINARY operator, but it has a BINARY function
             (format "BINARY(%s)" (dump-hive:value-expr v))
         )
-        
-        #{:boolean-negation :unary+ :unary- :unary-tilde :exists} 
+
+        #{:boolean-negation :unary+ :unary- :unary-tilde :exists}
         (dump-hive:unary-op dfg)
 
         #{:is :is-not :<=> :< :> :<= :>= :<> := :like :not-like :reglike
@@ -592,7 +615,7 @@
             r (:right dfg)
             nop (if (= (:type dfg) :not-in-array) " NOT " " ")
             ]
-            (format "%s%sIN (%s)" 
+            (format "%s%sIN (%s)"
                 (dump-hive:value-subexpr l)
                 nop
                 (dump-hive:format-args r)
@@ -624,7 +647,6 @@
         )
 
         #{:select} (->> dfg (dump-hive:select))
-
         #{:union} (do
             (assert (= (:qualifier dfg) :all))
             (str/join " UNION ALL "
@@ -678,29 +700,56 @@
     )
 )
 
-(defn dump-hive [dfg]
-    (dump-hive:value-expr dfg)
+(defn dump-hive [context dfg]
+    (let [
+        hive (condp contains? (:type dfg)
+            #{:create-view :create-ctas} (let [
+                op (case (:type dfg)
+                    :create-view "VIEW"
+                    :create-ctas "TABLE"
+                )
+                nm (:value (:name dfg))
+                vw (normalize-table context nm)
+                _ (util/throw-if-not vw
+                    InvalidSyntaxException. (format "unknown %s: %s" op nm)
+                )
+                _ (util/throw-if-not (#{"view" "ctas"} (:type vw))
+                    InvalidSyntaxException. (format "%s is not a %s" nm op)
+                )
+                view-name (:hive-name vw)
+                subq (dump-hive:value-expr (:as dfg))
+                cl (:column-list dfg)
+                ]
+                (if-not cl
+                    (format "CREATE %s %s AS %s" op view-name subq)
+                    (format "CREATE %s %s(%s) AS %s"
+                        op
+                        view-name
+                        (str/join ", " cl)
+                        subq
+                    )
+                )
+            )
+            #{:drop-view :drop-ctas} (let [hiveview (:name dfg)]
+                (case (:type dfg)
+                    :drop-view (format "DROP VIEW %s" (:hive-name hiveview))
+                    :drop-ctas (format "DROP TABLE %s" (:hive-name hiveview))
+                )
+            )
+            (dump-hive:value-expr dfg)
+        )
+        ]
+        (info "dump hive" :hive hive)
+        hive
+    )
 )
 
-(defn sql-2003->hive [context sql-text]
+(defn parse-sql [context sql-text]
     (info "start parsing" :sql sql-text :context (str context))
     (let [
-        [_ ast] (->> sql-text
-            (prs/str->stream)
-            (prs/positional-stream)
-            ((prs/choice*
-                second (prs/chain
-                    sql/blank*
-                    sql/query
-                    sql/blank*
-                    (prs/expect-eof)
-                )
-            ))
-        )
+        ast (sql/sql sql-text)
         dfg (analyze-sql context ast)
-        hive (dump-hive dfg)
         ]
-        (info "translated" :hive hive)
-        hive
+        dfg
     )
 )
