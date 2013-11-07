@@ -1,6 +1,7 @@
 body{
 	background:#fff url(../img/re.jpg) repeat-x 0 0;
 	font-size: 12px;
+	font-family: "Microsoft YaHei",Arial,Helvetica,sans-serif;
 }
 body#homeBody{
 	background: none;
@@ -16,6 +17,9 @@ html,body{
 }
 p{
 	margin:0;
+}
+.floatR{
+	float: right;
 }
 a:hover{
 	text-decoration: underline;
@@ -93,6 +97,9 @@ a:hover{
 	margin: 5px 0 0 10px;
 
 }
+.dropdown-menu{
+	padding:0;
+}
 .selectIcon{
 	background-position: -51px -71px;
 	width: 47px;
@@ -118,6 +125,21 @@ a:hover{
 .topMenu1.active{
 	color: #1b9abb;
 }
+.topMenu1.activeDown{
+	color: #fff;
+	background: url(../img/select_hover.jpg) no-repeat 7px 10px;
+}
+.topMenu1.activeDown .selectIcon,.topMenu1.activeDown .downIcon{
+	background: none;
+}
+.topMenu1.activeDown:hover{
+	color: #fff;
+}
+.selectMenu{
+	width: 151px;
+	top: 41px;
+	left: -33px;
+}
 .dbIcon{
 	background-position: -7px -71px;
 	width: 44px;
@@ -141,6 +163,12 @@ a:hover{
 }
 .helpIcon{
 	background-position: -310px -16px;
+}
+.xunIcon{
+	background-position: 100% -38px;
+}
+.hisIcon{
+	background-position: 100% -72px;
 }
 .sqlBar a:hover span{
 	color: #fff;
@@ -223,10 +251,13 @@ a.selectTenL:hover .selectTen{
 	position: absolute;
 	right: 0;
 	margin:0;
-	top: 0;	
+	top: 3px;	
 	cursor: pointer;
 	text-decoration: underline;
 	color: #288db0;
+}
+.sqlLogLink strong{
+	font-weight: normal;
 }
 .logIcon{
 	background-position: -6px -674px;
@@ -278,12 +309,15 @@ margin: 0 auto; */
 }
 .sqlBread a{
 	color: #333;
-	border-bottom: 1px dotted #333;
+}
+.sqlBread a.borderActive{
+	border-bottom: 1px dotted #333;	
 }
 .sqlBread a.current{
 	color: #dc3721;
 	border: none;
 	cursor: default;
+	font-weight: bold;
 }
 .sqlBread a:hover{
 	text-decoration: none;
@@ -368,6 +402,9 @@ margin: 0 auto; */
 	border-right: 1px solid #d4d8db;
 	padding-bottom: 10px;
 }
+.containerHelp{
+	padding-bottom: 0;
+}
 .sqlBoxDiv{
 	border:1px solid #CCC;
 /* 	padding: 4px 6px; */
@@ -388,7 +425,6 @@ margin: 0 auto; */
 .sqlDownload{
 	/* display: none; */
 	position: relative;
-	left: 22px;
 	padding-left: 15px;
 	padding-right: 15px;
 /* 	visibility: hidden; */
@@ -398,7 +434,7 @@ margin: 0 auto; */
 	width: 167px;
 	height: 46px;
 	top: 22px;
-	left: 50%;
+	left: 100%;
 	line-height: 46px;
 	margin-left: -83px;
 	visibility: hidden;
@@ -413,7 +449,7 @@ margin: 0 auto; */
 	color: #499fef;
 }
 .sqlDownloadWrap{
-	padding:10px;
+	padding:5px;
 	/* display: none; */
 	position: absolute;
 	z-index: 2;
@@ -449,6 +485,7 @@ line-height:normal;
 	text-align: center;
 	position: relative; 
 	margin-top: -47px;
+	color: #444646;
 }
 
 
@@ -566,12 +603,26 @@ a.sqlLogLink{
 .sqlSave:hover,.openCommon:hover,.openHistory:hover{
 	color:#0088cc; 
 }
+.sqlSave:hover span{
+	background-position: -125px -407px;
+}
+.openCommon:hover span{
+	background-position: -125px -453px;
+}
+.openHistory:hover span{
+	background-position: -125px -500px;
+}
 #sqlSelect{
 	margin-left: 15px;
+}
+.sqlTimeWrap{
+	height: 35px;
+	margin-bottom: 3px;
 }
 .sqlTime{
 	padding:5px 15px;
 	display: inline-block;
+	float: left;
 	vertical-align: middle;
 }
 .sqlTableWrap{
@@ -583,6 +634,7 @@ a.sqlLogLink{
 	text-align: left;
 	color: #fff;
 	font-weight: bold;
+	background: #76B94F;
 }
 #sqlTable td{
 	border:1px solid #d3d8db;
@@ -613,7 +665,7 @@ table.dataTable td{
 }
 
 #sqlTableWrap.colTable th{
-    background: none repeat scroll 0 0 #4A9FF0;
+    background-color:#4A9FF0;
     border: 1px solid #2E83E0;
     color: #FFFFFF;
     font-weight: bold;
@@ -630,6 +682,7 @@ table.dataTable td{
 /* tree selectTenL*/
 .ztree li a.selectTenL{
 /* 	display: none; */
+	visibility: hidden;
 }
 .treeDown{
 	margin-right: 10px;
@@ -642,10 +695,12 @@ table.dataTable td{
 	margin-right: 15px;
 }
 .progress{
-	width: 350px;
+	width: 80%;
 	display: none;
 	vertical-align: middle;
 	margin-bottom: 0;
+	float: left;
+	margin-top: 6px;
 }
 .tooltip-inner{
 	width: 130px;
@@ -745,8 +800,7 @@ table.dataTable td{
 }
 .banner1 .banner1ConT{
 	font-size: 60px;
-	padding-top: 110px;
-	padding-bottom: 40px;
+	padding:110px 0 55px 0;
 
 }
 .loginBox{
@@ -762,16 +816,20 @@ table.dataTable td{
 .loginBox .loginBtn{
 	width: 178px;
 	height: 58px;
-	background: url(../img/login.png) no-repeat -15px -47px;
+	background: url(../img/login.png) no-repeat -15px -123px;
 }
 .loginBox .loginReg{
 	border-left: 2px solid #666;
 }
 .loginBox .loginBtn:hover{
-	background-position: -15px -123px;
+	background-position: -15px -47px;
+}
+.banner1 .loginBox{
+	padding-top: 105px;
 }
 .bannerNav{
 	text-align: center;
+	padding-bottom: 30px;
 }
 .bannerNav a{
 	display: inline-block;
@@ -793,8 +851,201 @@ input.popInput{
 .downIcon{
 	position: absolute;
 	top: 17px;
-	right: 0;
+	right: 7px;
 }
 .loginOut strong{
 	font-weight: normal;
+}
+#homeBody .sqlHeader{
+	background: none;
+	width: 1000px;
+	margin: 0 auto;
+}
+
+input[type="file"], input[type="image"], input[type="submit"], input[type="reset"], input[type="button"], input[type="radio"], input[type="checkbox"]{
+	border: none;
+}
+
+
+/*register*/
+#registerBox{
+
+}
+.registerPro{
+	width: 966px;
+	margin: 20px auto 45px;
+	height: 31px;
+	line-height: 31px;
+	list-style: none;
+	font-size: 14px;
+	background: url(../img/progress.png) no-repeat 0 0;
+}
+.registerPro li{
+	float: left;
+	width: 322px;
+	text-align: center;
+	color: #868686;
+	line-height: 31px;	
+}
+.registerPro li.active{
+	color: #fff;
+}
+.registerForm{
+	width: 450px;
+	margin: 0 auto;
+	color: #666;
+	padding-bottom: 30px;
+}
+.registerForm h3{
+	font-size:14px;
+	font-weight: bold;
+	color: #999;
+}
+.registerForm div{
+	padding-bottom: 15px;
+}
+.registerForm label,.registerForm input,.registerForm span{
+	display: inline-block;
+	vertical-align: middle;
+	height: 26px;
+}
+.registerForm input{
+	padding:0;
+	border-radius: 5px;
+	width: 255px;
+}
+.registerForm label{
+	height: 30px;
+	width: 100px;
+	text-align: right;
+}
+.registerForm span{
+	height: 30px;
+}
+.registerForm span.formIcon{
+	background: url(../img/form_icon.gif) no-repeat 0 0;
+	width: 16px;
+	height: 16px;
+	margin: -5px 5px 0 10px;
+}
+.registerForm span.erorrIcon{
+	background-position: 0 -17px;
+}
+.submit_reg{
+	margin: 30px 0 0 103px;
+}
+
+
+/*user help*/
+.help{
+	padding-left: 200px;
+	padding-top: 5px;
+	overflow: hidden;
+
+}
+.help .helpList{
+	float: left;
+	display: inline;
+	width: 198px;
+	margin-left: -200px;
+	background: #f3f3f3;
+	border-left: 1px solid #d3d8db;
+	border-right: 1px solid #d3d8db;
+	min-height: 1000px;		
+}
+.help .helpList li{
+	padding:5px 0;
+	margin: 0 5px;
+	border-bottom: 1px dotted #ced1d2;
+}
+.help .helpCon{
+	width: 100%;
+	float: left;	
+}
+.help .helpCon .helpTxt{
+	font-size: 14px;
+	padding:30px;
+	line-height: 30px;
+	color: #555;
+}
+.help .helpCon .helpTxt h4{
+	color: #76b94e;
+	font-size:14px;
+}
+.help .helpList,.help .helpCon{
+	margin-bottom: -9999px;
+	padding-bottom: 9999px;
+}
+.helpDetail{
+	display: none;
+}
+.helpDetail p img{
+	padding:15px 0;
+}
+.help a{
+	color: #333;
+}
+.help a:hover{
+	color: #76b94e;
+}
+.help li.active a{
+	color: #76b94e;
+	font-weight: bold;
+}
+.openIcon{
+	background-position: -7px -135px;
+}
+.closeIcon{
+	background-position: -7px -95px;
+}
+.helpConcat{
+	color: #fff!important;
+	margin: 100px auto 0;
+	display: block;
+
+}
+
+
+#sqlTable_filter input,#popGrid_filter input,#colGrid_filter input{
+	height: 12px;
+	display: inline-block;
+	vertical-align: top;
+	width: 200px;
+
+}
+#popGrid_wrapper .dataTables_filter{
+	padding-right: 0;
+}
+
+.colTips{
+	float: right;
+	padding-right: 10px;
+	color: #e20000;
+}
+.colTips a{
+	color: #54667c;
+	text-decoration: underline;
+}
+.tipsIcon{
+	background-position: -216px -199px;
+	width: 19px;
+	height: 11px;
+}
+
+.boxy-wrapper .btn_blue_long{
+	margin-top: 24px;
+}
+.colDelTa{
+	width: 250px;
+	height: 100px;
+	margin: 0 auto;
+}
+.helpBar{
+	background: #76b94e;
+	color: #fff;
+	border-top-right-radius: 5px;
+	border-bottom-right-radius: 5px;
+	padding:0 20px;
+	display: inline-block;
+	margin-left: -30px;
 }
