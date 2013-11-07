@@ -3,8 +3,8 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>用户中心</title>
-    <link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="all"/>    
-    <link rel="stylesheet" href="css/common.css" type="text/css" media="all"/>      
+    <link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="all"/>
+    <link rel="stylesheet" href="css/common.css" type="text/css" media="all"/>
 
 </head>
 
@@ -14,7 +14,7 @@
 
     <div class="sqlBar">
         <span class="loginInfo"></span>
-        <a href="home.html" target="_blank"><span class="sqlIcon homeIcon"></span>首页</a>｜
+        <a href="#"><span class="sqlIcon homeIcon"></span>首页</a>｜
         <a href="user.html" target="_blank"><span class="sqlIcon myIcon"></span>个人中心</a>｜
         <a class="loginOut" href="#"><span class="sqlIcon loginOutIcon"></span><strong>退出登录</strong></a>｜
         <a href="help.html" target="_blank"><span class="sqlIcon helpIcon"></span>帮助</a>
@@ -33,20 +33,20 @@
                             数据查询
                             <span href="#" class="sqlIcon downIcon"></span>
                         </a>
-                                                
+
                         <ul class="dropdown-menu selectMenu" style="margin-left:40px;">
                             <li>
                                 <a href="/sql/" target="_blank"><span class="sqlSIcon xunIcon"></span>查询操作</a>
                             </li>
                             <li>
                                 <a href="history.html" target="_blank"><span class="sqlSIcon hisIcon"></span>历史查询</a>
-                            </li>                           
+                            </li>
 
                         </ul>
                     </div>
 
                     <a style="float:left;" class="topMenu2" href="collectors.html"><span class="sqlIcon dbIcon"></span>收集器管理</a>
-                </div>                                  
+                </div>
             </div>
 
 
@@ -90,10 +90,10 @@
                             <label for="">修改手机：</label>
                             <input type="text">
                             <span class="formIcon erorrIcon"></span><span>失败提示</span>
-                        </div>                        
-                        <input type="submit" value="确认修改" class="submit_reg btn_blue_long">                        
+                        </div>
+                        <input type="submit" value="确认修改" class="submit_reg btn_blue_long">
                     </form>
-                
+
                     <form action="" class="registerForm helpDetail">
                         <h3>请如实填写以下内容，让我们可以更好的为你提供服务。</h3>
                         <div>
@@ -111,10 +111,10 @@
                             <input type="text">
                             <span class="formIcon erorrIcon"></span><span>失败提示</span>
                         </div>
-                        <input type="submit" value="重置密码" class="submit_reg btn_blue_long">                        
+                        <input type="submit" value="重置密码" class="submit_reg btn_blue_long">
                     </form>
 
- 
+
 
                 </div>
             </div>
@@ -122,26 +122,26 @@
 
 
     </div>
-    
+
 </div>
-</div> 
+</div>
 
     <div id="footer">
         Copyright &copy; 2013 WhaleMiner
-    </div>  
+    </div>
 
 
     <script src="js/jquery-1.7.2.min.js" language="javascript"></script>
-    <script src="js/jquery.cookie.js" language="javascript"></script>    
-    <script src="js/common.js" language="javascript"></script>  
+    <script src="js/jquery.cookie.js" language="javascript"></script>
+    <script src="js/common.js" language="javascript"></script>
 <script>
 
 
-$(function(){       
+$(function(){
     Common.helpTabs();
-    Common.delCookie();    
+    Common.delCookie();
     Common.uiInit();
 })
-</script>                 
+</script>
 </body>
 </html>
