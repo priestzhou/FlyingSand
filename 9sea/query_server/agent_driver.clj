@@ -235,6 +235,7 @@
                 (:dbname dataset)
                 (:tablename dataset)
                 (:hiveName dataset)
+                "1"
             )
         )
     )
