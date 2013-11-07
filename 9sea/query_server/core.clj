@@ -165,7 +165,7 @@
 )
 
 (defn update-result-map
-  [q-id stats ret-result error-message csv-url]
+  [q-id stats ret-result error-message csv-url & {:keys [log-message] :or {log-message nil}}]
   (debug "update status" :qid q-id :stats stats :error error-message)
   (let [start-time (:submit-time (@result-map q-id))
         cur-time (System/currentTimeMillis)
@@ -182,7 +182,7 @@
              :status stats 
              :end-time cur-time
              :progress [1 1]
-             :log "query is succeeded!"
+             :log (if (nil? log-message) "query is succeeded!" log-message)
              :duration duration
              :url csv-url
              :count  (ret-result :count)
@@ -227,8 +227,13 @@
   (try
     (let [ns (str (:accountid context-info) "." (:appname context-info)  
                   "." (:appversion context-info) "." (:database context-info) "." (:tablename context-info))
-        ;  hive-name (if (= view-or-ctas 0)(str "vn_" (ad/sha1-hash (str ns))) (str "tn_" (ad/sha1-hash (str ns)))
-          hive-name (:hive_name context-info)
+          _ (info "namespace:" ns)
+          hive-name (:hive-name context-info)
+          log-message (if (= view-or-ctas :view) 
+                        (str "create view " (:tablename context-info) "successed!")
+                        (str "create table " (:tablename context-info) "successed!")
+                      )
+
          ]
     
       (cond
@@ -236,22 +241,22 @@
         (do
           (hive/create-view hive-name hql)
           (orm/insert mysql/TblMetaStore (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
-                                             :DBName (:database context-info) :TableName (:table context-info) 
+                                             :DBName (:database context-info) :TableName (:tablename context-info) 
                                              :hive_name (:hive-name context-info) :NameSpaceType 3}]))
         )
         (= view-or-ctas :ctas)
         (do
           (hive/create-CTAS hive-name hql)
           (orm/insert mysql/TblMetaStore (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
-                                             :DBName (:database context-info) :TableName (:table context-info) 
+                                             :DBName (:database context-info) :TableName (:tablename context-info) 
                                              :hive_name hive-name :NameSpaceType 2}]))
         )
       )
+      (update-result-map q-id "succeeded" {:count 1 :titles nil :values nil} nil nil log-message)
     )
-    (update-result-map q-id "succeeded" nil nil nil)
   (catch SQLException sql-ex
     (error "can't create view/table" (util/except->str sql-ex))
-    (update-result-map q-id "failed" nil (str "can't create view/table " (:hive-name context-info)) nil)
+    (update-result-map q-id "failed" nil (str "can't create view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
   )
   )
 )
@@ -263,64 +268,125 @@
                   "." (:appversion context-info) "." (:database context-info) "." (:tablename context-info))
           ns-type (orm/select mysql/TblMetaStore (orm/fields [:NameSpaceType]) (orm/where {:NameSpace ns}))
           drop-violate? (if (= (:NameSpace (first ns-type)) 2) true false)
+          _ (info "namespace:" ns)
+          log-message (if (= view-or-ctas :view) 
+                        (str "drop view " (:tablename context-info) "successed!")
+                        (str "drop table " (:tablename context-info) "successed!")
+                      )
           ]
       (if drop-violate? 
         (update-result-map q-id "failed" nil (str "can't drop raw table " (:tablename context-info)) nil )
         (do
           (when (= :view view-or-ctas) 
             (hive/drop-view (:hive-name context-info))
-
           )
           (when (= :ctas view-or-ctas)
         ;we need to check if it is a raw mysql table
             (hive/drop-CTAS (:hive-name context-info))
-            (orm/delete mysql/TblMetaStore (orm/where {:NameSpace ns}))
           )
-          (update-result-map q-id "succeeded" nil nil nil)
+          (orm/delete mysql/TblMetaStore (orm/where {:NameSpace ns}))
+          (update-result-map q-id "succeeded" {:count 0 :titles nil :values nil} nil nil log-message)
        )
      )
    )
   (catch SQLException sql-ex
     (error "can't drop view/table" (util/except->str sql-ex))
-    (update-result-map q-id "failed" nil (str "can't drop view/table " (:hive-name context-info)) nil)
+    (update-result-map q-id "failed" nil (str "can't drop view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
   ))
 ) 
+
+(defn translate-query
+  [context query-str]
+  (let [
+        dfg (trans/parse-sql context query-str)
+        _ (info (str "dfg:" dfg))
+        type (:type dfg)
+       ]
+    (cond (= type :select)
+      {
+       :clause-type :select-clause 
+       :hql (trans/dump-hive context dfg)
+      }
+    
+      (#{:create-view :create-ctas} type)
+        {
+         :clause-type :create-clause 
+         :type (if (= type :create-view) :view :ctas)
+         :tablename (str (first (:value (:name dfg))))
+         :hql (str (trans/dump-hive context (:as dfg)))
+        }
+      
+       (#{:drop-view :drop-ctas} type)
+        {
+       :clause-type :drop-clause
+       :type (if (= type :drop-view) :view :ctas)
+       :tablename (str (:name (:name dfg)))
+       :hive-name (:hive-name (:name dfg))
+        }
+    )
+  )
+)
+
+(defn gen-context-info
+  [account-id context tablename tabletype hivename]
+  (let [
+        hive-name (
+                   if-not (nil? hivename)
+                    hivename
+                   (do
+                     (
+                      if (= tabletype :view) 
+                       (str "vn_" (ad/sha1-hash (str tablename)))
+                       (str "tn_" (ad/sha1-hash (str tablename)))
+                     )
+                   )
+                  )
+       ]
+    {
+     :accountid account-id
+     :appname (first (:default-ns context))
+     :appversion (second (:default-ns context))
+     :database "test"
+     :tablename tablename
+     :hive-name hive-name
+    }
+  )
+)
+
 
 (defn run-shark-query
   [context q-id account-id query-str]
   (try
    (debug "run-shark-query" :qid q-id)
-    (let [ table-name ()
-           hive-name ()
-           hql ()
-           select-clause? ()
-           create-clause? ()
-           drop-clause? ()
-           is-view-or-ctas ()
-           context-info {
-                         :accountid account-id
-                         :appname (first (:default-ns context))
-                         :appversion (second (:default-ns context))
-                         :DBName "test"
-                         :TableName table-name
-                         :hive-name hive-name
-                        }
-
-
-          hive-query (trans/sql-2003->hive context query-str)
+    (prn "context:" (str context))
+    (let [ 
+           translated-result (translate-query context query-str)
+           _ (prn "translated-result" (str translated-result))
+           clause-type (:clause-type translated-result)
          ]
-     (when (select-clause? )
-       (let [ret-rs (execute-query hive-query)]
-         (future (execute-count-query q-id hive-query))
-         (process-query q-id ret-rs)
+     (if (= clause-type :select-clause)
+       (do
+         (let [
+               hive-query (:hql translated-result)
+               ret-rs (execute-query hive-query)]
+           (future (execute-count-query q-id hive-query))
+           (process-query q-id ret-rs)
+         )
+       )
+       (do
+         (let [table-name (:tablename translated-result)
+               table-type (:type translated-result)
+               context-info (gen-context-info account-id context table-name table-type nil)
+              ]
+         (when (= clause-type :create-clause ) 
+           (add-view-or-ctas q-id context-info (:hql translated-result) table-type )
+         )
+         (when (= clause-type :drop-clause )
+           (drop-view-or-ctas q-id context-info table-type)
+         )
        )
      )
-     (when (create-clause? ) 
-       (future (add-view-or-ctas q-id context-info hql is-view-or-ctas))
-     )
-     (when (drop-clause? )
-       (future (drop-view-or-ctas q-id context-info is-view-or-ctas))
-     )
+    )
   )
   (catch Exception ex
   (do

@@ -16,6 +16,135 @@
     )
 )
 
+(def test-context {
+                   :ns 
+                   [{:children 
+                     [
+                      {
+                         :children 
+                         [
+                          {
+                           :type "table", :name "acter", :hive-name "tn_84e56395378035cd6850fb913f9658a130d976f4", 
+                           :children [{:name "id",:type "int"}]
+                           } 
+                          {
+                           :type "table", :name "user", :hive-name "tn_79719c20120d0a7ef0e4d87c873a985eba87fc07", 
+                           :children []
+                          }
+                         ], 
+                         :type "namespace", :name "v1"
+                      }
+                      {
+                         :children 
+                         [
+                          {
+                           :type "table", :name "acter", :hive-name "tn_24e56395378035cd6850fb913f9658a130d976f4", 
+                           :children [{:name "id",:type "int"}]
+                           } 
+                          {
+                           :type "table", :name "user", :hive-name "tn_29719c20120d0a7ef0e4d87c873a985eba87fc07", :children []
+                          }
+                         ], 
+                         :type "namespace", :name "v2"
+                       }
+                       
+                       
+                      ], 
+                     :type "namespace", :name "御剑三国"}
+                    ], 
+                  :default-ns ["御剑三国" "v1"]
+                  }
+)
+(def test-context' {
+                   :ns 
+                   [{:children 
+                     [{:children 
+                       [
+                        {
+                         :type "table", :name "acter", :hive-name "tn_84e56395378035cd6850fb913f9658a130d976f4", :children []
+                         } 
+                        {
+                         :type "table", :name "user", :hive-name "tn_79719c20120d0a7ef0e4d87c873a985eba87fc07", :children []
+                        }
+                        {
+                         :type "view", :name "v1", :hive-name "vn_79719c20120d0a7ef0e4d87c873a985eba87fc07", :children []
+                        }
+                        {
+                         :type "ctas", :name "t1", :hive-name "tn_89719c20120d0a7ef0e4d87c873a985eba87fc07", :children []
+                        }
+                       ], 
+                       :type "namespace", :name "1.0"}
+                      ], 
+                     :type "namespace", :name "御剑三国"}
+                    ], 
+                  :default-ns ["御剑三国" "1.0"]
+                  }
+)
+
+(suite "create view-ctas"
+      (:fact test-create-view-in-two-version
+              (
+               shark/translate-query test-context "create view view1 as select a.* from v1.acter a join v2.acter b on a.id=b.id"
+              )
+          :is
+             {:clause-type :create-clause, :type :view, :tablename "view1", :hql "SELECT a.* FROM tn_84e56395378035cd6850fb913f9658a130d976f4 a JOIN tn_24e56395378035cd6850fb913f9658a130d976f4 b ON (a.id = b.id)"}
+          
+       )
+       (:fact test-create-view
+              (
+               shark/translate-query test-context "create view v1 as select * from acter"
+              )
+          :is
+          {:clause-type :create-clause, :type :view, :tablename "v1", :hql "SELECT * FROM tn_84e56395378035cd6850fb913f9658a130d976f4"}
+       )
+       (:fact test-drop-view
+              (
+               shark/translate-query test-context' "drop view v1"
+              )
+          :is
+          {:clause-type :drop-clause, :type :view, :tablename "v1", :hive-name "vn_79719c20120d0a7ef0e4d87c873a985eba87fc07"}
+       )
+       (:fact test-select-table
+              (
+               shark/translate-query test-context "select * from acter"
+              )
+          :is
+          {:clause-type :select-clause :hql "SELECT * from tn_84e56395378035cd6850fb913f9658a130d976f4"}
+      )
+     (:fact test-create-ctas
+            (
+             shark/translate-query test-context "create table t1 as select * from acter"
+            )
+        :is
+        {:clause-type :create-clause, :type :ctas, :tablename "t1", :hql "SELECT * FROM tn_84e56395378035cd6850fb913f9658a130d976f4"}
+     )
+    (:fact test-drop-ctas
+            (
+             shark/translate-query test-context' "drop table t1"
+            )
+            :is
+            {:clause-type :drop-clause, :type :ctas, :tablename "t1", :hive-name "tn_89719c20120d0a7ef0e4d87c873a985eba87fc07"}
+    )
+    (:fact test-gen-context-for-drop-view
+           (
+            shark/gen-context-info 5 test-context' "v1" :view "vn_79719c20120d0a7ef0e4d87c873a985eba87fc07"
+           )
+           :is
+          {
+            :accountid 5, :appname "御剑三国", :appversion "1.0", :database "test", :tablename "v1", :hive-name "vn_79719c20120d0a7ef0e4d87c873a985eba87fc07"          }
+    )
+    (:fact test-gen-context-for-create-view
+           (
+            shark/gen-context-info 5 test-context "v1" :view nil
+           )
+           :is
+           {
+            :accountid 5, :appname "御剑三国", :appversion "1.0", :database "test", :tablename "v1", :hive-name "vn_5a6df720540c20d95d530d3fd6885511223d5d20"
+           }
+    )
+
+)
+
 (suite "get metaschema"
        (:fact test-get-metastore-tree
                (let [r (qs/get-metastore-tree 4)]

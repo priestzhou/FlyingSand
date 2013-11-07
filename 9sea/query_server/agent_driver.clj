@@ -220,6 +220,7 @@
                 (:dbname dataset)
                 (:tablename dataset)
                 (:hiveName dataset)
+                "1"
             )
             (ha/create-table (:hiveName dataset) (:cols dataset))
         )
