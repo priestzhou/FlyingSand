@@ -43,22 +43,6 @@
     }
 )
 
-(defn- runsql [sql]
-                (jdbc/with-connection (mysql/get-mysql-db)
-                    (jdbc/with-query-results res [sql]
-                        (->>
-                            res
-                            doall
-                        )
-                    )
-                )
-)
-
-(defn- runupdate [sql]
-                (jdbc/with-connection (mysql/get-mysql-db)
-                    (jdbc/do-commands sql)
-                )
-)
 
 (defn- get-hash [type data]
     (-> type
@@ -87,7 +71,7 @@
 
 (defn- get-agent-list' [sstr]
     (let [sql (str "select * from TblAgent where agentState='" sstr "'")]
-        (runsql sql)
+        (mysql/runsql sql)
     )
 )
 
@@ -97,7 +81,7 @@
                     " where id ='" id "'"
                 )
         ]
-        (runupdate sql)
+        (mysql/runupdate sql)
     )
 )
 
@@ -108,7 +92,7 @@
                     "' where id ='" id "'"
                 )
         ]
-        (runupdate sql)
+        (mysql/runupdate sql)
     )
 )
 
@@ -118,7 +102,7 @@
 
 (defn- check-table [tns]
     (let [sql (str "select * from TblMetaStore where namespace = \"" tns "\"")
-            res (runsql sql)
+            res (mysql/runsql sql)
             rcount (count   res)
         ]
         (cond
@@ -174,7 +158,7 @@
             colstr (str "( \"" collist "\")")
             sql (str  "insert into " table " VALUES " colstr ";"
             )
-            res (runupdate sql)
+            res (mysql/runupdate sql)
         ]
         res
     )
@@ -186,7 +170,7 @@
             sql (str  "insert into " table " (" colnames ") VALUES " colstr ";"
             )
             _ (debug "add-record-bycol" :sql sql)
-            res (runupdate sql)
+            res (mysql/runupdate sql)
         ]
         res
     )
@@ -197,7 +181,7 @@
                 "select * from TblSchema where namespace = \"" 
                 tns "\" and agentid ='" agentid "'"
             )
-            res (runsql sql)
+            res (mysql/runsql sql)
             rcount (count   res)
         ]
         (cond
@@ -296,7 +280,7 @@
                 a.Namespace = b.Namespace   where agentid ='" agentid "'"
                 " and a.Namespace is not null and b.Namespace is not null")
 ;add app version in agent
-            res (runsql sql)
+            res (mysql/runsql sql)
         ]
         (debug "query-agent-schema" :res (str res) )
         res
@@ -345,7 +329,7 @@
     (let [sql (str "update TblSchema set TimestampPosition=\"" maxkey "\""
                 " where NameSpace=\"" tns "\" and AgentID =\"" agentid "\"" 
             )
-            res (runupdate sql)
+            res (mysql/runupdate sql)
         ]
         res
     )
@@ -357,7 +341,7 @@
             sql (str "update TblAgent set LastSyncTime=\"" now "\" "
                     " where id =" agentid
                 )
-            res (runupdate sql)
+            res (mysql/runupdate sql)
         ]
         res
     )
