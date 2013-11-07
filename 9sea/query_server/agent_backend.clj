@@ -61,7 +61,7 @@
         x rs
         :let [i (:status x)
               s_time (if (nil? (:synctime x))
-                       0
+                       -1
                        (to-long 
                        (parse (formatter "yyyy-MM-dd H:mm:ss") (:synctime x)))
                      )
@@ -69,8 +69,10 @@
               _ (info "recent-sync time:" s_time)
               ]
         ]
-        
-        (assoc x :status (get agent-status i) :recent-sync s_time)
+        (if (= -1 s_time)
+          (assoc x :status (get agent-status i) )
+          (assoc x :status (get agent-status i) :recent-sync s_time)
+        )
   ))
 )
 
