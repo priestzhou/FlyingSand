@@ -2,7 +2,7 @@
 --
 -- Host: 192.168.9.101    Database: meta_stage
 -- ------------------------------------------------------
--- Server version	5.5.31-1
+-- Server version 5.5.31-1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -29,6 +29,8 @@ CREATE TABLE `TblAgent` (
   `LastSyncTime` datetime DEFAULT NULL,
   `DataSize` int(11) DEFAULT NULL,
   `AgentUrl` varchar(80) DEFAULT NULL,
+  `AppName` varchar(30) DEFAULT NULL,
+  `AppVersion` varchar(30) DEFAULT NULL,  
   `ConfigHash` varchar(50) DEFAULT NULL,
   `AgentState` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -41,7 +43,7 @@ CREATE TABLE `TblAgent` (
 
 LOCK TABLES `TblAgent` WRITE;
 /*!40000 ALTER TABLE `TblAgent` DISABLE KEYS */;
-INSERT INTO `TblAgent` VALUES (19,5,'s3',NULL,NULL,'http://192.168.9.102:8081',NULL,2);
+INSERT INTO `TblAgent` VALUES (19,5,'s3',NULL,NULL,'http://192.168.9.102:8081',NULL,NULL,NULL,1);
 /*!40000 ALTER TABLE `TblAgent` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -67,7 +69,6 @@ CREATE TABLE `TblApplication` (
 
 LOCK TABLES `TblApplication` WRITE;
 /*!40000 ALTER TABLE `TblApplication` DISABLE KEYS */;
-INSERT INTO `TblApplication` VALUES (28,'御剑三国',5);
 /*!40000 ALTER TABLE `TblApplication` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -125,7 +126,6 @@ CREATE TABLE `TblMetaStore` (
 
 LOCK TABLES `TblMetaStore` WRITE;
 /*!40000 ALTER TABLE `TblMetaStore` DISABLE KEYS */;
-INSERT INTO `TblMetaStore` VALUES ('5.御剑三国.1.0.test.acter','御剑三国','1.0','test','acter','tn_84e56395378035cd6850fb913f9658a130d976f4'),('5.御剑三国.1.0.test.user','御剑三国','1.0','test','user','tn_79719c20120d0a7ef0e4d87c873a985eba87fc07');
 /*!40000 ALTER TABLE `TblMetaStore` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -181,7 +181,6 @@ CREATE TABLE `TblSchema` (
 
 LOCK TABLES `TblSchema` WRITE;
 /*!40000 ALTER TABLE `TblSchema` DISABLE KEYS */;
-INSERT INTO `TblSchema` VALUES ('5.御剑三国.1.0.test.acter','19',0,0,''),('5.御剑三国.1.0.test.user','19',1,1362624431600,'dt');
 /*!40000 ALTER TABLE `TblSchema` ENABLE KEYS */;
 UNLOCK TABLES;
 

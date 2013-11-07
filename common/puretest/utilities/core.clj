@@ -1,4 +1,4 @@
-(ns unittest.utilities.core
+(ns puretest.utilities.core
     (:use testing.core
         utilities.core
     )

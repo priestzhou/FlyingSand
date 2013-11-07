@@ -1,6 +1,6 @@
 Import('env')
 
-env.install(env.compileAndJar('agent.jar', 'agent', 
+env.install(env.compileAndJar('agent.jar', 'agent',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/argparser.jar'),
         env.File('$EXTLIB/ring-1.1.8.jar'),
@@ -10,19 +10,19 @@ env.install(env.compileAndJar('agent.jar', 'agent',
         env.File('$EXTLIB/java.jdbc-0.3.0-alpha5.jar'),
         env.File('$EXTLIB/mysql-connector-java-5.1.26-bin.jar'),
         env.File('$BUILD_DIR/logging.jar'),
-        env.File('$BUILD_DIR/utilities.jar'),   
-        env.File('$BUILD_DIR/monitor.jar')               
-    ], 
+        env.File('$BUILD_DIR/utilities.jar'),
+        env.File('$BUILD_DIR/monitor.jar')
+    ],
     standalone=True, manifest={'Main-Class': 'agent.main'}))
 
-env.install(env.compileAndJar('monitor.jar', 'monitor', 
+env.install(env.compileAndJar('monitor.jar', 'monitor',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/utilities.jar'),
         env.File('$BUILD_DIR/argparser.jar'),
         env.File('$EXTLIB/ring-1.1.8.jar'),
         env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
         env.File('$EXTLIB/compojure-1.1.5.jar'),
-    ], 
+    ],
     standalone=True, manifest={'Main-Class': 'monitor.main'}))
 
 parser = env.compileAndJar('parser.jar', 'parser',
@@ -31,25 +31,25 @@ parser = env.compileAndJar('parser.jar', 'parser',
         env.File('$BUILD_DIR/argparser.jar'),
         env.File('$BUILD_DIR/logging.jar'),
     ])
-env.install(env.compileAndJar('parser_unittest.jar', 'parser_unittest', 
+env.install(env.compileAndJar('parser_puretest.jar', 'parser_puretest',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/testing.jar'),
         env.File('$BUILD_DIR/utilities.jar'),
         env.File('$BUILD_DIR/argparser.jar'),
         env.File('$BUILD_DIR/logging.jar'),
-        parser, 
-    ], 
-    standalone=True, manifest={'Main-Class': 'parser_unittest.main'}))
+        parser,
+    ],
+    standalone=True, manifest={'Main-Class': 'parser_puretest.main'}))
 env.install(env.compileAndJar('sql_parser.jar', 'parser',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/utilities.jar'),
         env.File('$BUILD_DIR/argparser.jar'),
         env.File('$BUILD_DIR/logging.jar'),
-    ], 
+    ],
     standalone=True, manifest={'Main-Class': 'parser.main'}))
 
 env.install(env.compileAndJar('query_server.jar', 'query_server',
-    libs=[env['CLOJURE'], 
+    libs=[env['CLOJURE'],
         env.File('$EXTLIB/ring-1.1.8.jar'),
         env.File('$EXTLIB/ring-jetty-adapter-1.1.8.jar'),
         env.File('$EXTLIB/compojure-1.1.5.jar'),
@@ -92,7 +92,7 @@ env.install(env.compileAndJar('query_server.jar', 'query_server',
 
 
 env.install(env.compileAndJar('9sea_unittest.jar', 'unittest',
-    libs=[env['CLOJURE'], 
+    libs=[env['CLOJURE'],
         env.File('$EXTLIB/tools.cli-0.2.2.jar'),
         env.File('$BUILD_DIR/testing.jar'),
         env.File('$BUILD_DIR/agent.jar'),
@@ -106,19 +106,19 @@ env.install(env.compileAndJar('9sea_unittest.jar', 'unittest',
 
     standalone=True, manifest={'Main-Class': 'unittest.main'}))
 env.install(env.compileAndJar('9sea_smoketest.jar', 'smoketest',
-    libs=[env['CLOJURE'], 
+    libs=[env['CLOJURE'],
         env.File('$EXTLIB/tools.cli-0.2.2.jar'),
         env.File('$BUILD_DIR/testing.jar'),
         env.File('$BUILD_DIR/utilities.jar'),
         env.File('$BUILD_DIR/monitor.jar'),
         env.File('$EXTLIB/data.json-0.2.2.jar'),
         env.File('$BUILD_DIR/query_server.jar'),
-        
+
     ],
     standalone=True, manifest={'Main-Class': 'smoketest.main'}))
 
 env.install(env.compileAndJar('9sea_agent_testtool.jar', 'agent_testtool',
-    libs=[env['CLOJURE'], 
+    libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/utilities.jar'),
         env.File('$BUILD_DIR/argparser.jar'),
         env.File('$EXTLIB/data.json-0.2.2.jar'),

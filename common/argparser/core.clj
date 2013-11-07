@@ -1,33 +1,35 @@
 (ns argparser.core
-  (:require 
-      [clojure.string :as str]
-      [utilities.core :as util]
-  )
+    (:require
+        [clojure.string :as str]
+        [utilities.core :as util]
+        [utilities.shutil :as sh]
+    )
 )
 
 (defn- parse-arg [key args]
-    {
-        :pre [(not (empty? args))]
-    }
+{
+    :pre [(not (empty? args))]
+}
     [{key [(first args)]} (rest args)]
 )
 
 (defn- parse-opt [opts n key args]
-    {
-        :pre [(pos? n)
-            (not (empty? args))
-        ]
-    }
+{
+    :pre [
+        (pos? n)
+        (not (empty? args))
+    ]
+}
     (if-not (opts (first args))
         [nil args]
         (do
-            (util/throw-if-not (>= (count args) n)
+            (util/throw-if (< (count args) n)
                 IllegalArgumentException.
                 (str "require " (dec n) " args after " (first args))
             )
             [
-                {key (apply vector (rest (take n args)))} 
-                (apply vector (drop n args))
+                {key (rest (take n args))}
+                (drop n args)
             ]
         )
     )
@@ -35,7 +37,7 @@
 
 (defn- gen-parser [key option]
     (let [args (str/split option #" ")
-            opt? (= (.charAt (first args) 0) \-)
+            opt? (= (ffirst args) \-)
         ]
         (if-not opt?
             (partial parse-arg key)
@@ -59,35 +61,80 @@
     [opts options]
     (if (or (empty? opts) (empty? options))
         [nil options]
-        (if-let [ret (first 
-                (for [opt opts 
+        (if-let [ret (first
+                (for [opt opts
                       :let [[result remains] ((:parse opt) options)]
-                      :when (not= nil result)
-                  ] 
+                      :when result
+                  ]
                   [result remains]
                 ))
             ]
-            ret 
+            ret
             [nil options]
         )
     )
 )
 
+(defn- in? [key args]
+    (first (for [
+        arg args
+        :when (get arg key)
+        ]
+        arg
+    ))
+)
+
+(defn- parse' [opts ret args]
+    (if (empty? args)
+        ret
+        (let [[res remains] (parse-once opts args)]
+            (util/throw-if (nil? res)
+                IllegalArgumentException.
+                (str "Unknown option: " (first args))
+            )
+            (recur opts (conj ret res) remains)
+        )
+    )
+)
+
+(declare default-doc)
+
 (defn parse
     "parse options with the given spec"
-    [{:keys [usage args]} options]
-    (loop [ret [] 
-           [result remains] (parse-once args options)]
-        (if (nil? result)
-            (do
-                (util/throw-if-not (empty? remains)
-                 IllegalArgumentException.
-                 (str "Unknown option: " (first remains))
-                )
-                ret
+    [{:keys [usage args] :as arg-spec} options]
+    (let [
+        args (concat [
+                (opt :help "-h|--help" "show this help message")
+                (opt :build-info "--buildinfo" "show build info")
+            ]
+            (for [
+                arg args
+                :when (not (#{:help :build-info} (:key arg)))
+                ]
+                arg
             )
-            (recur (conj ret result) (parse-once args remains))
         )
+        res (parse' args [] options)
+        ]
+        (when (in? :help res)
+            (-> arg-spec
+                (assoc :args args)
+                (default-doc)
+                (println)
+            )
+            (System/exit 0)
+        )
+        (when (in? :build-info res)
+            (->> "@/manifest"
+                (sh/open-file)
+                (slurp)
+                (re-find #"Build-Info:\s+(\w+)")
+                (second)
+                (println)
+            )
+            (System/exit 0)
+        )
+        res
     )
 )
 
@@ -97,20 +144,12 @@
     (apply merge-with concat args)
 )
 
-(defn select-args
-    "select opts from the spec"
-    [selected-keys all]
-    (filter #((set selected-keys) (:key %)) all)
+(defn- gen-white-spaces [size]
+    (str/join (for [_ (range size)] " "))
 )
 
-(defn- gen-white-spaces 
-    [size]
-    (str/join (for [i (range size)] " "))
-)
-
-(defn- gen-str-vector
-    [x]
-    (cond 
+(defn- gen-str-vector [x]
+    (cond
         (nil? x) []
         (vector? x) x
         (string? x) [x]
@@ -118,32 +157,32 @@
     )
 )
 
-(defn- args->max-width
+(defn- args-max-width
     "return max option length"
     [args]
-    (->> (map :desc args)
-        (map (comp count first))
+    (->> args
+        (map :desc)
+        (map first)
+        (map count)
         (apply max)
     )
 )
 
-(defn doc-args
-    "generate help msg for the given args"
-    [args max-width]
-    (if (nil? args) 
-        []
+(defn- doc-args [args]
+    (let [max-width (args-max-width args)]
         (for [
-                desc (map :desc args) 
-                [n explain] (util/enumerate (second desc))
-                :let [opt (first desc)]
+            arg args
+            :let [desc (:desc arg)]
+            [n explain] (util/enumerate (second desc))
+            :let [opt (first desc)]
             ]
             (str/join (flatten [
-                " " 
-                (if (= n 0) 
+                " "
+                (if (= n 0)
                     [opt (gen-white-spaces (- max-width (count opt)))]
                     (gen-white-spaces max-width)
-                ) 
-                "  " 
+                )
+                "  "
                 explain
             ]))
         )
@@ -152,24 +191,22 @@
 
 (defn default-doc
     "default help msg generator"
-    [{:keys [usage synopsys args summary]}] ;input is spec of the parser
+    [{:keys [usage synopsys args summary]}]
     (let [emptyline [""]
-            max-width (args->max-width args)
-            doc->usage   (gen-str-vector usage)
-            doc->synopsys (gen-str-vector synopsys)
-            doc->args     (doc-args args max-width)
-            doc->summary  (gen-str-vector summary)
-            doc (flatten [doc->usage
+            doc-usage   (gen-str-vector usage)
+            doc-synopsys (gen-str-vector synopsys)
+            doc-args     (doc-args args)
+            doc-summary  (gen-str-vector summary)
+            doc (flatten [doc-usage
 
-                    (when-not (empty? doc->synopsys) emptyline)
-                    doc->synopsys
-                   
-                    (when-not (empty? doc->args) emptyline)
-                    (when-not (empty? doc->args) ["Options:"])
-                    doc->args
-                   
-                    (when-not (empty? doc->summary) emptyline)
-                    doc->summary
+                    (when-not (empty? doc-synopsys) emptyline)
+                    doc-synopsys
+
+                    (when-not (empty? doc-args) [emptyline "Options:"])
+                    doc-args
+
+                    (when-not (empty? doc-summary) emptyline)
+                    doc-summary
                 ]
             )
         ]
@@ -177,3 +214,9 @@
     )
 )
 
+(defn extract-with-default [opts kw proc default]
+    (if-let [v (get opts kw)]
+        (assoc opts kw (proc v))
+        (assoc opts kw default)
+    )
+)

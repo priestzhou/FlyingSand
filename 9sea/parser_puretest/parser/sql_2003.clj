@@ -1,5 +1,5 @@
-(ns parser-unittest.parser.sql-2003
-    (:use 
+(ns parser-puretest.parser.sql-2003
+    (:use
         [testing.core :only (suite)]
     )
     (:require
@@ -147,7 +147,7 @@
             (extract-result)
         )
         :is
-        [[\a :eof] nil]        
+        [[\a :eof] nil]
     )
 )
 
@@ -616,7 +616,7 @@
 )
 
 (suite "character string literal"
-    ; this is not completely compliant to SQL standards 
+    ; this is not completely compliant to SQL standards
     ; for lack of leading charactor set spec
     (:fact character-string-literal:one-segment
         (->> "'a'"
@@ -941,13 +941,13 @@
         )
         :is
         [[:eof] {:type :from-clause, :tables [
-            {:type :cross-join, 
+            {:type :cross-join,
                 :on {
                     :type :=
                     :left {:type :dotted-identifier, :value ["tbl1" "col"]}
                     :right {:type :dotted-identifier, :value ["tbl2" "col"]}
                 }
-                :left {:type :table, :refer ["tbl1"]}, 
+                :left {:type :table, :refer ["tbl1"]},
                 :right {:type :table, :refer ["tbl2"]}
             }
         ]}]
@@ -961,7 +961,7 @@
         :is
         [[:eof] {:type :from-clause, :tables [{
             :type :join
-            :left {:type :table, :refer ["tbl1"]}, 
+            :left {:type :table, :refer ["tbl1"]},
             :right {:type :table, :refer ["tbl2"]}
         }]}]
     )
@@ -1111,7 +1111,7 @@
             (extract-result)
         )
         :is
-        [[:eof] {:type :select, 
+        [[:eof] {:type :select,
             :select-list [{:type :derived-column, :value {:type :asterisk}}],
             :from-clause [{:type :table, :refer ["tbl"]}]
         }]
@@ -1151,7 +1151,7 @@
             :select-list [{:type :derived-column, :value {:type :asterisk}}],
             :from-clause [{:type :derived-table
                 :name "t"
-                :value {:type :select, 
+                :value {:type :select,
                     :select-list [
                         {:type :derived-column, :value {:type :asterisk}}
                     ],
@@ -1185,7 +1185,7 @@
         [[:eof] {:type :select
             :from-clause [{:type :table, :refer ["tbl"]}]
             :select-list [{
-                :type :derived-column, 
+                :type :derived-column,
                 :value {:type :asterisk, :refer ["tbl"]}
                 :name [
                     {:type :identifier, :value "a"}
@@ -1274,7 +1274,7 @@
         }]
     )
     (:fact select:group-by
-        (->> "SELECT * FROM tbl GROUP BY col, 1"
+        (->> "SELECT * FROM tbl GROUP BY tbl.col, col, 1"
             (prs/str->stream)
             (sql/query)
             (extract-result)
@@ -1284,7 +1284,8 @@
             :select-list [{:type :derived-column, :value {:type :asterisk}}]
             :from-clause [{:type :table, :refer ["tbl"]}]
             :group-by [
-                {:type :identifier, :value "col"}
+                {:type :dotted-identifier, :value ["tbl" "col"]}
+                {:type :dotted-identifier, :value ["col"]}
                 {:type :numeric-literal, :value "1"}
             ]
         }]
@@ -1520,7 +1521,7 @@
         (fn []
             (->> "TRUE IS FALSE IS NOT NULL"
                 (prs/str->stream)
-                ((prs/chain 
+                ((prs/chain
                     sql/value-expr
                     (prs/expect-eof)
                 ))
@@ -1536,7 +1537,7 @@
         )
         :is
         [[:eof] {
-            :type :boolean-negation, 
+            :type :boolean-negation,
             :value {:type :boolean-literal, :value "TRUE"}
         }]
     )
@@ -3762,6 +3763,77 @@
                 {:type :numeric-literal, :value "1"}
                 {:type :numeric-literal, :value "2"}
             ]
+        }]
+    )
+)
+
+(suite "view"
+    (:fact view:create
+        (->> "CREATE VIEW vw AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+    (:fact view:create:col
+        (->> "CREATE VIEW vw(col) AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :column-list ["col"]
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+    (:fact view:drop
+        (->> "DROP VIEW vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-view
+            :name {:type :dotted-identifier, :value ["vw"]}
+        }]
+    )
+    (:fact create:ctas
+        (->> "CREATE TABLE vw AS select * from tbl"
+            (prs/str->stream)
+            (sql/create-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :create-ctas
+            :name {:type :dotted-identifier, :value ["vw"]}
+            :as {:type :select
+                :select-list [{:type :derived-column, :value {:type :asterisk}}],
+                :from-clause [{:type :table, :refer ["tbl"]}]
+            }
+        }]
+    )
+    (:fact drop:ctas
+        (->> "DROP TABLE vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-ctas
+            :name {:type :dotted-identifier, :value ["vw"]}
         }]
     )
 )

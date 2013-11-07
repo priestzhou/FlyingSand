@@ -49,7 +49,7 @@ var Home = {
       var index=nav.index($(this));
       $(this).addClass("active").siblings().removeClass("active");
       panels.stop(true,true).eq(index).fadeIn().siblings().fadeOut();
-    })    
+    })
   }
 
 }

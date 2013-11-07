@@ -43,7 +43,7 @@
     (let [
         [strm] (->> stream
             ((prs/choice
-                (prs/between 
+                (prs/between
                     (prs/expect-string "--")
                     (prs/choice
                         (prs/expect-char \newline)
@@ -104,7 +104,7 @@
     )
 )
 
-(defn paren 
+(defn paren
     ([left-parser right-parser mid-parser]
         (partial paren-parser left-parser right-parser mid-parser)
     )
@@ -132,7 +132,7 @@
     (prs/chain
         (unsigned-digits)
         (prs/optional
-            (prs/chain 
+            (prs/chain
                 (prs/expect-char \.)
                 (unsigned-digits)
             )
@@ -141,7 +141,7 @@
 )
 
 (defn- pure-fraction []
-    (prs/chain 
+    (prs/chain
         (prs/expect-char \.)
         (unsigned-digits)
     )
@@ -171,7 +171,7 @@
 )
 
 (defliteral unsigned-numeric-literal :numeric-literal
-    (prs/choice 
+    (prs/choice
         (scientific)
         (decimal)
     )
@@ -222,9 +222,9 @@
         (if escp
             (prs/gen-ISE strm2 "not support ESCAPE")
             [
-                strm1 
+                strm1
                 {
-                    :type :hex-string-literal, 
+                    :type :hex-string-literal,
                     :value (prs/extract-string-between stream strm1)
                 }
             ]
@@ -524,7 +524,7 @@
     )
 )
 
-(def ^:private reserved-keywords #{ 
+(def ^:private reserved-keywords #{
 ; MySQL-5.5 compliant, many differences with SQL standards
     "ACCESSIBLE" "ADD" "ALL" "ALTER" "ANALYZE" "AND" "AS" "ASC" "ASENSITIVE"
 
@@ -630,11 +630,11 @@
                 (prs/expect-char ch)
                 (prs/many1
                     (prs/choice*
-                        (constantly ch) (prs/chain 
+                        (constantly ch) (prs/chain
                             (prs/expect-char ch)
                             (prs/expect-char ch)
                         )
-                        identity (prs/expect-char-if 
+                        identity (prs/expect-char-if
                             #(and (not= % :eof) (not= % ch))
                         )
                     )
@@ -1041,7 +1041,7 @@
         [strm prsd] (->> stream
             ((prs/separated-list
                 (prs/choice
-                    identifier
+                    dotted-identifier
                     unsigned-numeric-literal
                 )
                 (prs/chain
@@ -1197,6 +1197,85 @@
     )
 )
 
+(defn create-view [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "CREATE")
+                blank+
+                (prs/choice*
+                    (constantly :create-view) (expect-string-ignore-case "VIEW")
+                    (constantly :create-ctas) (expect-string-ignore-case "TABLE")
+                )
+                blank+
+                dotted-identifier
+                (prs/choice*
+                    last (prs/chain
+                        blank*
+                        paren-column-list
+                    )
+                    nil
+                )
+                blank+
+                (expect-string-ignore-case "AS")
+                blank+
+                query
+            ))
+        )
+        op (nth prsd 2)
+        view-name (nth prsd 4)
+        cl (nth prsd 5)
+        q (last prsd)
+        res {:type op, :name view-name, :as q}
+        res (if-not cl res (assoc res :column-list (:value cl)))
+        ]
+        [strm res]
+    )
+)
+
+(defn drop-view [stream]
+    (let [
+        [strm prsd] (->> stream
+            ((prs/chain
+                (expect-string-ignore-case "DROP")
+                blank+
+                (prs/choice*
+                    (constantly :drop-view) (expect-string-ignore-case "VIEW")
+                    (constantly :drop-ctas) (expect-string-ignore-case "TABLE")
+                )
+                blank+
+                dotted-identifier
+            ))
+        )
+        res {:type (nth prsd 2), :name (last prsd)}
+        ]
+        [strm res]
+    )
+)
+
+(defn sql [stream]
+    (let [
+        [strm prsd] (->> stream
+            (prs/str->stream)
+            (prs/positional-stream)
+            ((prs/choice*
+                second (prs/chain
+                    blank*
+                    (prs/choice
+                        query
+                        create-view
+                        drop-view
+                    )
+                    blank*
+                    (prs/expect-eof)
+                )
+            ))
+        )
+        ]
+        prsd
+    )
+)
+
 
 (defn- paren:no-transparent [parser stream]
     (let [
@@ -1256,7 +1335,7 @@
             ))
         )
         res (first prsd)
-        res (if-not res 
+        res (if-not res
             {:type :asterisk}
             {:type :asterisk, :refer (:value res)}
         )
@@ -1391,12 +1470,12 @@
         u (:max opt)
         ]
         (when (and l (< arity l))
-            (prs/gen-ISE stream 
+            (prs/gen-ISE stream
                 (format "%s requires at least %d argument(s)" (:name opt) l)
             )
         )
         (when (and u (> arity u))
-            (prs/gen-ISE stream 
+            (prs/gen-ISE stream
                 (format "%s requires at most %d argument(s)" (:name opt) u)
             )
         )
@@ -1762,9 +1841,9 @@
                 [connective right] prsd
                 right (remove-paren-if-possible right)
                 nxt (case (:type left)
-                    :paren 
+                    :paren
                     {:type :bit-expr, :value [(:value left) connective right]}
-                    :bit-expr 
+                    :bit-expr
                     (assoc left :value (concat (:value left) [connective right]))
                     {:type :bit-expr, :value [left connective right]}
                 )
@@ -1806,7 +1885,7 @@
                                 (paren value-expr-list)
                             )
                         )
-                        (fn [x] {:type :between, :middle (nth x 3), :right (last x)}) 
+                        (fn [x] {:type :between, :middle (nth x 3), :right (last x)})
                         (prs/chain
                             blank+
                             (expect-string-ignore-case "BETWEEN")
@@ -1987,7 +2066,7 @@
             :type c
             :left (remove-paren-if-possible l)
             :right r
-        } 
+        }
         ]
         [strm res]
     )
@@ -2042,9 +2121,9 @@
                 [connective right] prsd
                 right (remove-paren-if-possible right)
                 nxt (case (:type left)
-                    :paren 
+                    :paren
                     {:type :value-expr, :value [(:value left) connective right]}
-                    :value-expr 
+                    :value-expr
                     (assoc left :value (concat (:value left) [connective right]))
                     {:type :value-expr, :value [left connective right]}
                 )

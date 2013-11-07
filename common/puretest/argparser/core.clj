@@ -1,6 +1,6 @@
-(ns unittest.argparser.core
+(ns puretest.argparser.core
     (:use testing.core)
-    (:require 
+    (:require
         [argparser.core :as arg]
     )
 )
@@ -163,7 +163,7 @@
 
 (suite "argparser: default transformer"
        (:fact transformer->map
-           (arg/transform->map  
+           (arg/transform->map
              [{:dir ["a"]} {:foo ["foo1" "foo2"]} {:dir ["b"]} {:foo ["foo3" "foo4"]}]
            )
            :is
@@ -198,7 +198,7 @@
   (arg/opt :binary-files
       "--binary-files=TYPE"   "assume that binary files are TYPE;"
                               "TYPE is `binary', `text', or `without-match'")
-  
+
   (arg/opt :else
   "PATTERN"                   "pattern to be searched")
   ]
@@ -211,18 +211,6 @@
 )
 
 (suite "argparser: doc generator"
-       (:fact select-args
-           (arg/select-args  
-             [:regexp :ignore-case]
-             (:args spec-grep)
-           )
-           :is
-           (seq [
-                (nth (:args spec-grep) 0)
-                (nth (:args spec-grep) 2)
-                ]
-           )
-       )
        (:fact default-doc
            (arg/default-doc spec-grep)
            :is

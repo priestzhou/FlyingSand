@@ -41,6 +41,38 @@
     )
 )
 
+(defn web-response [dataFunc params dba]
+    (let [hc (str (hash dba))
+            confighash (:confighash params)
+            _ (debug confighash)
+
+        ]
+        (if (= hc confighash)
+            {:status 200
+                :headers {
+                    "Access-Control-Allow-Origin" "*"
+                    "Content-Type" "application/json"
+                }
+                :body (encryptWrt (dataFunc params dba))
+            }            
+            {:status 503
+                    :headers {
+                        "Access-Control-Allow-Origin" "*"
+                        "Content-Type" "application/json"
+                    }
+                :body (encryptWrt 
+                        {
+                            :errCode 2001
+                            :errStr "The confighash is changed"
+                        } 
+                    )
+            }            
+        )
+    )
+)
+
+
+
 (cp/defroutes app-routes
     (cp/GET "/setting/list" {params :params} 
         (info "/setting/list")
@@ -83,35 +115,24 @@
     )
     (cp/GET "/data/get/all" {params :params}
         (info "into get all data" (js/write-str params))
-        (let [r (dba/get-table-all-data @dbatom 
-                     (:dbname params) (:tablename params) 
+        (let [func (fn [p d] 
+                    (dba/get-table-all-data d 
+                        (:dbname p) (:tablename p) 
+                    )
                 )
             ]
-            (debug "all data result count " (count r))
-            {:status 200
-                :headers {
-                    "Access-Control-Allow-Origin" "*"
-                    "Content-Type" "application/json ; charset=UTF-8"
-                }
-                :body (encryptWrt r)
-            }
+            (web-response func params @dbatom)
         )
     )
     (cp/GET "/data/get/inc" {params :params}
         (info "into get inc data" (js/write-str params))
-        (let [r (dba/get-table-inc-data @dbatom 
-                    (:dbname params) (:tablename params) (:keynum params)
+        (let [func (fn [p d]
+                    (dba/get-table-inc-data d 
+                        (:dbname p) (:tablename p) (:keynum p)
+                    )
                 )
             ]
-            ;(println r)
-            (debug "all inc result count" (count r) )
-                {:status 200
-                    :headers {
-                        "Access-Control-Allow-Origin" "*"
-                        "Content-Type" "application/json ; charset=UTF-8"
-                    }
-                    :body (encryptWrt r )
-                }  
+            (web-response func params @dbatom)
         )
     )    
     (route/not-found "Not Found")

@@ -1,6 +1,9 @@
 var Common={
 	init:function(){
-		this.setInput();
+		this.setInput();		
+	},
+	uiInit:function(){
+		this.selectDown();
 	},
 	setInput:function(){
 		$.sc2.placeholder({trigger:".popInput"});
@@ -49,12 +52,14 @@ var Common={
 		    if(uid){
 		      delLink.find("strong").html('退出登录');
 		    }else{
-		    	delLink.find("strong").html('<a href="#" class="loginBtn">登录</a>');
-		    }
-
+		    	location.href="/sql/home.html";
+		    	//delLink.find("strong").html('<a href="#" class="loginBtn">登录</a>');
+		    }	
+		
 		delLink.click(function(){
-			$(this).find("strong").html('<a href="#" class="loginBtn">登录</a>');
-			$.cookie("user_id",null);
+			//$(this).find("strong").html('<a href="#" class="loginBtn">登录</a>');
+			$.cookie("user_id",null,{path:"/sql/"});
+			location.href="/sql/home.html";
 		})
 	},
 	getTimes:function(){
@@ -70,15 +75,12 @@ var Common={
 	        hide: 1000
 	      }
 	    });
-
+	    		
 	},
-	getSelectTime:function(from,main){
+	getSelectTime:function(from,mainName){
 		var startTime=from;
-		$(".sqlTime",main).html("");
-		var name=main.attr("name");
-
-		Common.timer={};
-		Common.timer[name]=setInterval(function(){
+		
+		Common.timer[mainName]=setInterval(function(){
 			var currentTime=Common.getTimes(),
 				ms=currentTime-startTime;
 
@@ -95,7 +97,7 @@ var Common={
 				remainM<=9?remainM="0"+remainM:remainM=remainM;
 				remainS<=9?remainS="0"+remainS:remainS=remainS;
 
-				$(".sqlTime",main).html(remainH+":"+remainM+":"+remainS)
+				$("#sqlTab .body").find(".main[name="+mainName+"] .sqlTime").html(remainH+":"+remainM+":"+remainS);							
 		},1000);
 
 	},
@@ -112,7 +114,7 @@ var Common={
 				m<12?m=m+1:m=1;
 				h<=9?h="0"+h:h=h;
 				mi<=9?mi="0"+mi:mi=mi;
-				s<=9?s="0"+s:s=s;
+				s<=9?s="0"+s:s=s;			
 
 			return y+"-"+m+"-"+d+" "+h+":"+mi+":"+s;
 	},
@@ -149,14 +151,15 @@ var Common={
   setGrid:function(title,value,poptitle){//列名，值，弹窗标题，是否要开启选项
 
 	var params={
-	  "id":"收集器ID",
+	  "id":"查询ID",
 	  "name":"数据收集器名称",
 	  "recent-sync":"最后一次同步时间",
 	  "synced-data":"数据传输总量",
 	  "url":"收集器路径",
 	  "status":"状态",
+	  "reason":"原因",
 	  "操作":"操作"
-	}
+	}    
     var values=value,
         column=title;
     var allColumn=[];
@@ -173,9 +176,10 @@ var Common={
         "sPaginationType": "full_numbers",
         bLengthChange:false,
         bSort:true,
+        "aaSorting": [[ 2, "desc" ]],
+        bSortClasses:false,
         "aaData": values,
         "aoColumns":allColumn,
-        sScrollX:"100%",
         oLanguage:{
           "sInfo": "共 _TOTAL_ 条记录 _START_ 到 _END_ ",
           "sSearch":"搜索：",
@@ -185,11 +189,57 @@ var Common={
             "sLast": "尾页",
             "sNext": "下一页",
             "sPrevious": "上一页"
-          }
-        }
+          }                    
+        }     
       });
 
 
 
-  }
+  },
+  formatArr:function(arr){
+ 	  var column=[];	
+      for (var j=0,l=arr.length;j<l;j++){
+        if(typeof arr[j]!="undefined"){
+          column.push(arr[j]);
+        }
+      }
+      return column;
+  },
+  helpTabs:function(){
+	var helpList=$(".helpList a"),helpCon=$(".helpCon .helpDetail");
+
+	helpList.click(function(){
+		var index=helpList.index($(this));
+		$(this).parent().siblings().find("span").removeClass("openIcon").addClass("closeIcon");
+		$(this).find("span").removeClass("closeIcon").addClass("openIcon");
+		$(this).parent().siblings().removeClass("active");
+		$(this).parent().addClass("active");	
+		helpCon.eq(index).show().siblings().hide();
+
+		return false;
+
+	})  	
+  },
+  selectDown:function(){
+  	var selectDown=$(".topMenu1"),select=$(".selectMenu"),timer;
+  	selectDown.mouseenter(function(){
+  		$(this).addClass("activeDown");
+  		$(this).next().show();
+  	})
+  	selectDown.mouseleave(function(){
+  		var t=$(this);
+  		timer=setTimeout(function(){
+  			t.removeClass("activeDown");
+  			t.next().hide();
+  		},800)
+  	})  	
+
+  	select.hover(function(){
+  		clearTimeout(timer);
+  	},function(){
+  		$(this).hide();
+  		$(this).prev().removeClass("activeDown");
+  	})
+
+  }    	
 }

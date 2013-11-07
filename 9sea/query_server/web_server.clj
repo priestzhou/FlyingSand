@@ -293,8 +293,8 @@
         qname name
         _ (println (format "POST saved/?name=%s&app=%s&version=%s&db=%s&query=%s %s" app version db qname query (pr-str {:UserId user-id})))
         r-qid (backend/check-query-name qname)
-        s-time (unparse (with-zone (formatters :date-hour-minute-second)
-                          (time/time-zone-for-offset +8))(from-long (System/currentTimeMillis)))
+        s-time (unparse (formatters :date-hour-minute-second)
+                          (from-long (System/currentTimeMillis)))
         ]
         (prn "qname:" qname)
         (prn "r-qid:" r-qid)

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>用户中心</title>
+    <link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="all"/>    
+    <link rel="stylesheet" href="css/common.css" type="text/css" media="all"/>      
+
+</head>
+
+<body>
+    <div id="sqlWrap">
+        <div id="sqlWrapMain">
+
+    <div class="sqlBar">
+        <span class="loginInfo"></span>
+        <a href="home.html" target="_blank"><span class="sqlIcon homeIcon"></span>首页</a>｜
+        <a href="user.html" target="_blank"><span class="sqlIcon myIcon"></span>个人中心</a>｜
+        <a class="loginOut" href="#"><span class="sqlIcon loginOutIcon"></span><strong>退出登录</strong></a>｜
+        <a href="help.html" target="_blank"><span class="sqlIcon helpIcon"></span>帮助</a>
+    </div>
+
+    <div class="sqlHeader boxShadowStyle">
+
+            <div class="row-fluid">
+                <div class="span4">
+                    <a class="sqlIcon logoIcon" href="/sql/"></a>
+                </div>
+                <div class="span8" style="width:330px;float:right;">
+                    <div class="btn-group" style="float:left;">
+                        <a class="topMenu1" href="index.html" data-toggle="dropdown">
+                            <span class="sqlIcon selectIcon"></span>
+                            数据查询
+                            <span href="#" class="sqlIcon downIcon"></span>
+                        </a>
+                                                
+                        <ul class="dropdown-menu selectMenu" style="margin-left:40px;">
+                            <li>
+                                <a href="/sql/" target="_blank"><span class="sqlSIcon xunIcon"></span>查询操作</a>
+                            </li>
+                            <li>
+                                <a href="history.html" target="_blank"><span class="sqlSIcon hisIcon"></span>历史查询</a>
+                            </li>                           
+
+                        </ul>
+                    </div>
+
+                    <a style="float:left;" class="topMenu2" href="collectors.html"><span class="sqlIcon dbIcon"></span>收集器管理</a>
+                </div>                                  
+            </div>
+
+
+    </div>
+    <div class="container containerHelp">
+            <div class="sqlBread boxShadowStyle">
+                <a href="#">用户中心</a>
+            </div>
+
+            <div class="help clearFix">
+                <div class="helpList">
+                    <ul>
+                        <li class="active"><a href="#"><span class="sqlSIcon openIcon"></span>基本资料</a></li>
+                        <li><a href="#"><span class="sqlSIcon closeIcon"></span>重置密码</a></li>
+                    </ul>
+                </div>
+                <div class="helpCon">
+                   <form action="" class="registerForm helpDetail" style="display:block">
+                        <h3>请如实填写以下内容，让我们可以更好的为你提供服务。</h3>
+                        <div>
+                            <label for="">修改昵称：</label>
+                            <input name="name" type="text">
+                            <span class="formIcon rightIcon"></span><span>成功提示</span>
+                        </div>
+                        <div>
+                            <label for="">修改公司名称：</label>
+                            <input type="text">
+                            <span class="formIcon erorrIcon"></span><span>失败提示</span>
+                        </div>
+                        <div>
+                            <label for="">修改公司邮箱：</label>
+                            <input type="text">
+                            <span class="formIcon erorrIcon"></span><span>失败提示</span>
+                        </div>
+                        <div>
+                            <label for="">修改QQ：</label>
+                            <input type="text">
+                            <span class="formIcon erorrIcon"></span><span>失败提示</span>
+                        </div>
+                        <div>
+                            <label for="">修改手机：</label>
+                            <input type="text">
+                            <span class="formIcon erorrIcon"></span><span>失败提示</span>
+                        </div>                        
+                        <input type="submit" value="确认修改" class="submit_reg btn_blue_long">                        
+                    </form>
+                
+                    <form action="" class="registerForm helpDetail">
+                        <h3>请如实填写以下内容，让我们可以更好的为你提供服务。</h3>
+                        <div>
+                            <label for="">原始密码：</label>
+                            <input name="name" type="text">
+                            <span class="formIcon rightIcon"></span><span>成功提示</span>
+                        </div>
+                        <div>
+                            <label for="">新密码：</label>
+                            <input type="text">
+                            <span class="formIcon erorrIcon"></span><span>失败提示</span>
+                        </div>
+                        <div>
+                            <label for="">确认密码：</label>
+                            <input type="text">
+                            <span class="formIcon erorrIcon"></span><span>失败提示</span>
+                        </div>
+                        <input type="submit" value="重置密码" class="submit_reg btn_blue_long">                        
+                    </form>
+
+ 
+
+                </div>
+            </div>
+
+
+
+    </div>
+    
+</div>
+</div> 
+
+    <div id="footer">
+        Copyright &copy; 2013 WhaleMiner
+    </div>  
+
+
+    <script src="js/jquery-1.7.2.min.js" language="javascript"></script>
+    <script src="js/jquery.cookie.js" language="javascript"></script>    
+    <script src="js/common.js" language="javascript"></script>  
+<script>
+
+
+$(function(){       
+    Common.helpTabs();
+    Common.delCookie();    
+    Common.uiInit();
+})
+</script>                 
+</body>
+</html>

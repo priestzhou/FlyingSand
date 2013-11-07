@@ -28,9 +28,7 @@
     }
 )
 
-(def ^:parivate partStr "fs_agent")
-
-(def ^:parivate splitStr "\t")
+(def ^:private partStr "fs_agent")
 
 (defn- mysql-type-to-hive [colType]
     (->>
