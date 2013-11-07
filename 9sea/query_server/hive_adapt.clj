@@ -64,6 +64,38 @@
   (-> @hive-conn-str)
 )
 
+(def ^:private hive-db (ref {:classname "org.apache.hadoop.hive.jdbc.HiveDriver"
+                             :subprotocol "hive"
+                             :user ""
+                             :password ""
+                            }
+                       )
+)
+
+(def ^:private hive-conn-str (ref ""))
+
+(def ^:private table-type ["" "table" "ctas" "view"])
+
+(defn set-hive-db
+  [host port]
+  (dosync
+    (alter hive-db conj {:subname (format "//%s:%s" host port)})
+    (ref-set hive-conn-str (format "jdbc:hive://%s:%s" host port))
+  )
+  (prn "hive-db" @hive-db)
+  (prn "hive-conn-str" @hive-conn-str)
+)
+
+(defn get-hive-db
+  []
+  (-> @hive-db)
+)
+
+(defn get-hive-conn-str
+  []
+  (-> @hive-conn-str)
+)
+
 (defn- mysql-type-to-hive [colType]
     (->>
         colType
