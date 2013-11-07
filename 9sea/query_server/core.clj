@@ -241,17 +241,17 @@
         (do
           (hive/create-view hive-name hql)
           (orm/insert mysql/TblMetaStore 
-                      (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
-                                             :DBName (:database context-info) :TableName (:tablename context-info) 
-                                             :hive_name (:hive-name context-info) :NameSpaceType 3}]))
+            (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
+                          :DBName (:database context-info) :TableName (:tablename context-info) 
+                          :hive_name (:hive-name context-info) :NameSpaceType 3}]))
         )
         (= view-or-ctas :ctas)
         (do
           (hive/create-CTAS hive-name hql)
           (orm/insert mysql/TblMetaStore 
-                      (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
-                                             :DBName (:database context-info) :TableName (:tablename context-info) 
-                                             :hive_name hive-name :NameSpaceType 2}]))
+            (orm/values [{:NameSpace ns :AppName (:appname context-info) :AppVersion (:appversion context-info)
+                         :DBName (:database context-info) :TableName (:tablename context-info) 
+                         :hive_name hive-name :NameSpaceType 2}]))
         )
       )
       (update-result-map 
