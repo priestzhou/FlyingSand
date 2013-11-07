@@ -48,7 +48,7 @@
 )
 
 
-(defn- filter-query-by-time [query]
+(defn- get-query-by-time [query]
     (let [starTime (:starttime query)
             endTime (:endtime query)
             timeSpan (:timeSpan query)
@@ -68,16 +68,16 @@
                 )
         ]
         (cond 
-            (< now starTime) false
-            (< endTime now) false
-
+            (< now starTime) nil
+            (< endTime now) nil
+            (not (empty? timeList) ) (first timeList)
         )
     )
 )
 
 (defn timing-query-check []
     (try 
-        ()
+        (let [])
         (Thread/sleep (config))
         (catch Exception e
             (error " the timing query check failed " :except (except->str e))
