@@ -230,8 +230,8 @@
           _ (info "namespace:" ns)
           hive-name (:hive-name context-info)
           log-message (if (= view-or-ctas :view) 
-                        (str "create view " (:tablename context-info) "successed!")
-                        (str "create table " (:tablename context-info) "successed!")
+                        (str "create view " (:tablename context-info) " successed!")
+                        (str "create table " (:tablename context-info) " successed!")
                       )
 
          ]
@@ -252,11 +252,13 @@
                                              :hive_name hive-name :NameSpaceType 2}]))
         )
       )
-      (update-result-map q-id "succeeded" {:count 1 :titles nil :values nil} nil nil log-message)
+      (update-result-map 
+        q-id "succeeded" {:count 1 :titles nil :values nil} nil nil :log-message log-message)
     )
   (catch SQLException sql-ex
     (error "can't create view/table" (util/except->str sql-ex))
-    (update-result-map q-id "failed" nil (str "can't create view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
+    (update-result-map 
+      q-id "failed" nil (str "can't create view/table " (:hive-name context-info) (.getMessage sql-ex)) nil)
   )
   )
 )
@@ -270,8 +272,8 @@
           drop-violate? (if (= (:NameSpace (first ns-type)) 2) true false)
           _ (info "namespace:" ns)
           log-message (if (= view-or-ctas :view) 
-                        (str "drop view " (:tablename context-info) "successed!")
-                        (str "drop table " (:tablename context-info) "successed!")
+                        (str "drop view " (:tablename context-info) " successed!")
+                        (str "drop table " (:tablename context-info) " successed!")
                       )
           ]
       (if drop-violate? 
@@ -285,7 +287,8 @@
             (hive/drop-CTAS (:hive-name context-info))
           )
           (orm/delete mysql/TblMetaStore (orm/where {:NameSpace ns}))
-          (update-result-map q-id "succeeded" {:count 0 :titles nil :values nil} nil nil log-message)
+          (update-result-map 
+            q-id "succeeded" {:count 0 :titles nil :values nil} nil nil :log-message log-message)
        )
      )
    )
