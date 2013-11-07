@@ -22,4 +22,3 @@
 
     )
 )
-;" java -cp  .:monitor.jar monitor.mian "
