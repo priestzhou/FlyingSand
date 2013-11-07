@@ -352,7 +352,7 @@
 )
 
 (defn- updata-agent-sync-time [agentid]
-    (let [now (coe/unparse (tformat/formatters :date-hour-minute-second) (time/now))
+    (let [now (tformat/unparse (tformat/formatters :date-hour-minute-second) (time/now))
             _ (debug "updatetime" now)
             sql (str "update TblAgent set LastSyncTime=\"" now "\" "
                     " where id =" agentid
