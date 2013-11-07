@@ -16,6 +16,8 @@
         [utilities.aes :as aes]
         [query-server.config :as config]
         [clj-time.core :as time]
+        [clj-time.format :as tformat]
+        [clj-time.coerce :as coe]
     )
     (:gen-class)
 )
@@ -350,7 +352,7 @@
 )
 
 (defn- updata-agent-sync-time [agentid]
-    (let [now (time/date-time (time/now))
+    (let [now (coe/unparse (tformat/formatters :date-hour-minute-second) (time/now))
             _ (debug "updatetime" now)
             sql (str "update TblAgent set LastSyncTime=\"" now "\" "
                     " where id =" agentid
