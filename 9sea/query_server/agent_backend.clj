@@ -52,15 +52,25 @@
 
 (defn select-agent
   [account-id]
-  (let [rs (orm/select mysql/TblAgent (orm/fields :id [:AgentState :status] [:AgentUrl :url]
-                                                   [:LastSyncTime :recent-sync] [:AgentName :name])
-                        (orm/where {:AccountID account-id}))]
+  (let [rs (orm/exec-raw (mysql/get-korma-db) ["select id,AgentState as status,AgentUrl as url,
+                                               date_format(LastSyncTime,'%Y-%m-%d %H:%i:%s') as synctime,
+                                               AgentName as name from TblAgent where AccountID=?" 
+                                               [account-id]] :results)
+       ]
   (for [
         x rs
-        :let [i (:status x)]
+        :let [i (:status x)
+              s_time (if (nil? (:synctime x))
+                       0
+                       (to-long 
+                       (parse (formatter "yyyy-MM-dd H:mm:ss") (:synctime x)))
+                     )
+                      
+              _ (info "recent-sync time:" s_time)
+              ]
         ]
         
-        (assoc x :status (get agent-status i))
+        (assoc x :status (get agent-status i) :recent-sync s_time)
   ))
 )
 
