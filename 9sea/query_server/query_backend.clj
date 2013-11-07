@@ -192,7 +192,7 @@
       res
       )
   )
- )
+)
 
 (defn add-children 
 ; return a vector of children based on group-set items
