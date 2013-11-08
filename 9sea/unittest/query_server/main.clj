@@ -82,7 +82,7 @@
 )
 
 (suite "create view-ctas"
-      (:fact test-create-view-in-two-version
+      (:fact query:view:test-create-view-in-two-version
               (
                shark/translate-query test-context "create view view1 as select a.* from v1.acter a join v2.acter b on a.id=b.id"
               )
@@ -90,40 +90,40 @@
 {:clause-type :create-clause, :type :view, :appname "御剑三国", :appversion "v1", :tablename "view1", :hql "CREATE VIEW vn_ed14e5f64a25f8fbdb0fccb42f8668e8c3323189 AS SELECT a.* FROM tn_84e56395378035cd6850fb913f9658a130d976f4 a JOIN tn_24e56395378035cd6850fb913f9658a130d976f4 b ON (a.id = b.id)", :hive-name "vn_ed14e5f64a25f8fbdb0fccb42f8668e8c3323189"}              
           
        )
-       (:fact test-create-view
+       (:fact query:view:test-create-view
               (
                shark/translate-query test-context "create view v1 as select * from acter"
               )
           :is
-          {:clause-type :create-clause, :type :view, :tablename "v1", :hql "SELECT * FROM tn_84e56395378035cd6850fb913f9658a130d976f4"}
+          {:clause-type :create-clause, :type :view, :appname "御剑三国", :appversion "v1", :tablename "v1", :hql "CREATE VIEW vn_65581ccac20e6dc57a2c59331dd536de74b9f540 AS SELECT * FROM tn_84e56395378035cd6850fb913f9658a130d976f4", :hive-name "vn_65581ccac20e6dc57a2c59331dd536de74b9f540"}
        )
-       (:fact test-drop-view
+       (:fact query:view:test-drop-view
               (
                shark/translate-query test-context' "drop view v1"
               )
           :is
-          {:clause-type :drop-clause, :type :view, :tablename "v1", :hive-name "vn_79719c20120d0a7ef0e4d87c873a985eba87fc07"}
+          {:clause-type :drop-clause, :type :ctas, :appname "御剑三国", :appversion "1.0", :tablename "v1", :hql "DROP VIEW IF EXISTS vn_79719c20120d0a7ef0e4d87c873a985eba87fc07"}
        )
-       (:fact test-select-table
+       (:fact query:view:test-select-table
               (
                shark/translate-query test-context "select * from acter"
               )
           :is
-          {:clause-type :select-clause :hql "SELECT * from tn_84e56395378035cd6850fb913f9658a130d976f4"}
+          {:clause-type :select-clause, :hql "SELECT * FROM tn_84e56395378035cd6850fb913f9658a130d976f4"}
       )
-     (:fact test-create-ctas
+     (:fact query:view:test-create-ctas
             (
              shark/translate-query test-context "create table t1 as select * from acter"
             )
         :is
-        {:clause-type :create-clause, :type :ctas, :tablename "t1", :hql "SELECT * FROM tn_84e56395378035cd6850fb913f9658a130d976f4"}
+        {:clause-type :create-clause, :type :ctas, :appname "御剑三国", :appversion "v1", :tablename "t1", :hql "CREATE TABLE tn_078731f2a2b2eff6bec4fc7e6f0bcfa35a733a04 AS SELECT * FROM tn_84e56395378035cd6850fb913f9658a130d976f4", :hive-name "tn_078731f2a2b2eff6bec4fc7e6f0bcfa35a733a04"}
      )
-    (:fact test-drop-ctas
+    (:fact query:view:test-drop-ctas
             (
              shark/translate-query test-context' "drop table t1"
             )
             :is
-            {:clause-type :drop-clause, :type :ctas, :tablename "t1", :hive-name "tn_89719c20120d0a7ef0e4d87c873a985eba87fc07"}
+           {:clause-type :drop-clause, :type :ctas, :appname "御剑三国", :appversion "1.0", :tablename "t1", :hql "DROP TABLE IF EXISTS tn_89719c20120d0a7ef0e4d87c873a985eba87fc07"}
     )
 
 )

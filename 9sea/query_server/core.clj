@@ -229,11 +229,11 @@
     (let [ns (str (:accountid context-info) "." (:appname context-info)  
                   "." (:appversion context-info) "." (:database context-info) "." (:tablename context-info))
           _ (info "namespace:" ns)
-          log-message (if (= view-or-ctas :view) 
-                        (str "create view " (:tablename context-info) " successed!")
-                        (str "create table " (:tablename context-info) " successed!")
-                      )
-          shark-query-result (hive/run-shark-query' hql)
+          table-str (cond (= view-or-ctas :view) "view"
+                          (= view-or-ctas :ctas) "table"
+                    )
+          log-message (str "create " table-str " " (:tablename context-info) " successed!")
+          shark-query-result (hive/run-shark-query' ""  hql)
           shark-ret-code (:status shark-query-result)
 
          ]
@@ -252,19 +252,25 @@
         )
         (update-result-map 
           q-id "failed" nil 
-          (str "can't create view/table " (:tablename context-info) "\n"
+          (str "can't create " table-str " " (:tablename context-info) " \n"
                (.getMessage (:exception shark-query-result))) nil)
       )
     )
     (catch SQLException sql-ex
       ; drop shark table first
-      (error "create table error:" (util/except->str sql-ex))
-      (let [ drop-table-hql (str "drop table " (:hive-name context-info))
-             drop-table-ret (hive/run-shark-query' drop-table-hql)
+      (error "create table/view error:" (util/except->str sql-ex))
+      (let [ 
+            table-str (cond (= view-or-ctas :view) "view"
+                            (= view-or-ctas :ctas) "table"
+                      )
+            drop-table-hql (cond (= view-or-ctas :view) (str "drop view " (:hive-name context-info))
+                                  (= view-or-ctas :ctas) (str "drop table "(:hive-name context-info))
+                            )
+             drop-table-ret (hive/run-shark-query' "" drop-table-hql)
            ]
         (if (= (:status drop-table-ret) :succeeded)
           (update-result-map q-id "failed" nil
-              (str "create view/table " (:tablename context-info) " failed\n, please try it again!") nil)
+              (str "create " table-str " " (:tablename context-info) " failed\n, please try it later!") nil)
           (do
             (error "shark error:" (util/except->str (:exception drop-table-ret)))
             (update-result-map q-id "failed" nil
@@ -272,9 +278,6 @@
           )
        )
       )
-      (update-result-map 
-        q-id "failed" nil 
-        (str "can't create view/table " (:tablename context-info) (.getMessage sql-ex)) nil)
     )
   )
 )
@@ -354,7 +357,9 @@
                             context
                     )
         _ (prn "new context:" new-context)
-        hql (trans/dump-hive new-context dfg)
+        hql (cond (= query-type :create-clause) (trans/dump-hive new-context dfg)
+                  (= query-type :drop-clause) (trans/dump-hive new-context (assoc dfg :if-exists true))
+            )
       ]
     {
      :ns new-ns
