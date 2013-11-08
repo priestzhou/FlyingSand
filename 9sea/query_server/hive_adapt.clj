@@ -60,11 +60,6 @@
   (prn "hive-conn-str" @hive-conn-str)
 )
 
-(defn get-hive-conn-str
-  []
-  (-> @hive-conn-str)
-)
-
 (defn get-hive-db
   []
   (-> @hive-db)
@@ -104,7 +99,10 @@
       )
   )
 )
+<<<<<<< HEAD
 
+=======
+>>>>>>> cef067f86b50701f2de0483245f93a64f6737c9d
 (defn run-shark-query-with-except-throw
   [query-str]
     (prn (str "query-str:" query-str))
