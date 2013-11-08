@@ -34,7 +34,7 @@ CREATE TABLE `TblAgent` (
   `ConfigHash` varchar(50) DEFAULT NULL,
   `AgentState` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -197,7 +197,7 @@ CREATE TABLE `TblUsers` (
   `Password` char(40) DEFAULT NULL,
   `AccountId` int(11) DEFAULT NULL,
   PRIMARY KEY (`UserId`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -224,7 +224,7 @@ CREATE TABLE `history_query` (
   `submit_time` datetime DEFAULT NULL,
   `execution_status` int(11) DEFAULT NULL,
   PRIMARY KEY (`query_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -246,3 +246,37 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2013-10-30 15:41:04
+
+DROP TABLE IF EXISTS `TblTimingTaskLog`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `TblTimingTaskLog` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `TimingQueryID` int(11) NOT NULL ,
+  `queryID` bigint(20) NOT NULL,
+  `Status` varchar(50) NOT NULL,
+  `Runtime` bigint(20) NOT NULL,
+
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `TblTimingQuery`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `TblTimingQuery` (
+  `TimingQueryID` int(11) NOT NULL AUTO_INCREMENT,
+  `AccountID` int(11) DEFAULT NULL,
+  `UserID` int(11) DEFAULT NULL,
+  `AppName` varchar(30) DEFAULT NULL,
+  `AppVersion` varchar(30) DEFAULT NULL,  
+  `SqlString` text DEFAULT NULL,
+  `StartTime` bigint(20) DEFAULT NULL,
+  `EndTime` bigint(20) DEFAULT NULL,
+  `TimeSpan` bigint(20) DEFAULT NULL,
+  `ChartSetting` text DEFAULT NULL,
+  PRIMARY KEY (`TimingQueryID`)
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
+
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+
