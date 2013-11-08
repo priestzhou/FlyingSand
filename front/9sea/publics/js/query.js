@@ -584,7 +584,7 @@ var params={
                                                       submitT.unblock();
 
 
-                                                      var url ="/sql"+ data.url;
+                                                      var url ="/sqldemo"+ data.url;
                                                       $(".progress .bar",main).css("width","100%").text("100%");
                                                       setTimeout(function(){$(".progress",main).css("display","none");},800);
 
@@ -966,7 +966,7 @@ var params={
 
     $(".downResultLink").live("click",function(){
         var csv_url=$(".sqlDownload",current).attr("data-url");
-        window.prompt ("请按CTRL+C复制到剪贴板", location.href + csv_url);
+        window.prompt ("请按CTRL+C复制到剪贴板", location.protocol + "//" + location.host + csv_url);
         return false;
       });
 
