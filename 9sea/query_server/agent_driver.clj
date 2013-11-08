@@ -274,8 +274,8 @@
 )
 
 (defn- query-agent-schema [agentid]
-    (let [sql (str "select *  from TblAgent c left join TblSchema a on c.id=a.agentid 
-                left join TblMetaStore b " 
+    (let [sql (str "select *  from TblAgent c left join TblSchema a 
+                on c.id=a.agentid left join TblMetaStore b " 
                 " on c.AppName=b.AppName and c.AppVersion=b.AppVersion and 
                 a.Namespace = b.Namespace   where agentid ='" agentid "'"
                 " and a.Namespace is not null and b.Namespace is not null")
@@ -546,17 +546,38 @@
         (let [tablelist (query-agent-schema agentid)]
             (when (= type "both")
                 (doall
-                    (map (partial get-table-data-both agentid agentname agenturl) tablelist)
+                    (map 
+                        (partial get-table-data-both 
+                            agentid 
+                            agentname 
+                            agenturl
+                        ) 
+                        tablelist
+                    )
                 )
             )
             (when (= type "inc")
                 (doall
-                    (map (partial get-table-data-inc agentid agentname agenturl) tablelist)
+                    (map 
+                        (partial get-table-data-inc 
+                            agentid 
+                            agentname 
+                            agenturl
+                        ) 
+                        tablelist
+                    )
                 )
             )
             (when (= type "all")
                 (doall
-                    (map (partial get-table-data-all agentid agentname agenturl) tablelist)
+                    (map 
+                        (partial get-table-data-all 
+                            agentid 
+                            agentname 
+                            agenturl
+                        ) 
+                        tablelist
+                    )
                 )
             )        
         )
