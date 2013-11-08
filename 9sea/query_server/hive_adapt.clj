@@ -43,21 +43,7 @@
 (def ^:private hive-conn-str (ref ""))
 
 (def ^:private table-type ["" "table" "ctas" "view"])
-
-(defn set-hive-db
-  [host port]
-  (dosync
-    (alter hive-db conj {:subname (format "//%s:%s" host port)})
-    (ref-set hive-conn-str (format "jdbc:hive://%s:%s" host port))
-  )
-  (prn "hive-db" @hive-db)
-  (prn "hive-conn-str" @hive-conn-str)
-)
-
-(defn get-hive-db
-  []
-  (-> @hive-db)
-)
+(def ^:private hive-conn-str (ref ""))
 
 (defn get-hive-conn-str
   []
@@ -98,9 +84,7 @@
       )
   )
 )
-<<<<<<< HEAD
 
-=======
 (defn run-shark-query-with-except-throw
   [query-str]
     (prn (str "query-str:" query-str))
@@ -109,7 +93,6 @@
         (doall rs)
         ))
 )
->>>>>>> make create/drop view reliable
 
 (defn create-table [tn collist]
     (let [coll (map  get-column collist)
