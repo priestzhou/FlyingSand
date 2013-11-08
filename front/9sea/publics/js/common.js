@@ -58,7 +58,7 @@ var Common={
 
 		delLink.click(function(){
 			//$(this).find("strong").html('<a href="#" class="loginBtn">登录</a>');
-			$.cookie("user_id",null,{path:"/sqldemo/"});
+			$.cookie("user_id",null);
 			location.href="/sqldemo/";
 		})
 	},
