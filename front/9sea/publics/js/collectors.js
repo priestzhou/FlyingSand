@@ -21,7 +21,7 @@ var Collectors = {
         var name=$(".colName").val(),
             url=$(".colUrl").val();
         $.ajax({
-              url: "/sql/collectors/",
+              url: "/sqldemo/collectors/",
               type: 'post',
               data:{
                         "name": name,
@@ -46,7 +46,7 @@ var Collectors = {
   },
   getCollectors:function(){
         $.ajax({
-              url: "/sql/collectors/",
+              url: "/sqldemo/collectors/",
               type: 'get',
               data:{
                         "timestamp": Common.getTimes()
@@ -102,7 +102,7 @@ var Collectors = {
                       $(this).parent().html("");
                     })
                   }
-                  
+
                   titles.push();
                   Common.setGrid(titles,v,"<span class='sqlIcon tipIcon'></span>常用查询");
                 }
@@ -120,7 +120,7 @@ var Collectors = {
 
       var html='<textarea class="colDelTa popTextarea" placeholder="删除理由" value=""/><p><a id="colDel" class="btn_blue_long" href="javascript:void(0);" rel="'+id+'">提交</a></p>';
       Query.setPop("<span class='sqlIcon tipIcon tipCommonIcon'></span>删除收集器",html);
-      
+
     })
 
     $("#colDel").live("click",function(){
@@ -130,7 +130,7 @@ var Collectors = {
           return false;
         }
         $.ajax({
-              url: "/sql/collectors/"+id,
+              url: "/sqldemo/collectors/"+id,
               type: 'delete',
               data:{
                         "timestamp": Common.getTimes()
@@ -168,7 +168,7 @@ var Collectors = {
 
      $("#colEditBtn").live("click",function(){
         $.ajax({
-              url: "/sql/collectors/"+ $("#colEditId").val(),
+              url: "/sqldemo/collectors/"+ $("#colEditId").val(),
               type: 'put',
               data:{
                         "name": $(".colName").val(),
@@ -218,7 +218,7 @@ var Collectors = {
     var obj=$("#checkCollectors");
     obj.click(function(){
         $.ajax({
-              url: "/sql/collectors/",
+              url: "/sqldemo/collectors/",
               type: 'get',
               data:{
                         "timestamp": Common.getTimes()
@@ -251,7 +251,7 @@ var Collectors = {
                             }
 
                       }
-              
+
                   }
 
                   Collectors.setPopGrid(titles,v,"<span class='sqlIcon tipIcon'></span>收集器历史操作");
@@ -291,7 +291,7 @@ var Collectors = {
           "sPaginationType": "full_numbers",
           bLengthChange:false,
           bSort:false,
-          bSortClasses:false,            
+          bSortClasses:false,
           "aaData": values,
           "aoColumns":allColumn,
           oLanguage:{

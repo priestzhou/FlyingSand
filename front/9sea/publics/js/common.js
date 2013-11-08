@@ -27,7 +27,7 @@ var Common={
 	        var email=$(".loginPop > input:eq(0)").val(),
 	            password=$(".loginPop > input:eq(1)").val();
 	        $.ajax({
-	            url: '/sql/',
+	            url: '/sqldemo/',
 	            type: 'post',
 	            data:{
 	                      "email":email,
@@ -52,14 +52,14 @@ var Common={
 		    if(uid){
 		      delLink.find("strong").html('退出登录');
 		    }else{
-		    	location.href="/sql/";
+		    	location.href="/sqldemo/";
 		    	//delLink.find("strong").html('<a href="#" class="loginBtn">登录</a>');
 		    }
 
 		delLink.click(function(){
 			//$(this).find("strong").html('<a href="#" class="loginBtn">登录</a>');
-			$.cookie("user_id",null,{path:"/sql/"});
-			location.href="/sql/";
+			$.cookie("user_id",null,{path:"/sqldemo/"});
+			location.href="/sqldemo/";
 		})
 	},
 	getTimes:function(){
@@ -120,7 +120,7 @@ var Common={
 	},
 	isLogin:function(){
         $.get(
-        "/sql/", {
+        "/sqldemo/", {
           "timestamp": Common.getTimes()
         },
         function(data,status) {

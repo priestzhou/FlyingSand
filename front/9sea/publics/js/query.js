@@ -75,7 +75,7 @@ var Query = {
 
 /*    var uid=$.cookie("user_id");
     if(!uid){
-      location.href="/sql/";
+      location.href="/sqldemo/";
       return;
     }*/
 
@@ -170,7 +170,7 @@ var Query = {
   },
   getMeta:function(t,setting){
     $.get(
-      "/sql/meta", {
+      "/sqldemo/meta", {
 
       },
       function(data,status) {
@@ -509,7 +509,7 @@ var params={
       submitT.data("n",1)
 
                 $.ajax({
-                    url: "/sql/queries/",
+                    url: "/sqldemo/queries/",
                     type: 'post',
                     data:{
                         "app":pro,
@@ -530,7 +530,7 @@ var params={
                             //$("#sqlDownload").attr("data-id",id);
 
                               $.ajax({
-                                  url: "/sql/queries/"+id+"/",
+                                  url: "/sqldemo/queries/"+id+"/",
                                   type: 'get',
                                   data:{
                                       "timestamp": Common.getTimes()
@@ -560,7 +560,7 @@ var params={
 
                                             Query.getResult[mainName]=setInterval(function(){
                                                 $.get(
-                                                "/sql/queries/"+id+"/", {
+                                                "/sqldemo/queries/"+id+"/", {
                                                   "timestamp": Common.getTimes()
                                                 },
                                                 function(data,status) {
@@ -677,7 +677,7 @@ var params={
           return false;
         }
         $.ajax({
-            url: '/sql/saved/',
+            url: '/sqldemo/saved/',
             type: 'post',
             data:{
                       "name":name,
@@ -703,7 +703,7 @@ var params={
     })
     openCommon.live("click",function(){
         $.get(
-        "/sql/saved/", {
+        "/sqldemo/saved/", {
           "timestamp": Common.getTimes()
         },
         function(data,status) {
@@ -739,7 +739,7 @@ var params={
 
     openHistory.live("click",function(){
         $.get(
-        "/sql/queries/", {
+        "/sqldemo/queries/", {
           "timestamp": Common.getTimes()
         },
         function(data,status) {
@@ -778,7 +778,7 @@ var params={
   },
   getHistory:function(){
         $.get(
-        "/sql/queries/", {
+        "/sqldemo/queries/", {
           "timestamp": Common.getTimes()
         },
         function(data,status) {
@@ -894,7 +894,7 @@ var params={
     $(".tablesDel").live("click",function(){
         var t=$(this),id=t.attr("rel");
         $.ajax({
-            url: '/sql/saved/'+id+"/",
+            url: '/sqldemo/saved/'+id+"/",
             type: 'delete',
             data:{
 
@@ -927,7 +927,7 @@ var params={
         if(url=="null"){
           Boxy.alert("无可下载的记录");
         }else{
-          location.href="/sql/"+url;
+          location.href="/sqldemo/"+url;
         }
 
     })
@@ -943,7 +943,7 @@ var params={
             location.href=csv_url;
           }
 /*          $.ajax({
-              url: '/sql/queries/'+qid,
+              url: '/sqldemo/queries/'+qid,
               //url: csv_url,
               type: 'get',
               data:{
