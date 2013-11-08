@@ -9,7 +9,8 @@
         [clojure.java.jdbc :as jdbc]
         [clojure.data.json :as js]
         [utilities.core :as uc]
-
+        [clj-time.core :as time]
+        [clj-time.coerce :as coerce]
         [hdfs.core :as hc]
         [query-server.mysql-connector :as mysql]
         [query-server.config :as config]
@@ -50,7 +51,7 @@
 )
 
 (defn- get-now []
-    
+    (coerce/to-long (time/now))
 )
 
 (defn- get-query-from-db []
@@ -58,10 +59,10 @@
 )
 
 (defn- get-query-by-time [query]
-    (let [starTime (:starttime query)
+    (let [startTime (:starttime query)
             endTime (:endtime query)
             timeSpan (:timeSpan query)
-            now (System/currentTimeMillis)
+            now (get-now)
             timeList (->> 
                     startTime
                     (iterate #(+ timeSpan % ))
@@ -77,7 +78,7 @@
                 )
         ]
         (cond 
-            (< now starTime) nil
+            (< now startTime) nil
             (< endTime now) nil
             (not (empty? timeList) ) (first timeList)
         )
@@ -114,35 +115,49 @@
     )
 )
 
-(defn- wait-for-task [qid retryTimes]
+(defn- add-task-run-record [qid status runtime]
+
+)
+
+(defn- wait-for-task [qid runtime retryTimes]
     (let [result (qb/get-query-result qid)]
         (cond 
             (or (nil? result) (= "failed" (:status result))) 
             (do 
-                (add-task-run-record qid "failed" )
+                (add-task-run-record qid "failed" runtime)
                 (error "the query failed or can't find" :qid qid)
+                nil
             )
             (= "running" (:status result))
             (do 
                 (when (= retryTimes (config/get-key :timing-query-retryTimes))
                     (error "the query time out" :qid qid)
-                    
                 )
                 (Thread/sleep (config/get-key :timing-query-runner-interval))
-                (recur qid (+ 1 retryTimes))
+                (recur qid runtime (+ 1 retryTimes))
+            )
+            (= "succeeded" (:status result))
+            (do 
+                (info "the query succeeded " :qid qid)
+                (add-task-run-record qid "succeeded" runtime)
+                result
             )
         )
     )
+)
+
+(defn- check-task-result [result]
 
 )
 
 (defn- submit-task [task]
     (let [{:keys [timing_query_id appname appversion accountid sqlstr userid]} task
             context (ws/gen-context accountid appname appversion nil)
-            qid (submit-query context userid sqlstr)
+            qid (qb/submit-query context userid sqlstr)
+            runtime (:task-run-time task)
+            result (wait-for-task qid runtime 0)
         ]
-        (wait-for-task qid 0)
-        (check-task-result (qb/get-query-result qid))
+        (check-task-result result)
     )
 )
 
@@ -165,7 +180,7 @@
                 task-list
                     (->>
                         query-list
-                        (map #(vector % (get-query-by-time% )))
+                        (map #(vector % (get-query-by-time %)))
                         (filter 
                             #(->>
                                 %
@@ -175,7 +190,6 @@
                             )
                         )
                     )
-
             ]
             (map add-to-task-queue task-list)
         )
