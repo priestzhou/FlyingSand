@@ -60,21 +60,21 @@
           (config/get-key :shark-port)
         )
         
-        (future 
-            (as/new-agent-check)
-        )
-        (future 
-            (as/inc-data-check)
-        )
-        (future
-            (do
-                (Thread/sleep 60000)
-                (as/all-data-check)
-            )
-        )
-        (future 
-            (as/mismatch-agent-check)
-        )        
+;        (future 
+;            (as/new-agent-check)
+;        )
+;        (future 
+;            (as/inc-data-check)
+;        )
+;        (future
+;            (do
+;                (Thread/sleep 60000)
+;                (as/all-data-check)
+;            )
+;        )
+;        (future 
+;            (as/mismatch-agent-check)
+;        )        
         (web/start opts)
     )
 )

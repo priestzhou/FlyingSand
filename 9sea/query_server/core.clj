@@ -239,7 +239,7 @@
 	ret-result (transform-result rs)
         filename (format "%s/%d_%d_result.csv" (config/get-key :result-file-dir) q-id q-time)
         csv-url (format "/result/%d_%d_result.csv" q-id q-time)
-        count (get-count-by-qid q-id)
+        count (count ret-result)
        ]
         (debug (format "result count for qid:%s is %s" q-id count))
     (let [res (assoc ret-result :count count)]
@@ -273,7 +273,7 @@
       dfg (trans/parse-sql context query-str)
       hive-query (trans/dump-hive context dfg)
           ret-rs (execute-query hive-query)]
-      (future (execute-count-query q-id hive-query))
+    ;  (future (execute-count-query q-id hive-query))
       (process-query q-id ret-rs)
     )
   (catch Exception ex
