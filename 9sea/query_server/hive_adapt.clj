@@ -91,20 +91,26 @@
       (sql/with-query-results rs [query-str]
         (doall rs)
         ))
+    {:status :succeeded}
     (catch Exception exception
       (error "run shark query:" (util/except->str exception))
-      ))
-)
-
-(defn run-shark-query-with-except-throw
-  [query-str]
-  (info (str "query-str:" query-str))
-  (sql/with-connection (get-hive-db)
-    (sql/with-query-results rs [query-str]
-      (doall rs))
+      {:status :failed :exception exception}
+      )
   )
 )
+<<<<<<< HEAD
 
+=======
+(defn run-shark-query-with-except-throw
+  [q-id query-str]
+    (debug "run-shark-query" :qid q-id)
+    (prn (str "query-str:" query-str))
+    (sql/with-connection (get-hive-db)
+      (sql/with-query-results rs [query-str]
+        (doall rs)
+        ))
+)
+>>>>>>> make create/drop view reliable
 
 (defn create-table [tn collist]
     (let [coll (map  get-column collist)
