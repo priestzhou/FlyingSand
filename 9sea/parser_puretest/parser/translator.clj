@@ -581,7 +581,7 @@
     )
 )
 
-(suite "view"
+(suite "view ctas"
     (:fact view:create
         (let [
             dfg (trans/parse-sql context "CREATE VIEW vw AS select * from tbl")
@@ -630,6 +630,11 @@
         :is
         "DROP VIEW hiveview"
     )
+    (:fact drop:view:if-exists
+        (sql->hive viewed-context "DROP VIEW IF EXISTS vw")
+        :is
+        "DROP VIEW IF EXISTS hiveview"
+    )
     (:fact create:ctas
         (let [
             dfg (trans/parse-sql context "CREATE TABLE ctas AS select * from tbl")
@@ -661,5 +666,10 @@
         (sql->hive ctas-context "DROP TABLE app.ctas")
         :is
         "DROP TABLE hivectas"
+    )
+    (:fact drop:ctas:if-exists
+        (sql->hive ctas-context "DROP TABLE IF EXISTS ctas")
+        :is
+        "DROP TABLE IF EXISTS hivectas"
     )
 )

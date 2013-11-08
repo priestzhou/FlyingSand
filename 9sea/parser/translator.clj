@@ -730,11 +730,15 @@
                     )
                 )
             )
-            #{:drop-view :drop-ctas} (let [hiveview (:name dfg)]
-                (case (:type dfg)
-                    :drop-view (format "DROP VIEW %s" (:hive-name hiveview))
-                    :drop-ctas (format "DROP TABLE %s" (:hive-name hiveview))
+            #{:drop-view :drop-ctas} (let [
+                hive-name (:hive-name (:name dfg))
+                cmd-str (case (:type dfg)
+                    :drop-view "DROP VIEW"
+                    :drop-ctas "DROP TABLE"
                 )
+                if-str (if (:if-exists dfg) "IF EXISTS " "")
+                ]
+                (format "%s %s%s" cmd-str if-str hive-name)
             )
             (dump-hive:value-expr dfg)
         )
