@@ -14,7 +14,7 @@
         [utilities.parse :as prs]
         [query-server.config :as config]
         [query-server.mysql-connector :as mysql]
-        
+
     )
     (:use
         [compojure.core :only (defroutes GET PUT POST DELETE HEAD ANY)]
@@ -97,8 +97,8 @@
                 (let [
                     log (-> (@results qid) (:log) (.concat (format "stage %d\n" current-stage)))
                     ]
-                    (alter results 
-                        update-in [qid] 
+                    (alter results
+                        update-in [qid]
                         assoc :progress [current-stage total-stages] :log log
                     )
                 )
@@ -111,9 +111,9 @@
                 (dosync
                     (alter results
                         update-in [qid]
-                        assoc 
-                            :result result 
-                            :status "succeeded" 
+                        assoc
+                            :result result
+                            :status "succeeded"
                             :progress [total-stages total-stages]
                             :url (format "queries/%d/csv" qid)
                             :duration (- now (:submit-time (@results qid)))
@@ -221,7 +221,7 @@
             )
       )
 )
-      
+
 (defn get-result [qid]
     (let [
         qid (Long/parseLong qid)
@@ -229,7 +229,7 @@
         result (backend/get-query-result qid)
          ]
         (println result)
-        (if (nil? result) 
+        (if (nil? result)
           {
             :status 404
           }
@@ -248,7 +248,7 @@
         )
     )
 )
- 
+
 (defn get-meta [cookies]
     (let [user-id (extract-user-id cookies)
           account-id (get-account-id user-id)
@@ -256,14 +256,14 @@
           ]
       (dosync
         (ref-set meta-tree (backend/get-metastore-tree account-id))
-      ) 
+      )
       (if (nil? @meta-tree) (println "get meta error!")
         (do
          (println "GET meta" (pr-str {:UserId user-id}))
          {
             :status 200
             :headers {"Content-Type" "application/json"}
-            :body (json/write-str @meta-tree) 
+            :body (json/write-str @meta-tree)
          }
         )
       )
@@ -299,7 +299,7 @@
         (prn "qname:" qname)
         (prn "r-qid:" r-qid)
         (authenticate cookies)
-        (if (not (nil? r-qid)) 
+        (if (not (nil? r-qid))
             {
                 :status 409
                 :headers {"Content-Type" "text/plain"}
@@ -447,8 +447,8 @@
         (when-not (empty? cids)
             (throw+
                 {
-                    :status 409 
-                    :headers {"Content-Type" "application/json"} 
+                    :status 409
+                    :headers {"Content-Type" "application/json"}
                     :body (json/write-str {
                         :error msg
                         :collector (first cids)
@@ -470,8 +470,8 @@
             (if (empty? res)
                 (throw+
                     {
-                        :status 401 
-                        :headers {"Content-Type" "application/json"} 
+                        :status 401
+                        :headers {"Content-Type" "application/json"}
                         :body "null"
                     }
                 )
@@ -547,7 +547,7 @@
              res (at-backend/select-agent account-id)]
                   {
                    :status 200
-                   :headers {"Content-Type" "application/json"} 
+                   :headers {"Content-Type" "application/json"}
                    :body (json/write-str res)
                   }
         )
@@ -556,7 +556,7 @@
         {
          :status 500
          :body "null"
-        } 
+        }
     ))
 )
 
@@ -568,8 +568,8 @@
             (let [agent (at-backend/check-agent-id? cid)]
               (if (nil? agent)
                 {
-                  :status 404 
-                  :headers {"Content-Type" "application/json"} 
+                  :status 404
+                  :headers {"Content-Type" "application/json"}
                   :body "null"
                 }
                 (do
@@ -613,7 +613,7 @@
                  :body "no agent found"
                 }
                 (do
-                
+
                   (let [duplicated-url-id (at-backend/check-agent-url? url account-id)
                        duplicated-name-id (at-backend/check-agent-name? url account-id)]
                    (if (not-nil? duplicated-name-id)
@@ -656,7 +656,7 @@
 <!doctype html>
 <html>
 <head>
-<meta http-equiv='refresh' content='1;url=/sql/'>
+<meta http-equiv='refresh' content='1;url=/sqldemo/'>
 </head>
 </html>
 "
@@ -669,12 +669,12 @@
                         :headers {
                             "Content-Type" "text/html"
                         }
-                        :cookies {"user_id" {:value auth :path "/sql/"}}
+                        :cookies {"user_id" {:value auth}}
                         :body "
 <!doctype html>
 <html>
 <head>
-<meta http-equiv='refresh' content='1;url=/sql/'>
+<meta http-equiv='refresh' content='1;url=/sqldemo/'>
 </head>
 </html>
 "

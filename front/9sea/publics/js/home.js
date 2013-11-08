@@ -22,7 +22,7 @@ var Home = {
         var email=$(".loginPop > input:eq(0)").val(),
             password=$(".loginPop > input:eq(1)").val();
         $.ajax({
-            url: '/sql/',
+            url: '/sqldemo/',
             type: 'post',
             data:{
                       "email":email,
@@ -34,7 +34,7 @@ var Home = {
 
             },
             statusCode:{
-              201:function(){location.href="/sql/"},
+              201:function(){location.href="/sqldemo/"},
               401:function(){Boxy.alert("用户名或密码不正确")}
             }
 
