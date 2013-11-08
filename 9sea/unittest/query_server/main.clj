@@ -87,7 +87,7 @@
                shark/translate-query test-context "create view view1 as select a.* from v1.acter a join v2.acter b on a.id=b.id"
               )
           :is
-             {:clause-type :create-clause, :type :view, :tablename "view1", :hql "SELECT a.* FROM tn_84e56395378035cd6850fb913f9658a130d976f4 a JOIN tn_24e56395378035cd6850fb913f9658a130d976f4 b ON (a.id = b.id)"}
+{:clause-type :create-clause, :type :view, :appname "御剑三国", :appversion "v1", :tablename "view1", :hql "CREATE VIEW vn_ed14e5f64a25f8fbdb0fccb42f8668e8c3323189 AS SELECT a.* FROM tn_84e56395378035cd6850fb913f9658a130d976f4 a JOIN tn_24e56395378035cd6850fb913f9658a130d976f4 b ON (a.id = b.id)", :hive-name "vn_ed14e5f64a25f8fbdb0fccb42f8668e8c3323189"}              
           
        )
        (:fact test-create-view
@@ -124,23 +124,6 @@
             )
             :is
             {:clause-type :drop-clause, :type :ctas, :tablename "t1", :hive-name "tn_89719c20120d0a7ef0e4d87c873a985eba87fc07"}
-    )
-    (:fact test-gen-context-for-drop-view
-           (
-            shark/gen-context-info 5 test-context' "v1" :view "vn_79719c20120d0a7ef0e4d87c873a985eba87fc07"
-           )
-           :is
-          {
-            :accountid 5, :appname "御剑三国", :appversion "1.0", :database "test", :tablename "v1", :hive-name "vn_79719c20120d0a7ef0e4d87c873a985eba87fc07"          }
-    )
-    (:fact test-gen-context-for-create-view
-           (
-            shark/gen-context-info 5 test-context "v1" :view nil
-           )
-           :is
-           {
-            :accountid 5, :appname "御剑三国", :appversion "1.0", :database "test", :tablename "v1", :hive-name "vn_5a6df720540c20d95d530d3fd6885511223d5d20"
-           }
     )
 
 )

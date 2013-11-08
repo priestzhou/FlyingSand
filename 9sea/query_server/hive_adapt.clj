@@ -64,14 +64,6 @@
   (-> @hive-conn-str)
 )
 
-(def ^:private hive-db (ref {:classname "org.apache.hadoop.hive.jdbc.HiveDriver"
-                             :subprotocol "hive"
-                             :user ""
-                             :password ""
-                            }
-                       )
-)
-
 (def ^:private hive-conn-str (ref ""))
 
 (def ^:private table-type ["" "table" "ctas" "view"])
@@ -123,61 +115,22 @@
       (sql/with-query-results rs [query-str]
         (doall rs)
         ))
+    {:status :succeeded}
     (catch Exception exception
       (error "run shark query:" (util/except->str exception))
-      ))
+      {:status :failed :exception exception}
+      )
+  )
 )
-
 (defn run-shark-query-with-except-throw
-  [query-str]
-  (info (str "query-str:" query-str))
-  (sql/with-connection (get-hive-db)
-    (sql/with-query-results rs [query-str]
-      (doall rs))
-  )
+  [q-id query-str]
+    (debug "run-shark-query" :qid q-id)
+    (prn (str "query-str:" query-str))
+    (sql/with-connection (get-hive-db)
+      (sql/with-query-results rs [query-str]
+        (doall rs)
+        ))
 )
-
-(defn create-CTAS
-  [table-name table-query]
-  (let [hive-sql (str " CREATE TABLE " table-name
-                      " AS " table-query
-                 )
-        rs (run-shark-query-with-except-throw hive-sql)
-       ]
-    rs
-  )
-)
-
-(defn create-view
-  [view-name view-query]
-  (let [hive-sql (str " CREATE VIEW " view-name
-                      " AS " view-query
-                 )
-        rs (run-shark-query-with-except-throw hive-sql)
-        ]
-
-    rs
-  )
-)
-
-(defn drop-view
-  [view-name]
-  (let [hive-sql (str "DROP VIEW " view-name)
-        rs (run-shark-query-with-except-throw hive-sql)
-       ]
-    rs
-  )
-)
-
-(defn drop-CTAS
-  [ctas-name]
-  (let [hive-sql (str "DROP TABLE " ctas-name)
-        rs (run-shark-query-with-except-throw hive-sql)
-       ]
-    rs
-  )
-)
-     
 
 (defn create-table [tn collist]
     (let [coll (map  get-column collist)
