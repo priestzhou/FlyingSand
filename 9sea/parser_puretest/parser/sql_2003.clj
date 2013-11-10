@@ -3810,6 +3810,18 @@
             :name {:type :dotted-identifier, :value ["vw"]}
         }]
     )
+    (:fact view:drop:if-exists
+        (->> "DROP VIEW IF EXISTS vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-view
+            :if-exists true
+            :name {:type :dotted-identifier, :value ["vw"]}
+        }]
+    )
     (:fact create:ctas
         (->> "CREATE TABLE vw AS select * from tbl"
             (prs/str->stream)
@@ -3833,6 +3845,18 @@
         )
         :is
         [[:eof] {:type :drop-ctas
+            :name {:type :dotted-identifier, :value ["vw"]}
+        }]
+    )
+    (:fact drop:ctas:if-exists
+        (->> "DROP TABLE IF EXISTS vw"
+            (prs/str->stream)
+            (sql/drop-view)
+            (extract-result)
+        )
+        :is
+        [[:eof] {:type :drop-ctas
+            :if-exists true
             :name {:type :dotted-identifier, :value ["vw"]}
         }]
     )

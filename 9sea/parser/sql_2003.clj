@@ -1243,11 +1243,21 @@
                     (constantly :drop-view) (expect-string-ignore-case "VIEW")
                     (constantly :drop-ctas) (expect-string-ignore-case "TABLE")
                 )
+                (prs/choice*
+                    (constantly :if-exists) (prs/chain
+                        blank+
+                        (expect-string-ignore-case "IF")
+                        blank+
+                        (expect-string-ignore-case "EXISTS")
+                    )
+                    nil
+                )
                 blank+
                 dotted-identifier
             ))
         )
         res {:type (nth prsd 2), :name (last prsd)}
+        res (if-not (nth prsd 3) res (assoc res :if-exists true))
         ]
         [strm res]
     )
