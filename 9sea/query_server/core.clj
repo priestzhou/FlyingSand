@@ -233,7 +233,7 @@
                           (= view-or-ctas :ctas) "table"
                     )
           log-message (str "create " table-str " " (:tablename context-info) " successed!")
-          shark-query-result (hive/run-shark-query' ""  hql)
+          shark-query-result (hive/run-shark-command ""  hql)
           shark-ret-code (:status shark-query-result)
 
          ]
@@ -266,7 +266,7 @@
             drop-table-hql (cond (= view-or-ctas :view) (str "drop view " (:hive-name context-info))
                                   (= view-or-ctas :ctas) (str "drop table "(:hive-name context-info))
                             )
-             drop-table-ret (hive/run-shark-query' "" drop-table-hql)
+             drop-table-ret (hive/run-shark-command "" drop-table-hql)
            ]
         (if (= (:status drop-table-ret) :succeeded)
           (update-result-map q-id "failed" nil
@@ -334,7 +334,7 @@
 )
 
 (defn- translate-query'
-  [context dfg query-type]
+  [account-id context dfg query-type]
   (let [
         table-ref (:value (:name dfg))
         table-ns (drop-last table-ref)
@@ -344,8 +344,8 @@
         new-ns (concat ns-prefix table-ns)
 
         hive-name (case (:type dfg) 
-          :create-view (str "vn_" (ad/sha1-hash (str (first new-ns) "." (second new-ns) "." table-name)))
-          :create-ctas (str "tn_" (ad/sha1-hash (str (first new-ns) "." (second new-ns) "." table-name)))
+          :create-view (str "vn_" (ad/sha1-hash (str account-id "." (first new-ns) "." (second new-ns) "." table-name)))
+          :create-ctas (str "tn_" (ad/sha1-hash (str account-id "."  (first new-ns) "." (second new-ns) "." table-name)))
           nil
                   )
         new-context (cond (= query-type :create-clause)
@@ -372,7 +372,7 @@
 
 
 (defn translate-query
-  [context query-str]
+  [account-id context query-str]
   (let [
         dfg (trans/parse-sql context query-str)
         _ (info (str "dfg:" dfg))
@@ -386,7 +386,7 @@
       }
     
       (#{:create-view :create-ctas} type)
-        (let [translated-res (translate-query' context dfg :create-clause)]
+        (let [translated-res (translate-query' account-id context dfg :create-clause)]
           {
            :clause-type :create-clause 
            :type ttype
@@ -398,7 +398,7 @@
           }
         )
        (#{:drop-view :drop-ctas} type)
-        (let [translated-res (translate-query' context dfg :drop-clause)]
+        (let [translated-res (translate-query' account-id context dfg :drop-clause)]
           {
            :clause-type :drop-clause
            :type ttype
@@ -418,7 +418,7 @@
    (debug "run-shark-query" :qid q-id)
     (prn "context:" (str context))
     (let [ 
-           translated-result (translate-query context query-str)
+           translated-result (translate-query account-id context query-str)
            _ (prn "translated-result" (str translated-result))
            clause-type (:clause-type translated-result)
          ]

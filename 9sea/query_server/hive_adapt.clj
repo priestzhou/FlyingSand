@@ -92,6 +92,22 @@
       (sql/with-query-results rs [query-str]
         (doall rs)
         ))
+    (catch Exception exception
+      (error "run shark query:" (util/except->str exception))
+    )
+  )
+)
+
+(defn run-shark-command
+  [q-id query-str]
+  (try
+    (debug "run-shark-query" :qid q-id)
+    (prn (str "query-str:" query-str))
+    (sql/with-connection (get-hive-db)
+      ; we may need to use another API here
+      (sql/with-query-results rs [query-str]
+        (doall rs)
+        ))
     {:status :succeeded}
     (catch Exception exception
       (error "run shark query:" (util/except->str exception))
