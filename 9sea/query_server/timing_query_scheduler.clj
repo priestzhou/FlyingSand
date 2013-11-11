@@ -56,13 +56,17 @@
 )
 
 (defn- get-query-from-db []
-    [testrecord]
+    (let [sql (str "select * from TblTimingQuery"
+            )
+        ]
+        (mysql/runsql sql)
+    )
 )
 
 (defn- get-query-by-time [query]
     (let [startTime (:starttime query)
             endTime (:endtime query)
-            timeSpan (:timeSpan query)
+            timeSpan (:timespan query)
             now (get-now)
             timeList (->> 
                     startTime
@@ -78,6 +82,9 @@
                     )
                 )
         ]
+        (debug "get-query-by-time" :now now :startTime startTime 
+            :timeList timeList
+        )
         (cond 
             (< now startTime) nil
             (< endTime now) nil
@@ -87,6 +94,7 @@
 )
 
 (defn add-to-task-queue [taskitem]
+    (debug "add-to-task-queue" :taskitem taskitem)
     (let [taskmap-raw (first taskitem)
             taskmap (assoc taskmap-raw :task-run-time (last taskitem))
         ]
@@ -95,13 +103,14 @@
                 (empty? 
                     (filter 
                         #(and 
-                            (= (:timing_query_id taskitem) (:timing_query_id %))
-                            (= (:task-run-time taskitem) (:task-run-time %))
+                            (= (:timing_query_id taskmap) (:timing_query_id %))
+                            (= (:task-run-time taskmap) (:task-run-time %))
                         )
                         @taskQueue
                     )
                 )
-                (alter taskQueue concat [taskitem])
+                (println "add-to-task-queue" taskmap)
+                (alter taskQueue concat [taskmap])
             )
         )
     )
@@ -110,6 +119,7 @@
 (defn pop-first-from-task-queue []
     (dosync
         (when-let [item (first @taskQueue)]
+            (debug "pop item!")
             (alter taskQueue rest)
             item
         )
@@ -177,18 +187,20 @@
 )
 
 (defn- submit-task [task]
+    (debug "submit-task"  (str task))
     (let [{:keys 
-                [timing_query_id appname appversion 
-                    accountid sqlstr userid 
+                [timingqueryid appname appversion 
+                    accountid sqlstring userid 
                     failmailflag noresultmailflag anyresultmailflag
                 ]
             }
                 task
             context (ws/gen-context accountid appname appversion nil)
-            qid (qb/submit-query context userid sqlstr)
+            _(println "keys :"  task)
+            qid (qb/submit-query context accountid userid sqlstring)
             runtime (:task-run-time task)
             result (wait-for-task 
-                    timing_query_id qid runtime 0 failmailflag 
+                    timingqueryid qid runtime 0 failmailflag 
                 )
         ]
         (check-task-result result noresultmailflag anyresultmailflag)
@@ -210,7 +222,9 @@
 
 (defn timing-query-check []
     (try 
+        (debug (str "timing-query-check run  " (get-now)))
         (let [query-list (get-query-from-db)
+                _ (println "query-list  "  query-list)
                 task-list
                     (->>
                         query-list
@@ -224,8 +238,9 @@
                             )
                         )
                     )
+                _ (println "task-list  " task-list)
             ]
-            (map add-to-task-queue task-list)
+            (dorun (map add-to-task-queue task-list))
         )
         (Thread/sleep (config/get-key :timing-query-check-interval))
         (catch Exception e
@@ -238,8 +253,9 @@
 (defn start-timing-query []
     (when (config/get-key :timing-query-start-flag)
         (info "timing-query starting ")
-        (future timing-query-check)
-        (future timing-query-runner)
-        (future timing-query-runner)
+        (future (timing-query-check))
+        (future (timing-query-runner))
+        (future (timing-query-runner))
+        (info "timing-query started ")
     )
 )
