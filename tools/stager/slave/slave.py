@@ -118,8 +118,12 @@ def prepare(opt):
     if prepare:
         rt = app_root(app, ver)
         prepare_dirs(rt)
-        with open(op.join(rt, 'prepare.clj'), 'w') as f:
-            f.write(prepare["script"])
+        if prepare['executable-type'] == 'clj':
+            with open(op.join(rt, 'prepare.clj'), 'w') as f:
+                f.write(prepare["script"])
+        elif prepare['executable-type'] == 'py':
+            with open(op.join(rt, 'prepare.py'), 'w') as f:
+                f.write(prepare["script"])
         p = execute(app, ver, prepare)
         exitcode = p.wait()
         if exitcode != 0:

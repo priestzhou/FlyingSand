@@ -186,5 +186,36 @@ class TestSlave(unittest.TestCase):
         with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prepare.out')) as f:
             self.assertEqual(f.read(), '["staging"]')
 
+    def test_prepare_py(self):
+        # start an app
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    'prepare': {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prepare.py',
+                        'args': ['staging'],
+                        'script': '''\
+import sys
+with open('prepare.out', 'w') as f:
+    f.write(str(sys.argv[1:]))
+'''},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        # stop the app
+        self.put('/apps/', json.dumps([]))
+        with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prepare.out')) as f:
+            self.assertEqual(f.read(), "['staging']")
+
 if __name__ == '__main__':
     unittest.main()
