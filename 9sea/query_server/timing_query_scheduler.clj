@@ -68,10 +68,12 @@
             endTime (:endtime query)
             timeSpan (:timespan query)
             now (get-now)
+            ;seq-start-time (- now (mod (- now startTime) timeSpan))
+            seq-end-time (min (+ now timespan) endTime) 
             timeList (->> 
                     startTime
                     (iterate #(+ timeSpan % ))
-                    (take-while #(> endTime %))
+                    (take-while #(> seq-end-time %))
                     (map #(- now %))
                     (filter 
                         #(< 
@@ -80,6 +82,7 @@
                             (config/get-key :timing_query_window_max)
                         )
                     )
+                    (map #(+ now %))
                 )
         ]
         (debug "get-query-by-time" :now now :startTime startTime 
