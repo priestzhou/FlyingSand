@@ -115,16 +115,22 @@
     )
 )
 
-(defn- add-task-run-record [qid status runtime]
-
+(defn add-task-run-record [tid qid status runtime]
+    (let [sql (str "insert into TblTimingTaskLog "
+                "(TimingQueryID,queryID,status,runtime) "
+                "values (" tid "," qid ",\"" status "\"," runtime")"
+            )
+        ]
+        (mysql/runupdate sql)
+    )
 )
 
-(defn- wait-for-task [qid runtime retryTimes]
+(defn- wait-for-task [tid qid runtime retryTimes]
     (let [result (qb/get-query-result qid)]
         (cond 
             (or (nil? result) (= "failed" (:status result))) 
             (do 
-                (add-task-run-record qid "failed" runtime)
+                (add-task-run-record tid qid "failed" runtime)
                 (error "the query failed or can't find" :qid qid)
                 nil
             )
@@ -134,12 +140,12 @@
                     (error "the query time out" :qid qid)
                 )
                 (Thread/sleep (config/get-key :timing-query-runner-interval))
-                (recur qid runtime (+ 1 retryTimes))
+                (recur tid qid runtime (+ 1 retryTimes))
             )
             (= "succeeded" (:status result))
             (do 
                 (info "the query succeeded " :qid qid)
-                (add-task-run-record qid "succeeded" runtime)
+                (add-task-run-record tid qid "succeeded" runtime)
                 result
             )
         )
@@ -147,7 +153,9 @@
 )
 
 (defn- check-task-result [result]
-
+    (let [rcount (:count result)]
+        
+    )
 )
 
 (defn- submit-task [task]
@@ -155,7 +163,7 @@
             context (ws/gen-context accountid appname appversion nil)
             qid (qb/submit-query context userid sqlstr)
             runtime (:task-run-time task)
-            result (wait-for-task qid runtime 0)
+            result (wait-for-task timing_query_id qid runtime 0)
         ]
         (check-task-result result)
     )
