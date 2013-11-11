@@ -93,17 +93,22 @@ def download(fs):
                 conn.close()
 
 def execute(app, ver, opt):
-    assert opt["executable-type"] == 'clj'
     cwd = os.getcwd()
     app_rt = app_root(app, ver)
-    cmd = ['java', '-cp',
-        ':'.join([op.join(cwd, 'clojure-1.5.1.jar'), app_rt]
-            + [op.join(app_rt, x) for x in opt["class-paths"]]),
-        'clojure.main', '-m', opt['main-class']
-    ] + opt['args']
-    info('start app %s/%s: %s', app, ver, cmd)
+    if opt["executable-type"] == 'clj':
+        cmd = ['java', '-cp',
+            ':'.join([op.join(cwd, 'clojure-1.5.1.jar'), app_rt]
+                + [op.join(app_rt, x) for x in opt["class-paths"]]),
+            'clojure.main', '-m', opt['main']
+        ] + opt['args']
+        info('start app %s/%s: %s', app, ver, cmd)
+    elif opt["executable-type"] == 'py':
+        cmd = ['python' + opt['version'], opt['main']] + opt['args']
+        info('start app %s/%s: %s', app, ver, cmd)
+    else:
+        assert False, "unknown executable-type"
     cout = open(op.join(app_rt, 'std.out'), 'w')
-    p = psutil.Popen(cmd, cwd=app_rt, stdout=cout, stderr=STDOUT)
+    p = psutil.Popen(cmd, cwd=app_rt, stdout=cout, stderr=STDOUT, close_fds=True)
     return p
 
 def prepare(opt):

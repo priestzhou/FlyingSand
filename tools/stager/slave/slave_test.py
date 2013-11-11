@@ -25,6 +25,20 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     (spit "prog.out" "0" :append true)
 )
 ''')
+        elif self.path == '/ver/prog.py':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write('''\
+from time import sleep
+with open('prog.out', 'a') as f:
+    f.write('1')
+sleep(5)
+with open('prog.out', 'a') as f:
+    f.write('0')
+''')
+        else:
+            self.send_response(404)
 
 class TestSlave(unittest.TestCase):
     def put(self, path, message):
@@ -100,7 +114,7 @@ class TestSlave(unittest.TestCase):
                     "executable": {
                         'executable-type': 'clj',
                         'class-paths': [],
-                        'main-class': 'prog',
+                        'main': 'prog',
                         'args': []
                     }
                 }
@@ -108,6 +122,32 @@ class TestSlave(unittest.TestCase):
         sleep(3) # it takes ~2s to start jvm up
         # stop the app
         self.put('/apps/', json.dumps([]))
+        # if it was not stopped, then
+        sleep(5) # 5s to run prog
+        sleep(1) # 1s to let slave notice
+        sleep(3) # and restart
+        with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prog.out')) as f:
+            self.assertEqual(f.read(), '1')
+
+    def test_start_stop_py(self):
+        # start an app
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        # stop the app
+        self.put('/apps/', json.dumps([]))
+        # if it was not stopped, then
         sleep(5) # 5s to run prog
         sleep(1) # 1s to let slave notice
         sleep(3) # and restart
