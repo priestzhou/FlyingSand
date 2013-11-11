@@ -12,6 +12,11 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write('imok')
 
+    def do_PUT(self):
+        if self.path == '/apps/':
+            self.send_response(200)
+
+
 def read_cfg():
     with open('slave.cfg') as f:
         return json.load(f)
