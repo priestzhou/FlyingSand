@@ -147,7 +147,7 @@
                     (error "the query time out" :qid qid)
                 )
                 (Thread/sleep (config/get-key :timing-query-runner-interval))
-                (recur tid qid runtime (+ 1 retryTimes))
+                (recur tid qid runtime (+ 1 retryTimes) mailflag)
             )
             (= "succeeded" (:status result))
             (do 
@@ -237,6 +237,7 @@
 
 (defn start-timing-query []
     (when (config/get-key :timing-query-start-flag)
+        (info "timing-query starting ")
         (future timing-query-check)
         (future timing-query-runner)
         (future timing-query-runner)

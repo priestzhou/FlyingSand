@@ -61,7 +61,7 @@
           (config/get-key :shark-port)
         )
         (as/start_agent_futurs)
-        (tps/start-timing-query)       
+        (tqs/start-timing-query)       
         (web/start opts)
     )
 )
