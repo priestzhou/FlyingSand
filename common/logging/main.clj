@@ -2,7 +2,7 @@
     (:use
         [logging.core :only [defloggers]]
     )
-    (:import 
+    (:import
         [org.slf4j LoggerFactory Logger]
     )
     (:gen-class)
@@ -19,5 +19,7 @@
     (catch Throwable ex
         (error "haha" :exception ex)
     ))
-    
+    (info "aaa" #{:key "smile"})
+    (info "bbb" {:key "smile"})
+    (info "ccc" [:key "smile"])
 )
