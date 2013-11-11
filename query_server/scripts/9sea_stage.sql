@@ -273,6 +273,10 @@ CREATE TABLE `TblTimingQuery` (
   `StartTime` bigint(20) DEFAULT NULL,
   `EndTime` bigint(20) DEFAULT NULL,
   `TimeSpan` bigint(20) DEFAULT NULL,
+  `FailMailFlag` varchar(10) DEFAULT NULL,
+  `NoResultMailFlag` varchar(10) DEFAULT NULL,
+  `AnyResultMailFlag` varchar(10) DEFAULT NULL,
+  `MailList` text DEFAULT NULL,
   `ChartSetting` text DEFAULT NULL,
   PRIMARY KEY (`TimingQueryID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
