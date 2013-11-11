@@ -27,7 +27,6 @@ env.install(env.compileAndJar('common_puretest.jar', 'puretest',
     libs=[env['CLOJURE'],
         env.File('$EXTLIB/commons-codec-1.8.jar'),
         env.File('$BUILD_DIR/testing.jar'),
-
         env.File('$BUILD_DIR/utilities.jar'),
     ],
     standalone=True, manifest={'Main-Class': 'puretest.main'}))
