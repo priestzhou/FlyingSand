@@ -27,6 +27,7 @@ env.install(env.compileAndJar('common_puretest.jar', 'puretest',
     libs=[env['CLOJURE'],
         env.File('$EXTLIB/commons-codec-1.8.jar'),
         env.File('$BUILD_DIR/testing.jar'),
+
         env.File('$BUILD_DIR/utilities.jar'),
     ],
     standalone=True, manifest={'Main-Class': 'puretest.main'}))
@@ -61,5 +62,4 @@ env.install(env.compileAndJar('mailtool.jar', 'mailtool',
         env.File('$EXTLIB/postal-1.11.0.jar'),
         env.File('$EXTLIB/commons-codec-1.7.jar'),
         env.File('$EXTLIB/mail-1.4.4.jar'),
-    ],
-    standalone=True, manifest={'Main-Class': 'mailtool.main'}))
+    ],standalone=True))
