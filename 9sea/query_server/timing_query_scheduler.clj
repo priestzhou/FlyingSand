@@ -15,6 +15,7 @@
         [query-server.mysql-connector :as mysql]
         [query-server.config :as config]
         [query-server.web-server :as ws]
+        [mailtool.core :as mail]
     )
     (:gen-class)
 )
@@ -125,7 +126,7 @@
     )
 )
 
-(defn- wait-for-task [tid qid runtime retryTimes]
+(defn- wait-for-task [tid qid runtime retryTimes mailflag maillist]
     (let [result (qb/get-query-result qid)]
         (cond 
             (or (nil? result) (= "failed" (:status result))) 
@@ -154,16 +155,24 @@
 
 (defn- check-task-result [result]
     (let [rcount (:count result)]
-        
+
     )
 )
 
 (defn- submit-task [task]
-    (let [{:keys [timing_query_id appname appversion accountid sqlstr userid]} task
+    (let [{:keys 
+                [timing_query_id appname appversion 
+                    accountid sqlstr userid maillist
+                    failmailflag noresultmailflag anyresultmailflag
+                ]
+            }
+                task
             context (ws/gen-context accountid appname appversion nil)
             qid (qb/submit-query context userid sqlstr)
             runtime (:task-run-time task)
-            result (wait-for-task timing_query_id qid runtime 0)
+            result (wait-for-task 
+                    timing_query_id qid runtime 0 failmailflag maillist
+                )
         ]
         (check-task-result result)
     )
@@ -175,11 +184,11 @@
             (submit-task task)
             (Thread/sleep (config/get-key :timing-query-runner-interval))
         )
-        
         (catch Exception e
             (error " the timing query run failed " :except (except->str e))
         )
     )
+    (recur)
 )
 
 (defn timing-query-check []
@@ -208,6 +217,16 @@
     )
     (recur)
 )
+
+(defn start-timing-query []
+    (when (config/get-key :timing-query-start-flag)
+        (future timing-query-check)
+        (future timing-query-runner)
+        (future timing-query-runner)
+    )
+)
+
+
 
 
 

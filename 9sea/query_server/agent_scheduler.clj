@@ -121,3 +121,23 @@
     (Thread/sleep (config/get-key :mismatch-agent-check-interval))
     (recur)
 )
+
+(defn start_agent_futurs []
+    (when (config/get-key :agent_start_flag)    
+        (future 
+            (new-agent-check)
+        )
+        (future 
+            (inc-data-check)
+        )
+        (future
+            (do
+                (Thread/sleep 60000)
+                (all-data-check)
+            )
+        )
+        (future 
+            (mismatch-agent-check)
+        ) 
+    )
+)
