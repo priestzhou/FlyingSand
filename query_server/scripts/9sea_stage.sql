@@ -267,6 +267,7 @@ CREATE TABLE `TblTimingQuery` (
   `TimingQueryID` int(11) NOT NULL AUTO_INCREMENT,
   `AccountID` int(11) DEFAULT NULL,
   `UserID` int(11) DEFAULT NULL,
+  `TaskName` varchar(50) DEFAULT NULL,
   `AppName` varchar(30) DEFAULT NULL,
   `AppVersion` varchar(30) DEFAULT NULL,  
   `SqlString` text DEFAULT NULL,
