@@ -126,13 +126,19 @@
     )
 )
 
-(defn- wait-for-task [tid qid runtime retryTimes mailflag maillist]
+(defn- wait-for-task [tid qid runtime retryTimes mailflag]
     (let [result (qb/get-query-result qid)]
         (cond 
             (or (nil? result) (= "failed" (:status result))) 
             (do 
                 (add-task-run-record tid qid "failed" runtime)
                 (error "the query failed or can't find" :qid qid)
+                (when (= "true" mailflag)
+                    (mail/send-html-mail "zhangjun@flying-sand.com"
+                        "test mail "
+                        "failed test mail"
+                    )
+                )
                 nil
             )
             (= "running" (:status result))
@@ -153,16 +159,27 @@
     )
 )
 
-(defn- check-task-result [result]
+(defn- check-task-result [result noflag anyflag]
     (let [rcount (:count result)]
-
+        (when (and (= "true" noflag) (= rcount 0) )
+            (mail/send-html-mail "zhangjun@flying-sand.com"
+                "test mail "
+                "noresultmailflag test mail"
+            )
+        )
+        (when (and (= "true" anyflag) (> rcount 0) )
+            (mail/send-html-mail "zhangjun@flying-sand.com"
+                "test mail "
+                "anyresultmailflag test mail"
+            )
+        )        
     )
 )
 
 (defn- submit-task [task]
     (let [{:keys 
                 [timing_query_id appname appversion 
-                    accountid sqlstr userid maillist
+                    accountid sqlstr userid 
                     failmailflag noresultmailflag anyresultmailflag
                 ]
             }
@@ -171,10 +188,10 @@
             qid (qb/submit-query context userid sqlstr)
             runtime (:task-run-time task)
             result (wait-for-task 
-                    timing_query_id qid runtime 0 failmailflag maillist
+                    timing_query_id qid runtime 0 failmailflag 
                 )
         ]
-        (check-task-result result)
+        (check-task-result result noresultmailflag anyresultmailflag)
     )
 )
 
@@ -225,8 +242,3 @@
         (future timing-query-runner)
     )
 )
-
-
-
-
-
