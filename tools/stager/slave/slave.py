@@ -1,8 +1,179 @@
-import sys
 import json
+from itertools import *
+import os
+import os.path as op
+import shutil
 from time import sleep
-from threading import Thread
+from threading import Thread, Lock
+from Queue import Queue
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from logging import debug, info, warning, error
+import logging
+from httplib import HTTPConnection
+from urlparse import urlparse, urlunparse
+import hashlib
+import psutil
+from subprocess import STDOUT
+
+logging.basicConfig(filename='slave.log', level = logging.INFO,
+    format='[%(asctime)s] %(levelname)s [%(message)s]')
+
+def files(opt):
+    hosts = opt["sources"]
+    app = opt["app"]
+    ver = opt["ver"]
+    for url, dst in zip(cycle(hosts), sorted(opt["files"].keys())):
+        src = opt["files"][dst]
+        src = op.join(ver, src)
+        yield [url+src, op.join('cache', src), op.join('apps', app, ver, dst)]
+
+def sha1(f):
+    digest = hashlib.sha1()
+    with open(f, 'rb') as f:
+        x = f.read(512 * 1024)
+        while x:
+            digest.update(x)
+            x = f.read(512 * 1024)
+    return digest.hexdigest()
+
+def prepare_dirs(d):
+    if not op.exists(d):
+        os.makedirs(d)
+
+def app_root(app, ver, cwd=None):
+    if cwd is None:
+        cwd = os.getcwd()
+    app_rt = op.join(cwd, 'apps', app, ver)
+    return app_rt
+
+def download(fs):
+    for url, cache, dst in fs:
+        prepare_dirs(op.dirname(cache))
+        prepare_dirs(op.dirname(dst))
+        if not op.exists(cache):
+            url = urlparse(url)
+            host = url.hostname
+            port = url.port
+            url = urlunparse(['', '', url.path, url.params, url.query, ''])
+            conn = HTTPConnection(host, port)
+            try:
+                conn.request('GET', url)
+                resp = conn.getresponse()
+                if resp.status != 200:
+                    error("error while fetching files: %d", resp.status)
+                    raise Exception("fetch file %s: %d" % (cache, resp.status))
+                else:
+                    with open(cache, 'wb') as f:
+                        shutil.copyfileobj(resp, f)
+                    shutil.copy(cache, dst)
+            finally:
+                conn.close()
+        else:
+            digest = sha1(cache)
+            url = urlparse(url)
+            host = url.hostname
+            port = url.port
+            url = urlunparse(['', '', url.path, url.params, url.query, ''])
+            conn = HTTPConnection(host, port)
+            try:
+                conn.request('GET', url, '', {"If-None-Match": digest})
+                resp = conn.getresponse()
+                if resp.status == 200:
+                    info('cache missing: %s', cache)
+                    with open(cache, 'wb') as f:
+                        shutil.copyfileobj(resp, f)
+                    shutil.copy(cache, dst)
+                elif resp.status == 304:
+                    info('cache hit: %s', cache)
+                    shutil.copy(cache, dst)
+                else:
+                    error("error while fetching files: %d", resp.status)
+                    raise Exception("fetch file %s: %d" % (cache, resp.status))
+            finally:
+                conn.close()
+
+def execute(app, ver, opt):
+    assert opt["executable-type"] == 'clj'
+    cwd = os.getcwd()
+    app_rt = app_root(app, ver)
+    cmd = ['java', '-cp',
+        ':'.join([op.join(cwd, 'clojure-1.5.1.jar'), app_rt]
+            + [op.join(app_rt, x) for x in opt["class-paths"]]),
+        'clojure.main', '-m', opt['main-class']
+    ] + opt['args']
+    info('start app %s/%s: %s', app, ver, cmd)
+    cout = open(op.join(app_rt, 'std.out'), 'w')
+    p = psutil.Popen(cmd, cwd=app_rt, stdout=cout, stderr=STDOUT)
+    return p
+
+def prepare(opt):
+    app = opt["app"]
+    ver = opt["ver"]
+    prepare = opt.get("prepare", None)
+    if prepare:
+        rt = app_root(app, ver)
+        prepare_dirs(rt)
+        with open(op.join(rt, 'prepare.clj'), 'w') as f:
+            f.write(prepare["script"])
+        p = execute(app, ver, prepare)
+        exitcode = p.wait()
+        if exitcode != 0:
+            error('fail to prepare')
+            raise Exception('fail to prepare')
+    info('%s/%s prepared', app, ver)
+
+workitems = Queue()
+running_apps_lock = Lock()
+running_apps = {}
+
+def start(opt):
+    download(files(opt))
+    prepare(opt)
+    app = opt["app"]
+    ver = opt["ver"]
+    with open(op.join(app_root(app, ver), 'cfg.ver'), 'w') as f:
+        f.write(opt["cfg-ver"])
+    opt["proc"] = execute(app, ver, opt["executable"])
+    info('%s/%s started', app, ver)
+
+def stop(opt):
+    p = opt.get("proc", None)
+    if p:
+        opt["proc"].kill()
+        opt["proc"].wait()
+        del opt["proc"]
+    info('%s/%s stoped', opt["app"], opt["ver"])
+
+def updater():
+    global running_apps_lock
+    global running_apps
+    global workitems
+    while True:
+        item = workitems.get()
+        try:
+            info("accept a new list of apps: %s", item)
+            dejson = json.loads(item)
+            with open('apps.cfg', 'w') as f:
+                f.write(item)
+            new_apps = {}
+            for x in dejson:
+                app = x["app"]
+                new_apps[app] = x
+            with running_apps_lock:
+                for app, opt in running_apps.items():
+                    if app not in new_apps:
+                        stop(opt)
+                    elif opt["ver"] != new_apps[app]["ver"]:
+                        stop(opt)
+                for app, opt in new_apps.items():
+                    if app not in running_apps:
+                        start(opt)
+                    elif opt["cfg-ver"] != running_apps[app]["cfg-ver"]:
+                        stop(running_apps[app])
+                        start(opt)
+                running_apps = new_apps
+        except ValueError:
+            error("fail to dejsonize: %s", item)
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -13,7 +184,10 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write('imok')
 
     def do_PUT(self):
+        global workitems
         if self.path == '/apps/':
+            length = int(self.headers['Content-Length'])
+            workitems.put(self.rfile.read(length))
             self.send_response(200)
 
 
@@ -25,6 +199,8 @@ if __name__ == '__main__':
     cfg = read_cfg()
     host = cfg["host"]
     port = cfg["port"]
+    t = Thread(target=updater)
+    t.start()
     httpd = HTTPServer((host, port), MyHTTPRequestHandler)
     httpd.serve_forever()
 

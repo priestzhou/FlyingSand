@@ -7,7 +7,24 @@ import shutil
 import httplib
 import json
 import psutil
+from threading import Thread
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import slave
+
+class MyHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/ver/prog.clj':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write('''\
+(ns prog)
+(defn -main [& args]
+    (spit "prog.out" "1" :append true)
+    (Thread/sleep 5000)
+    (spit "prog.out" "0" :append true)
+)
+''')
 
 class TestSlave(unittest.TestCase):
     def put(self, path, message):
@@ -24,9 +41,22 @@ class TestSlave(unittest.TestCase):
         self.assertEqual(resp.status, 200)
         return resp.read()
 
+    @classmethod
+    def setUpClass(cls):
+        cls.httpd = HTTPServer(('localhost', 11110), MyHTTPRequestHandler)
+        def start_server():
+            cls.httpd.serve_forever()
+        t = Thread(target=start_server)
+        t.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.httpd.shutdown()
+
     def setUp(self):
         self.root_dir = os.tempnam()
         os.makedirs(self.root_dir)
+        print 'root', self.root_dir
         shutil.copy('tools/stager/slave/slave.py', self.root_dir)
         shutil.copy('common/extlib/clojure-1.5.1.jar', self.root_dir)
         with open(op.join(self.root_dir, 'slave.cfg'), 'w') as f:
@@ -37,32 +67,38 @@ class TestSlave(unittest.TestCase):
 
     def tearDown(self):
         self.slave.kill()
+        self.slave.wait()
+        sleep(0.1)
 
     def test_ruok(self):
         r = self.get('/ruok')
         self.assertEqual(r, 'imok')
 
+    def test_files(self):
+        fs = list(slave.files({
+            'app': "a", 'ver': "w",
+            'sources': ['http://h0/', 'http://h1/'],
+            'files': {
+                "b": "x",
+                "c": "y",
+                "d": "z"
+            }
+        }))
+        self.assertEqual(fs, [
+                ["http://h0/w/x", "cache/w/x", "apps/a/w/b"],
+                ["http://h1/w/y", "cache/w/y", "apps/a/w/c"],
+                ["http://h0/w/z", "cache/w/z", "apps/a/w/d"]
+        ])
+
     def test_start_stop(self):
         # start an app
         self.put('/apps/', json.dumps([
                 {
-                    'app': "a", 'ver': "x",
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
                     'sources': ['http://localhost:11110/'],
-                    'files': {"prog.clj": "y"},
-                    'prepare': {
-                        'executable-type': 'java',
-                        'class-paths': [],
-                        'main-class': 'prepare',
-                        'args': ['staging'],
-                        'script': '''\
-(ns prepare)
-(defn -main [& args]
-    (spit "%s/prepare.out" "1" :append true)
-)
-''' % (op.join(self.root_dir, 'a', 'x'))
-                    },
+                    'files': {"prog.clj": "prog.clj"},
                     "executable": {
-                        'executable-type': 'java',
+                        'executable-type': 'clj',
                         'class-paths': [],
                         'main-class': 'prog',
                         'args': []
@@ -75,7 +111,7 @@ class TestSlave(unittest.TestCase):
         sleep(5) # 5s to run prog
         sleep(1) # 1s to let slave notice
         sleep(3) # and restart
-        with open(op.join(self.root_dir, 'a', 'x', 'prog.out')) as f:
+        with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prog.out')) as f:
             self.assertEqual(f.read(), '1')
 
 if __name__ == '__main__':
