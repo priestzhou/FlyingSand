@@ -67,11 +67,14 @@
     (reduce #(str %1 "<td>" %2 "</td>") "" values)
 )
 
-(defn- gen-query-table [result]
+(defn- gen-query-table [result url]
     (let [thead (:titles result)
             values (:values result)
         ]
         (str 
+            "<p>您也可通过此链接直接下载查询结果：<a ref=\""url "\">"
+            url
+            "</a> </p>"
             "<table border=\"1\">"
                 "<thead> <tr>"
                 (reduce  #(str %1 "<th>" %2 "</th>") "" thead)
@@ -103,7 +106,7 @@
             (< 0 rcount)
             (send-mail' 
                 maillist taskname starttime endtime "成功" "查询结果有内容"
-                (gen-query-table (:result result))
+                (gen-query-table (:result result) (:url result))
             )
         )
     )
