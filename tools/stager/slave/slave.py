@@ -160,6 +160,7 @@ def update(item):
         dejson = json.loads(item)
         with open('apps.cfg', 'w') as f:
             f.write(item)
+            f.write('\n')
         new_apps = {}
         for x in dejson:
             app = x["app"]
@@ -220,12 +221,46 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             workitems.put(self.rfile.read(length))
             self.send_response(200)
 
+def fetch_app_ver(p):
+    x = p
+    ver = op.basename(x)
+    x = op.dirname(x)
+    app = op.basename(x)
+    x = op.dirname(x)
+    if op.join(os.getcwd(), 'apps') != x:
+        error('unknown cwd in process %s', p)
+        raise Exception('unknown path')
+    return app, ver
+
+def failover():
+    error('start failover')
+    init_pid = 1
+    with running_apps_lock:
+        with open('apps.cfg') as f:
+            items = json.load(f)
+        for x in items:
+            running_apps[x['app']] = x
+        for p in psutil.process_iter():
+            if p.name in ['python2.7', 'python3.3', 'java'] and p.ppid == init_pid:
+                try:
+                    app, ver = fetch_app_ver(p.getcwd())
+                    if app not in running_apps or ver != running_apps[app]['ver']:
+                        warning('unknown process for %s/%s. killing...', app, ver)
+                        p.kill()
+                        p.wait()
+                    else:
+                        info('take care %s/%s again', app, ver)
+                        running_apps[app]['proc'] = p
+                except:
+                    pass
+    info('finish failover')
 
 def read_cfg():
     with open('slave.cfg') as f:
         return json.load(f)
 
 if __name__ == '__main__':
+    failover()
     cfg = read_cfg()
     host = cfg["host"]
     port = cfg["port"]

@@ -75,6 +75,8 @@ class TestSlave(unittest.TestCase):
         shutil.copy('common/extlib/clojure-1.5.1.jar', self.root_dir)
         with open(op.join(self.root_dir, 'slave.cfg'), 'w') as f:
             f.write('{"host": "localhost", "port": 11111}\n')
+        with open(op.join(self.root_dir, 'apps.cfg'), 'w') as f:
+            f.write('{}\n')
         self.slave = psutil.Popen(['python2.7', '-B', 'slave.py'],
             cwd=self.root_dir)
         sleep(1)
