@@ -40,7 +40,7 @@
     )
 )
 
-(defn- send-mail' [maillist taskname starttime endtime flag titleflag]
+(defn- send-mail' [maillist taskname starttime endtime flag titleflag tablecontext]
     (println "endtime" endtime)
     (println "starttime" starttime)
     (println "taskname" taskname)
@@ -59,7 +59,28 @@
                 (cstr/replace #"_flag_" flag)   
             )
         ]
-        (mail/send-html-mail maillist title context)
+        (mail/send-html-mail maillist title (str context tablecontext))
+    )
+)
+
+(defn- gen-one-tr [values]
+    (reduce #(str %1 "<td>" %2 "</td>") "" values)
+)
+
+(defn- gen-query-table [result]
+    (let [thead (:titles result)
+            values (:values result)
+        ]
+        (str 
+            "<table border=\"1\">"
+                "<thead> <tr>"
+                (reduce  #(str %1 "<th>" %2 "</th>") "" thead)
+                "</tr> </thead>"
+                "<tbody>"
+                (reduce #(str %1 "<tr>" (gen-one-tr %2) "</tr>") "" values)
+                "</tbody>"
+            "</table>"
+        )
     )
 )
 
@@ -72,14 +93,18 @@
             rcount (:count result)
             starttime (:submit-time result)
             endtime (:end-time result)
+            _ (println "result" (:result result) )
         ]
         (cond 
             (= status "failed")
-            (send-mail' maillist taskname starttime endtime "失败" "查询失败")
+            (send-mail' maillist taskname starttime endtime "失败" "查询失败" "")
             (= 0 rcount)
-            (send-mail' maillist taskname starttime endtime "成功" "查询结果集为空")
+            (send-mail' maillist taskname starttime endtime "成功" "查询结果集为空" "")
             (< 0 rcount)
-            (send-mail' maillist taskname starttime endtime "成功" "查询结果有内容")
+            (send-mail' 
+                maillist taskname starttime endtime "成功" "查询结果有内容"
+                (gen-query-table (:result result))
+            )
         )
     )
 )
