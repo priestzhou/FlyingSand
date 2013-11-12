@@ -46,51 +46,41 @@ def app_root(app, ver, cwd=None):
     app_rt = op.join(cwd, 'apps', app, ver)
     return app_rt
 
+def download_to_cache(url, cache):
+    prepare_dirs(op.dirname(cache))
+    digest = sha1(cache) if op.exists(cache) else None
+    url = urlparse(url)
+    host = url.hostname
+    port = url.port
+    url = urlunparse(['', '', url.path, url.params, url.query, ''])
+    conn = HTTPConnection(host, port)
+    try:
+        if digest:
+            conn.request('GET', url, '', {"If-None-Match": digest})
+        else:
+            conn.request('GET', url)
+        resp = conn.getresponse()
+        if resp.status == 200:
+            info('cache missing: %s', cache)
+            with open(cache, 'wb') as f:
+                shutil.copyfileobj(resp, f)
+        elif resp.status == 304:
+            info('cache hit: %s', cache)
+        else:
+            error("error while fetching files: %d", resp.status)
+            raise Exception("fetch file %s: %d" % (cache, resp.status))
+    finally:
+        conn.close()
+
+def copy_cache_to_workdir(cache, dst):
+    prepare_dirs(op.dirname(dst))
+    shutil.copy(cache, dst)
+
+
 def download(fs):
     for url, cache, dst in fs:
-        prepare_dirs(op.dirname(cache))
-        prepare_dirs(op.dirname(dst))
-        if not op.exists(cache):
-            url = urlparse(url)
-            host = url.hostname
-            port = url.port
-            url = urlunparse(['', '', url.path, url.params, url.query, ''])
-            conn = HTTPConnection(host, port)
-            try:
-                conn.request('GET', url)
-                resp = conn.getresponse()
-                if resp.status != 200:
-                    error("error while fetching files: %d", resp.status)
-                    raise Exception("fetch file %s: %d" % (cache, resp.status))
-                else:
-                    with open(cache, 'wb') as f:
-                        shutil.copyfileobj(resp, f)
-                    shutil.copy(cache, dst)
-            finally:
-                conn.close()
-        else:
-            digest = sha1(cache)
-            url = urlparse(url)
-            host = url.hostname
-            port = url.port
-            url = urlunparse(['', '', url.path, url.params, url.query, ''])
-            conn = HTTPConnection(host, port)
-            try:
-                conn.request('GET', url, '', {"If-None-Match": digest})
-                resp = conn.getresponse()
-                if resp.status == 200:
-                    info('cache missing: %s', cache)
-                    with open(cache, 'wb') as f:
-                        shutil.copyfileobj(resp, f)
-                    shutil.copy(cache, dst)
-                elif resp.status == 304:
-                    info('cache hit: %s', cache)
-                    shutil.copy(cache, dst)
-                else:
-                    error("error while fetching files: %d", resp.status)
-                    raise Exception("fetch file %s: %d" % (cache, resp.status))
-            finally:
-                conn.close()
+        download_to_cache(url, cache)
+        copy_cache_to_workdir(cache, dst)
 
 def execute(app, ver, opt):
     cwd = os.getcwd()
@@ -140,8 +130,6 @@ def start(opt):
     prepare(opt)
     app = opt["app"]
     ver = opt["ver"]
-    with open(op.join(app_root(app, ver), 'cfg.ver'), 'w') as f:
-        f.write(opt["cfg-ver"])
     opt["proc"] = execute(app, ver, opt["executable"])
 
 def stop(opt):
@@ -172,30 +160,29 @@ def update(item):
                 elif opt["ver"] != new_apps[app]["ver"]:
                     stop(opt)
             for app, opt in new_apps.items():
-                if app not in running_apps:
-                    start(opt)
-                elif opt["cfg-ver"] != running_apps[app]["cfg-ver"]:
-                    stop(running_apps[app])
-                    start(opt)
-                else:
+                if app in running_apps and 'proc' in running_apps[app]:
                     opt['proc'] = running_apps[app]['proc']
             running_apps = new_apps
     except ValueError:
         error("fail to dejsonize: %s", item)
 
+def is_running(p):
+    if p is None:
+        return False
+    elif not p.is_running():
+        return False
+    else:
+        try:
+            p.wait(timeout=0.1)
+            return False
+        except psutil.TimeoutExpired:
+            return True
+
 def patrol():
     info('patrol')
     with running_apps_lock:
         for app, opt in running_apps.items():
-            p = opt.get("proc", None)
-            if p and p.is_running():
-                try:
-                    exitcode = p.wait(timeout=0.1)
-                    warning('restart %s/%s', app, opt['ver'])
-                    start(opt)
-                except psutil.TimeoutExpired:
-                    pass
-            else:
+            if not is_running(opt.get("proc", None)):
                 warning('restart %s/%s', app, opt['ver'])
                 start(opt)
 
@@ -242,19 +229,20 @@ def failover():
             items = json.load(f)
         for x in items:
             running_apps[x['app']] = x
-        for p in psutil.process_iter():
-            if p.name in ['python2.7', 'python3.3', 'java'] and p.ppid == init_pid:
-                try:
-                    app, ver = fetch_app_ver(p.getcwd())
-                    if app not in running_apps or ver != running_apps[app]['ver']:
-                        warning('unknown process for %s/%s. killing...', app, ver)
-                        p.kill()
-                        p.wait()
-                    else:
-                        info('take care %s/%s again', app, ver)
-                        running_apps[app]['proc'] = p
-                except:
-                    pass
+        ps = [p for p in psutil.process_iter() if p.ppid == init_pid]
+        ps = [p for p in ps if p.name in ['python2.7', 'python3.3', 'java']]
+        for p in ps:
+            try:
+                app, ver = fetch_app_ver(p.getcwd())
+                if app in running_apps and ver == running_apps[app]['ver']:
+                    info('take care %s/%s again', app, ver)
+                    running_apps[app]['proc'] = p
+                else:
+                    warning('unknown process for %s/%s. killing...', app, ver)
+                    p.kill()
+                    p.wait()
+            except:
+                pass
     info('finish failover')
 
 def read_cfg():
