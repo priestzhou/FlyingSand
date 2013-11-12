@@ -20,10 +20,11 @@
     (let [
         response @req
         status (:status response)
+        _ (prn response)
         content-type (cond
             (nil? (:headers response)) nil
-            (nil? ((:headers response) "Content-Type")) nil
-            :else ((:headers response) "Content-Type")
+            (nil? (:content-type (:headers response))) nil
+            :else (:content-type (:headers response))
         )
         body (:body response)
         body (case content-type
@@ -46,4 +47,25 @@
 )
 
 (suite "slaves"
+    (:fact slaves:add
+        (with-open [s (CloseableServer. (mw/start-server {:port 11110}))]
+            (let [r0 (hc/post "http://localhost:11110/slaves/" {
+                    :query-params {
+                        "url" "http://localhost:11111/"
+                        "type" "staging"
+                    }
+                })
+                r0 (extract-response r0)
+                r1 (hc/get "http://localhost:11110/slaves/")
+                r1 (extract-response r1)
+                ]
+                [r0 r1]
+            )
+        )
+        :is
+        [
+            [201 nil]
+            [200 [["http://localhost:11111/" "staging"]]]
+        ]
+    )
 )

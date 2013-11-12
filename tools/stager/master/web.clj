@@ -6,6 +6,8 @@
         [clojure.java.io :as io]
         [org.httpkit.server :as http]
         [clojure.data.json :as json]
+        [utilities.core :as util]
+        [master.app :as app]
     )
     (:use
         [compojure.core :only (defroutes GET PUT POST DELETE HEAD ANY)]
@@ -16,20 +18,36 @@
 
 (defloggers debug info warn error)
 
-(defn- get-slaves [])
-(defn- add-slave [_])
+(defn- ruok []
+    {
+        :status 200
+        :headers {"Content-Type" "text/plain"}
+        :body "imok"
+    }
+)
+
+(defn- handle [h]
+    (try+
+        (h)
+    (catch map? ex
+        ex
+    )
+    (catch Exception ex
+        (error "exception!" :error (util/except->str ex))
+    )
+    (catch Error ex
+        (error "error!" :error (util/except->str ex))
+        (System/exit 1)
+    ))
+)
 
 (defn- app [opts]
     (handler/api
         (defroutes app-routes
-            (GET "/ruok" [] {
-                :status 200
-                :headers {"Content-Type" "text/plain"}
-                :body "imok"
-            })
-            (GET "/slaves/" [] (get-slaves))
+            (GET "/ruok" [] (ruok))
+            (GET "/slaves/" [] (handle app/get-slaves))
             (POST "/slaves/" {:keys [params]}
-                (add-slave params)
+                (handle (partial app/add-slave params))
             )
             (route/files "/" {:root (:resource-root opts) :allow-symlinks? true})
             (route/not-found "Not Found")
