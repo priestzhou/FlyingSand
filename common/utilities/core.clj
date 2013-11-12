@@ -1,7 +1,8 @@
 (ns utilities.core
-    (:import 
+    (:import
         [java.nio.charset StandardCharsets]
-        [java.io StringWriter PrintWriter]
+        [java.io StringWriter PrintWriter InputStream]
+        [java.security MessageDigest]
     )
 )
 
@@ -19,10 +20,10 @@
     (apply map vector args)
 )
 
-(defn enumerate 
+(defn enumerate
     ([init xs]
     (zip (iterate inc' init) xs))
-    
+
     ([xs]
     (enumerate 0 xs))
 )
@@ -116,4 +117,28 @@
     )
 )
 
+(defn hash-stream [^bytes buf ^InputStream in ^MessageDigest hasher]
+    (let [sz (.read in buf)]
+        (if (< sz 0)
+            (.digest hasher)
+            (do
+                (.update hasher buf 0 sz)
+                (recur buf in hasher)
+            )
+        )
+    )
+)
+
+(defn sha1-stream
+    ([^InputStream in]
+        (let [buf (byte-array (* 512 1024))]
+            (sha1-stream buf in)
+        )
+    )
+    ([^bytes buf ^InputStream in]
+        (let [hasher (MessageDigest/getInstance "SHA-1")]
+            (hash-stream buf in hasher)
+        )
+    )
+)
 

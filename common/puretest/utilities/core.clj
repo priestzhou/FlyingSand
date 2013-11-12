@@ -1,9 +1,14 @@
 (ns puretest.utilities.core
-    (:use testing.core
+    (:use
+        [testing.core :only (suite)]
         utilities.core
+    )
+    (:require
+        [clojure.string :as str]
     )
     (:import
         [java.util ArrayList]
+        [java.io ByteArrayInputStream]
     )
 )
 
@@ -106,5 +111,23 @@
     )
     (:fact hexdigits:two
         (hexdigits (byte-array [(byte 0x12) (byte -2)])) :is "12fe"
+    )
+)
+
+(suite "hasher"
+    (:fact sha1-stream
+        (->> "abc"
+            (str->bytes)
+            (ByteArrayInputStream.)
+            (sha1-stream)
+            (hexdigits)
+        )
+        :is
+        (->
+            "A9 99 3E 36 47 06 81 6A BA 3E 25 71 78 50 C2 6C 9C D0 D8 9D"
+            (str/lower-case)
+            (str/split #" ")
+            (str/join)
+        )
     )
 )

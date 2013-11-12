@@ -1,0 +1,20 @@
+Import('env')
+
+master = env.compileAndJar('master.jar', 'master',
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/argparser.jar'),
+    ],
+    standalone=True, manifest={'Main-Class': 'master.main'})
+
+env.compileAndJar('stager_puretest.jar', 'puretest',
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/testing.jar'),
+        master
+    ],
+    standalone=True, manifest={'Main-Class': 'puretest.main'})
+env.compileAndJar('stager_smoketest.jar', 'smoketest',
+    libs=[env['CLOJURE'],
+        env.File('$BUILD_DIR/testing.jar'),
+        master
+    ],
+    standalone=True, manifest={'Main-Class': 'smoketest.main'})

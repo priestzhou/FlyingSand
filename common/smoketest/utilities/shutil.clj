@@ -3,17 +3,17 @@
         [clojure.string :as str]
     )
     (:use
-        testing.core
+        [testing.core :only (suite)]
         utilities.core
         utilities.shutil
     )
-    (:import 
+    (:import
         [java.nio.file Path]
     )
 )
 
 (suite "rmtree"
-    (:testbench 
+    (:testbench
         (fn [test]
             (let [p "st_rmtree"]
                 (execute ["rm" "-rfv" p])
@@ -25,8 +25,8 @@
             )
         )
     )
-    (:fact rmtree 
-        (fn [p] 
+    (:fact rmtree
+        (fn [p]
             (rmtree p)
             (let [{exitcode :exitcode} (execute ["stat" p])]
                 (throw-if (= 0 exitcode)
@@ -132,7 +132,7 @@
 
 
 (suite "execute"
-    (:fact execute-stdout
+    (:fact execute:stdout
         (execute ["echo" "-n" "haha"] :out :pipe)
         :is
         {
@@ -140,7 +140,7 @@
             :out "haha"
         }
     )
-    (:fact execute-stderr
+    (:fact execute:stderr
         (execute ["bash" "-c" "echo -n haha 1>&2"] :err :pipe)
         :is
         {
@@ -148,7 +148,7 @@
             :err "haha"
         }
     )
-    (:fact execute-stdin
+    (:fact execute:stdin
         (execute ["cat" "-"] :in "haha" :out :pipe)
         :is
         {
@@ -156,7 +156,7 @@
             :out "haha"
         }
     )
-    (:fact execute-stderr-to-stdout
+    (:fact execute:stderr-to-stdout
         (execute ["bash" "-c" "echo -n haha 1>&2"] :out :pipe :err :out)
         :is
         {
@@ -169,43 +169,72 @@
 (suite "execute: with file"
     (:testbench
         (fn [test]
-            (let [d (getPath "execute_test")
-                    f (getPath d "xixi")
+            (let [
+                d (tempdir)
+                f (getPath d "xixi")
                 ]
                 (try
-                    (rmtree d)
                     (spitFile f "haha")
-                    (test f)
+                    (test d f)
                 (finally
                     (rmtree d)
                 ))
             )
         )
     )
-    (:fact execute-stdin-from-file
-        #(execute ["cat" "-"] :in % :out :pipe)
+    (:fact execute:stdin-from-file
+        (fn [_ f]
+            (execute ["cat" "-"] :in f :out :pipe)
+        )
         :eq
-        (fn [_]
-            {
-                :exitcode 0
-                :out "haha"
-            }
+        (fn [& _]
+            {:exitcode 0 :out "haha"}
         )
     )
-    (:fact execute-stdout-to-file
-        (fn [f]
+    (:fact execute:stdout-to-file
+        (fn [_ f]
             (execute ["echo" "-n" "hehe"] :out f)
             (slurp (.toFile f))
         )
         :eq
-        (fn [_] "hehe")
+        (fn [& _] "hehe")
     )
-    (:fact execute-stderr-to-file
-        (fn [f]
+    (:fact execute:stderr-to-file
+        (fn [_ f]
             (execute ["bash" "-c" "echo -n hehe 1>&2"] :err f)
             (slurp (.toFile f))
         )
         :eq
-        (fn [_] "hehe")
+        (fn [& _] "hehe")
+    )
+    (:fact execute:chdir
+        (fn [d _]
+            (let [r (execute ["pwd"] :out :pipe :dir d)]
+                (assert (= (:exitcode r) 0))
+                (->> r
+                    (:out)
+                    (str/trim)
+                    (getPath)
+                )
+            )
+        )
+        :eq
+        (fn [d _] d)
+    )
+)
+
+(suite "sha1-file"
+    (:fact sha1-file
+        (let [f (getPath (tempdir) "xx")]
+            (spitFile f "abc")
+            (hexdigits (sha1-file f))
+        )
+        :is
+        (->
+            "A9 99 3E 36 47 06 81 6A BA 3E 25 71 78 50 C2 6C 9C D0 D8 9D"
+            (str/lower-case)
+            (str/split #" ")
+            (str/join)
+        )
     )
 )

@@ -1,13 +1,14 @@
 (ns utilities.shutil
-    (:import 
+    (:import
         [java.nio.file Files Path LinkOption
             FileSystems SimpleFileVisitor FileVisitResult
         ]
-        java.nio.file.attribute.FileAttribute
+        [java.nio.file.attribute FileAttribute]
         [java.io StringWriter File InputStream FileInputStream]
     )
     (:require
         [clojure.java.io :as io]
+        [utilities.core :as util]
     )
 )
 
@@ -19,16 +20,16 @@
 )
 
 (defn getPath ^Path [base & segs]
-    (if-not (instance? Path base)
-        (->
-            (FileSystems/getDefault)
-            (.getPath base (into-array String segs))
+    (cond
+        (instance? String base) (.getPath (FileSystems/getDefault)
+            base (into-array String segs)
         )
-        (reduce #(.resolve %1 %2) base segs)
+        (instance? File base) (reduce #(.resolve %1 %2) (.toPath base) segs)
+        :else (reduce #(.resolve %1 %2) base segs)
     )
 )
 
-(defn- gen-fs-visitor [paths] 
+(defn- gen-fs-visitor [paths]
   (proxy [SimpleFileVisitor] []
     (visitFile [file _]
       (conj! paths file)
@@ -64,6 +65,10 @@
     )
 )
 
+(defn slurpFile [path]
+    (slurp (.toFile (getPath path)))
+)
+
 (defn spitFile [path content]
     (let [p (getPath path)]
         (assert (.getParent p))
@@ -74,7 +79,7 @@
     )
 )
 
-(defn tempdir 
+(defn tempdir
     ([prefix]
         (let [p (Files/createTempDirectory prefix (into-array FileAttribute []))]
             (mkdir p)
@@ -83,6 +88,14 @@
     )
     ([]
         (tempdir nil)
+    )
+)
+
+(defn sha1-file [p]
+    (let [p (getPath p)]
+        (with-open [in (FileInputStream. (.toFile p))]
+            (util/sha1-stream in)
+        )
     )
 )
 
@@ -125,38 +138,38 @@
     cmd - command line args to start the program
     opts - environments and redirections
     :in - possible values include :inherit, :pipe, a file or a string.
-        :inherit, the default, will redirect stdin of subprocess from the 
+        :inherit, the default, will redirect stdin of subprocess from the
             parent process.
         :pipe will open an OutputStream in the parent process, linking to stdin
             of the subprocess.
-        a file, i.e., an instance of File or Path, will redirect the stdin of 
+        a file, i.e., an instance of File or Path, will redirect the stdin of
             subprocess from the file.
         a string, will push the string into stdin of the subprocess.
     :out - possible values include :inherit, :pipe or a file.
         :inherit, the default, will redirect stdout to that of the parent process.
-        a file, i.e., an instance of File or Path, will overwrite the file by 
+        a file, i.e., an instance of File or Path, will overwrite the file by
             contents from stdout.
-        :pipe will put stdout of subprocess to an InputStream of the parent process. 
+        :pipe will put stdout of subprocess to an InputStream of the parent process.
     :err - possible values include :inherit, :pipe, :out or a file.
         :inherit, the default, will redirect stderr to that of the parent process.
         :pipe will put stderr of subprocess to an InputStream of the parent process
-        a file, i.e., an instance of File or Path, will overwrite the file by 
+        a file, i.e., an instance of File or Path, will overwrite the file by
             contents from stderr.
         :out will redirect stderr to its stdout.
     This returns the subprocess.
     "
     (let [
             opts (merge {
-                    :in :inherit 
+                    :in :inherit
                     :out :inherit
                     :err :inherit
-                } 
+                }
                 (apply hash-map opts)
             )
             pb (ProcessBuilder. (into-array String cmd))
         ]
         (let [in (:in opts)]
-            (cond 
+            (cond
                 (= :inherit in)
                     (.redirectInput pb java.lang.ProcessBuilder$Redirect/INHERIT)
                 (= :pipe in)
@@ -167,9 +180,9 @@
                     (.redirectInput pb in)
                 (instance? Path in)
                     (.redirectInput pb (.toFile in))
-                :else (throw (IllegalArgumentException. 
-                        (str "unknown argument for :in " in)
-                    ))
+                :else (throw (IllegalArgumentException.
+                    (str "unknown argument for :in " in)
+                ))
             )
         )
         (let [out (:out opts)]
@@ -182,9 +195,9 @@
                     (.redirectOutput pb out)
                 (instance? Path out)
                     (.redirectOutput pb (.toFile out))
-                :else (throw (IllegalArgumentException. 
-                        (str "unknown argument for :out " out)
-                    ))
+                :else (throw (IllegalArgumentException.
+                    (str "unknown argument for :out " out)
+                ))
             )
         )
         (let [err (:err opts)]
@@ -199,9 +212,19 @@
                     (.redirectError pb err)
                 (instance? Path err)
                     (.redirectError pb (.toFile err))
-                :else (throw (IllegalArgumentException. 
-                        (str "unknown argument for :err " err)
-                    ))
+                :else (throw (IllegalArgumentException.
+                    (str "unknown argument for :err " err)
+                ))
+            )
+        )
+        (when-let [dir (:dir opts)]
+            (cond
+                (instance? String dir) (.directory pb (File. dir))
+                (instance? Path dir) (.directory pb (.toFile dir))
+                (instance? File dir) (.directory pb dir)
+                :else (throw (IllegalArgumentException.
+                    (str "unknown argument for :dir " dir)
+                ))
             )
         )
         (let [p (.start pb)]
@@ -221,14 +244,14 @@
     cmd - command line args to start the program
     opts - environments and redirections
     :in - possible values include :inherit, a file or a string.
-        :inherit, the default, will redirect stdin of subprocess from the 
+        :inherit, the default, will redirect stdin of subprocess from the
             parent process.
-        a file, i.e., an instance of File or Path, will redirect the stdin of 
+        a file, i.e., an instance of File or Path, will redirect the stdin of
             subproces from the file.
         a string, will push the string into stdin of the subprocess.
     :out - possible values include :inherit, :pipe or a file.
         :inherit, the default, will redirect stdout to that of the parent process.
-        a file, i.e., an instance of File or Path, will overwrite the file by 
+        a file, i.e., an instance of File or Path, will overwrite the file by
             contents from stdout.
         :pipe will results a string in return, keyed by :out. Use it carefully,
             for it will possibly cause subprocess hung.
@@ -236,7 +259,7 @@
         :inherit, the default, will redirect stderr to that of the parent process.
         :pipe will results a string in return, keyed by :err. Use it carefully,
             for it will possibly cause subprocess hung.
-        a file, i.e., an instance of File or Path, will overwrite the file by 
+        a file, i.e., an instance of File or Path, will overwrite the file by
             contents from stderr.
         :out will redirect stderr to its stdout.
     This returns a map which contains :exitcode, and optionally :out and :err.
@@ -247,15 +270,15 @@
         ]
         (->
             {:exitcode (.waitFor p)}
-            (merge 
-                (if (= :pipe (:out opts)) 
-                    {:out (slurp (.getInputStream p))} 
+            (merge
+                (if (= :pipe (:out opts))
+                    {:out (slurp (.getInputStream p))}
                     {}
                 )
             )
-            (merge 
-                (if (= :pipe (:err opts)) 
-                    {:err (slurp (.getErrorStream p))} 
+            (merge
+                (if (= :pipe (:err opts))
+                    {:err (slurp (.getErrorStream p))}
                     {}
                 )
             )
