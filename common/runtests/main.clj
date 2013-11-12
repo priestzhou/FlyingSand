@@ -1,5 +1,5 @@
 (ns runtests.main
-    (:require 
+    (:require
         [clojure.string :as str]
         [clojure.java.io :as io]
         [clansi.core :as color]
@@ -7,8 +7,8 @@
         [utilities.shutil :as sh]
         [argparser.core :as arg]
     )
-    (:import 
-        [java.io File FileReader]
+    (:import
+        [java.io File FileReader ByteArrayInputStream]
         [java.nio.file Files FileSystems Path]
         [java.nio.file.attribute FileAttribute]
         [java.util.concurrent ArrayBlockingQueue]
@@ -21,8 +21,11 @@
         cmd ["java" "-jar" exejar "--show-cases"]
         f (->> exejar
             (sh/getPath)
-            (.toFile)
-            (.getName)
+            (str)
+            (util/str->bytes)
+            (ByteArrayInputStream.)
+            (util/sha1-stream)
+            (util/hexdigits)
             (format "%s.show-cases")
             (sh/getPath work-dir)
             (.toFile)
@@ -30,7 +33,12 @@
         {exitcode :exitcode} (sh/execute cmd :out f)
         ]
         (if (= 0 exitcode)
-            (-> (slurp f) (str/split #"\n"))
+            (let [res (-> (slurp f) (str/trim))]
+                (if (empty? res)
+                    []
+                    (str/split res #"\n")
+                )
+            )
             (do
                 (println "execution fail: " cmd)
                 (System/exit 1)
@@ -57,8 +65,8 @@
             (format "%s.out")
             (sh/getPath work-dir)
         )
-        {:keys [exitcode]} (sh/execute 
-            ["java" "-jar" exejar cs-name] 
+        {:keys [exitcode]} (sh/execute
+            ["java" "-jar" exejar cs-name]
             :out out :err :out
         )
         ]
@@ -270,7 +278,7 @@
             (System/exit 0)
         )
         (util/throw-if-not (:else opts)
-            IllegalArgumentException. 
+            IllegalArgumentException.
             "require at least one executable"
         )
         (-> opts
@@ -289,7 +297,7 @@
         pat (:cases opts)
         parallel (:parallel opts)
         exejars (:else opts)
-        cases (->> exejars 
+        cases (->> exejars
             (scan-test-jars dir)
             (filter (fn [[cs-name _]] (re-matches pat cs-name)))
             (group-by classifier)
