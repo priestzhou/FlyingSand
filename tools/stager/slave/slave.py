@@ -5,7 +5,7 @@ import os.path as op
 import shutil
 from time import sleep
 from threading import Thread, Lock
-from Queue import Queue
+from Queue import Queue, Empty
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from logging import debug, info, warning, error
 import logging
@@ -143,7 +143,6 @@ def start(opt):
     with open(op.join(app_root(app, ver), 'cfg.ver'), 'w') as f:
         f.write(opt["cfg-ver"])
     opt["proc"] = execute(app, ver, opt["executable"])
-    info('%s/%s started', app, ver)
 
 def stop(opt):
     p = opt.get("proc", None)
@@ -153,36 +152,58 @@ def stop(opt):
         del opt["proc"]
     info('%s/%s stoped', opt["app"], opt["ver"])
 
-def updater():
+def update(item):
     global running_apps_lock
     global running_apps
+    try:
+        info("accept a new list of apps: %s", item)
+        dejson = json.loads(item)
+        with open('apps.cfg', 'w') as f:
+            f.write(item)
+        new_apps = {}
+        for x in dejson:
+            app = x["app"]
+            new_apps[app] = x
+        with running_apps_lock:
+            for app, opt in running_apps.items():
+                if app not in new_apps:
+                    stop(opt)
+                elif opt["ver"] != new_apps[app]["ver"]:
+                    stop(opt)
+            for app, opt in new_apps.items():
+                if app not in running_apps:
+                    start(opt)
+                elif opt["cfg-ver"] != running_apps[app]["cfg-ver"]:
+                    stop(running_apps[app])
+                    start(opt)
+            running_apps = new_apps
+    except ValueError:
+        error("fail to dejsonize: %s", item)
+
+def patrol():
+    info('patrol')
+    with running_apps_lock:
+        for app, opt in running_apps.items():
+            p = opt.get("proc", None)
+            if p and p.is_running():
+                try:
+                    exitcode = p.wait(timeout=0.1)
+                    warning('restart %s/%s', app, opt['ver'])
+                    start(opt)
+                except psutil.TimeoutExpired:
+                    pass
+            else:
+                warning('restart %s/%s', app, opt['ver'])
+                start(opt)
+
+def worker():
     global workitems
     while True:
-        item = workitems.get()
         try:
-            info("accept a new list of apps: %s", item)
-            dejson = json.loads(item)
-            with open('apps.cfg', 'w') as f:
-                f.write(item)
-            new_apps = {}
-            for x in dejson:
-                app = x["app"]
-                new_apps[app] = x
-            with running_apps_lock:
-                for app, opt in running_apps.items():
-                    if app not in new_apps:
-                        stop(opt)
-                    elif opt["ver"] != new_apps[app]["ver"]:
-                        stop(opt)
-                for app, opt in new_apps.items():
-                    if app not in running_apps:
-                        start(opt)
-                    elif opt["cfg-ver"] != running_apps[app]["cfg-ver"]:
-                        stop(running_apps[app])
-                        start(opt)
-                running_apps = new_apps
-        except ValueError:
-            error("fail to dejsonize: %s", item)
+            item = workitems.get(True, 1)
+            update(item)
+        except Empty:
+            patrol()
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -208,7 +229,7 @@ if __name__ == '__main__':
     cfg = read_cfg()
     host = cfg["host"]
     port = cfg["port"]
-    t = Thread(target=updater)
+    t = Thread(target=worker)
     t.start()
     httpd = HTTPServer((host, port), MyHTTPRequestHandler)
     httpd.serve_forever()

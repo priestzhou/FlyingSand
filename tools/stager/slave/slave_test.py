@@ -217,5 +217,58 @@ with open('prepare.out', 'w') as f:
         with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prepare.out')) as f:
             self.assertEqual(f.read(), "['staging']")
 
+    def test_failover(self):
+        # start an app
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        self.slave.kill()
+        self.slave.wait()
+        self.slave = psutil.Popen(['python2.7', '-B', 'slave.py'],
+            cwd=self.root_dir)
+        sleep(5) # 5s to run prog
+        sleep(1) # 1s to let slave notice
+        sleep(3) # and restart
+        # stop the app
+        self.put('/apps/', json.dumps([]))
+        sleep(1)
+        with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prog.out')) as f:
+            self.assertEqual(f.read(), '101')
+
+    def test_restart(self):
+        # start an app
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        sleep(5) # 5s to run prog
+        sleep(1) # 1s to let slave notice
+        # stop the app
+        self.put('/apps/', json.dumps([]))
+        sleep(1)
+        with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prog.out')) as f:
+            self.assertEqual(f.read(), '101')
+
 if __name__ == '__main__':
     unittest.main()
