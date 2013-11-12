@@ -9,6 +9,7 @@ import json
 import psutil
 from threading import Thread
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+import re
 import slave
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -26,10 +27,14 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 )
 ''')
         elif self.path == '/ver/prog.py':
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/plain')
-            self.end_headers()
-            self.wfile.write('''\
+            digest = self.headers.get('If-None-Match', None)
+            if digest and digest == '08d7a0c45d71b03442a28da74d88c369d25e8078':
+                self.send_response(304)
+            else:
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/plain')
+                self.end_headers()
+                self.wfile.write('''\
 from time import sleep
 with open('prog.out', 'a') as f:
     f.write('1')
@@ -271,6 +276,100 @@ with open('prepare.out', 'w') as f:
         sleep(1)
         with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prog.out')) as f:
             self.assertEqual(f.read(), '101')
+
+    def test_update_nothing(self):
+        # start an app
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(6) # it should be restarted
+        # stop the app
+        self.put('/apps/', json.dumps([]))
+        sleep(1)
+        with open(op.join(slave.app_root('app', 'ver', self.root_dir), 'prog.out')) as f:
+            self.assertEqual(f.read(), '101')
+
+    def test_cache(self):
+        # start an app
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        # stop the app and restart it
+        self.put('/apps/', json.dumps([]))
+        with open(op.join(self.root_dir, 'cache', 'ver', 'prog.py'), 'w') as f:
+            f.write('')
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        self.put('/apps/', json.dumps([]))
+        self.put('/apps/', json.dumps([
+                {
+                    'app': "app", 'ver': "ver", "cfg-ver": "0",
+                    'sources': ['http://localhost:11110/'],
+                    'files': {"prog.py": "prog.py"},
+                    "executable": {
+                        'executable-type': 'py',
+                        'version': '2.7',
+                        'main': 'prog.py',
+                        'args': []
+                    }
+                }
+            ]))
+        sleep(1)
+        self.put('/apps/', json.dumps([]))
+        with open(op.join(self.root_dir, 'slave.log')) as f:
+            xs = [x.strip() for x in f]
+        xs = [re.search('\[cache.*\]', x) for x in xs]
+        xs = [x.group() for x in xs if x]
+        self.assertEqual(xs, [
+            '[cache missing: cache/ver/prog.py]',
+            '[cache hit: cache/ver/prog.py]'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -177,6 +177,8 @@ def update(item):
                 elif opt["cfg-ver"] != running_apps[app]["cfg-ver"]:
                     stop(running_apps[app])
                     start(opt)
+                else:
+                    opt['proc'] = running_apps[app]['proc']
             running_apps = new_apps
     except ValueError:
         error("fail to dejsonize: %s", item)
