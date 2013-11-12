@@ -16,6 +16,7 @@
         [query-server.config :as config]
         [query-server.web-server :as ws]
         [mailtool.core :as mail]
+        [query-server.timing-query-mail :as tqmail]
     )
     (:gen-class)
 )
@@ -147,10 +148,7 @@
                 (add-task-run-record tid qid "failed" runtime)
                 (error "the query failed or can't find" :qid qid)
                 (when (= "true" mailflag)
-                    (mail/send-html-mail "zhangjun@flying-sand.com"
-                        "test mail "
-                        "failed test mail"
-                    )
+                    (tqmail/send-mail tid qid)
                 )
                 nil
             )
@@ -174,17 +172,12 @@
 
 (defn- check-task-result [result noflag anyflag]
     (let [rcount (:count result)]
-        (when (and (= "true" noflag) (= rcount 0) )
-            (mail/send-html-mail "zhangjun@flying-sand.com"
-                "test mail "
-                "noresultmailflag test mail"
+        (when 
+            (or 
+                (and (= "true" anyflag) (> rcount 0)) 
+                (and (= "true" noflag) (= rcount 0))
             )
-        )
-        (when (and (= "true" anyflag) (> rcount 0) )
-            (mail/send-html-mail "zhangjun@flying-sand.com"
-                "test mail "
-                "anyresultmailflag test mail"
-            )
+            (tqmail/send-mail tid qid)
         )        
     )
 )
