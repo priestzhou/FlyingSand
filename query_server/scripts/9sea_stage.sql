@@ -84,7 +84,7 @@ CREATE TABLE `TblHistoryQuery` (
   `SubmitUserId` int(11) NOT NULL,
   `SubmitTime` datetime DEFAULT NULL,
   `ExecutionStatus` int(11) DEFAULT NULL,
-  `QueryString` varchar(512) DEFAULT NULL,
+  `QueryString` TEXT DEFAULT NULL,
   `EndTime` datetime DEFAULT NULL,
   `Error` varchar(512) DEFAULT NULL,
   `Url` varchar(255) DEFAULT NULL,
@@ -116,6 +116,7 @@ CREATE TABLE `TblMetaStore` (
   `DBName` varchar(20) DEFAULT NULL,
   `TableName` varchar(20) DEFAULT NULL,
   `hive_name` varchar(50) DEFAULT NULL,
+  `NameSpaceType` int(11) NOT NULL,
   PRIMARY KEY (`NameSpace`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -139,7 +140,7 @@ DROP TABLE IF EXISTS `TblSavedQuery`;
 CREATE TABLE `TblSavedQuery` (
   `QueryId` bigint(20) NOT NULL AUTO_INCREMENT,
   `QueryName` varchar(255) DEFAULT NULL,
-  `QueryString` varchar(512) DEFAULT NULL,
+  `QueryString` text DEFAULT NULL,
   `CreatedUserId` int(11) DEFAULT NULL,
   `SubmitTime` datetime DEFAULT NULL,
   `AppName` varchar(30) DEFAULT NULL,
