@@ -70,7 +70,7 @@
             timeSpan (:timespan query)
             now (get-now)
             ;seq-start-time (- now (mod (- now startTime) timeSpan))
-            seq-end-time (min (+ now timespan) endTime) 
+            seq-end-time (min (+ now timeSpan) endTime) 
             timeList (->> 
                     startTime
                     (iterate #(+ timeSpan % ))
@@ -170,7 +170,7 @@
     )
 )
 
-(defn- check-task-result [result noflag anyflag]
+(defn- check-task-result [tid qid result noflag anyflag]
     (let [rcount (:count result)]
         (when 
             (or 
@@ -199,7 +199,9 @@
                     timingqueryid qid runtime 0 failmailflag 
                 )
         ]
-        (check-task-result result noresultmailflag anyresultmailflag)
+        (check-task-result 
+            timingqueryid qid result noresultmailflag anyresultmailflag
+        )
     )
 )
 

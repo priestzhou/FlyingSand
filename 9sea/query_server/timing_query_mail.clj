@@ -13,6 +13,7 @@
         [query-server.mysql-connector :as mysql]
         [query-server.config :as config]
         [mailtool.core :as mail]
+        [clojure.string :as cstr]
     )
 )
 
@@ -30,20 +31,32 @@
     )
 )
 
+(defn- parsetime [time-long]
+    (->
+        time-long
+        (coerce/from-long)
+        (time/to-time-zone  (time/time-zone-for-offset +8))
+        (str )
+    )
+)
+
 (defn- send-mail' [maillist taskname starttime endtime flag titleflag]
+    (println "endtime" endtime)
+    (println "starttime" starttime)
+    (println "taskname" taskname)
     (let [ title 
             (-> 
                 mailtitle
-                (replace #"_titleflag_" titleflag)
-                (replace #"_taskname_" taskname)
+                (cstr/replace #"_titleflag_" titleflag)
+                (cstr/replace #"_taskname_" taskname)
             )
             context 
             (->
                 mailcontext
-                (replace #"_taskname_" taskname)
-                (replace #"_starttime_" starttime)   
-                (replace #"_endtime_" endtime)   
-                (replace #"_flag_" flag)   
+                (cstr/replace #"_taskname_" taskname)
+                (cstr/replace #"_starttime_" (parsetime starttime))
+                (cstr/replace #"_endtime_" (parsetime endtime))
+                (cstr/replace #"_flag_" flag)   
             )
         ]
         (mail/send-html-mail maillist title context)
@@ -52,6 +65,7 @@
 
 (defn send-mail [tid qid] 
     (let [qinfo (get-query-from-db-by-id tid)
+            _ (println "qinfo" qinfo)
             {:keys [maillist taskname]} qinfo
             result (qb/get-query-result qid)
             status (:status result)
