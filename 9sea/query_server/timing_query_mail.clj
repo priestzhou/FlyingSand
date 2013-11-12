@@ -17,9 +17,9 @@
     )
 )
 
-(def mailcontext "尊敬的用户：<br> 您的周期任务，任务名称：_taskname_，
-    于_starttime_开始，于_endtime_结束。<br>
-    任务执行结果:_flag_，请登录系统查看详情。<br>")
+(def mailcontext "<p>尊敬的用户：</p> <p>您的周期任务，任务名称：_taskname_，
+    于_starttime_开始，于_endtime_结束。</p> <p>
+    任务执行结果:_flag_，请登录系统查看详情。</p>")
 
 (def mailtitle "_taskname_已经执行完毕,_titleflag_")
 
