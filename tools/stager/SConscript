@@ -2,6 +2,13 @@ Import('env')
 
 master = env.compileAndJar('master.jar', 'master',
     libs=[env['CLOJURE'],
+        env.File('$EXTLIB/slingshot-0.10.3.jar'),
+        env.File('$EXTLIB/ring-1.2.1.jar'),
+        env.File('$EXTLIB/http-kit-2.1.13.jar'),
+        env.File('$EXTLIB/compojure-1.1.6.jar'),
+        env.File('$EXTLIB/data.json-0.2.2.jar'),
+        env.File('$BUILD_DIR/logging.jar'),
+        env.File('$BUILD_DIR/utilities.jar'),
         env.File('$BUILD_DIR/argparser.jar'),
     ],
     standalone=True, manifest={'Main-Class': 'master.main'})

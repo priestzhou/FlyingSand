@@ -162,6 +162,14 @@ libDependencies = {
         env.File('$EXTLIB/hiccup-1.0.3.jar'),
         env.File('$EXTLIB/clj-stacktrace-0.2.6.jar'),
     ],
+    env.File('$EXTLIB/ring-1.2.1.jar'): [
+        env.File('$EXTLIB/ring-codec-1.0.0.jar'),
+        env.File('$EXTLIB/commons-codec-1.8.jar'),
+        env.File('$EXTLIB/commons-fileupload-1.3.jar'),
+        env.File('$EXTLIB/javax.servlet-api.jar'),
+        env.File('$EXTLIB/tools.reader-0.7.10.jar'),
+        env.File('$EXTLIB/clj-time-0.5.2.jar'),
+    ],
     env.File('$EXTLIB/ns-tracker-0.2.1.jar'): [
         env.File('$EXTLIB/tools.namespace-0.2.3.jar'),
     ],
@@ -175,6 +183,11 @@ libDependencies = {
     ],
     env.File('$EXTLIB/compojure-1.1.5.jar'): [
         env.File('$EXTLIB/ring-1.1.8.jar'),
+        env.File('$EXTLIB/clout-1.1.0.jar'),
+        env.File('$EXTLIB/core.incubator-0.1.3.jar'),
+        env.File('$EXTLIB/tools.macro-0.1.2.jar'),
+    ],
+    env.File('$EXTLIB/compojure-1.1.6.jar'): [
         env.File('$EXTLIB/clout-1.1.0.jar'),
         env.File('$EXTLIB/core.incubator-0.1.3.jar'),
         env.File('$EXTLIB/tools.macro-0.1.2.jar'),
@@ -272,7 +285,7 @@ libDependencies = {
         env.File('$EXTLIB/mysql-connector-java-5.1.6.jar'),
         env.File('$EXTLIB/lib-for-shark/java.jdbc-0.2.3.jar'),
         env.File('$EXTLIB/c3p0-0.9.2.1.jar'),
-	env.File('$EXTLIB/mchange-commons-java-0.2.3.4.jar'),
+        env.File('$EXTLIB/mchange-commons-java-0.2.3.4.jar'),
     ],
 }
 
