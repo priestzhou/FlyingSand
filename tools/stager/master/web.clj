@@ -28,7 +28,19 @@
 
 (defn- handle [h]
     (try+
-        (h)
+        (let [r (h)]
+            (cond
+                (nil? (:headers r)) (assoc r
+                    :headers {"Content-Type" "application/json"}
+                    :body "null"
+                )
+                (not (contains? (:headers r) "Content-Type")) (assoc r
+                    :headers (assoc (:headers r) "Content-Type" "application/json")
+                    :body "null"
+                )
+                :else r
+            )
+        )
     (catch map? ex
         ex
     )
@@ -49,6 +61,10 @@
             (GET "/slaves/" [] (handle app/get-slaves))
             (POST "/slaves/" {:keys [params]}
                 (handle (partial app/add-slave params))
+            )
+
+            (GET "/remote" {:keys [params]}
+                (handle (partial app/fetch-remote opts params))
             )
 
             ; (GET "/repository/" {:keys [params]}

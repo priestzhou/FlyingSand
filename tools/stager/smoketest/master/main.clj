@@ -4,6 +4,8 @@
     )
     (:require
         [clojure.data.json :as json]
+        [clj-time.core :as time]
+        [clj-time.coerce :as coer]
         [org.httpkit.client :as hc]
         [utilities.shutil :as sh]
         [master.web :as mw]
@@ -75,42 +77,51 @@
     )
 )
 
-(comment
-(suite "ver"
-    (:fact ver:get:tag
+(defn- update-repo [now]
+    (Thread/sleep 100)
+    (let [r (hc/get
+            (format "http://localhost:11110/remote?timestamp=%d" now)
+        )
+        r @r
+        ]
+        (cond
+            (= (:status r) 102) (recur now)
+            :else r
+        )
+    )
+)
+
+(suite "repository"
+    (:fact repo:update
         (let [
             rt (sh/tempdir)
+            repo (sh/getPath rt "repo")
             opt {
                 :port 11110
-                :repository (str (sh/getPath rt "smile"))
-                :workdir (str (sh/getPath rt "ws"))
+                :workdir rt
             }
             ]
-            (sh/execute ["git" "init" "smile"] :dir rt)
+            (git/init repo)
+            (sh/spitFile (sh/getPath repo "smile.txt") "hehe")
+            (git/commit repo :msg "hehe")
+            (git/clone (sh/getPath rt "remote") :src (.toUri repo))
+            (git/branch repo :branch "smile")
             (with-open [s (CloseableServer. (mw/start-server opt))]
-                (let [r0 (hc/get "http://localhost:11110/repository/" {
-                        :query-params {"tag" "master"}
-                    })
-                    r0 (extract-response r0)
-                    ]
-                    (sh/spitFile (sh/getPath rt "smile" "smile.txt") "hehe")
-                    (sh/execute ["git" "add" "smile.txt"] :dir (sh/getPath rt "smile"))
-                    (sh/execute ["git" "commit" "-am" "hehe"] :dir (sh/getPath rt "smile"))
-                    (let [r1 (hc/get "http://localhost:11110/repository/" {
-                            :query-params {"tag" "master"}
-                        })
-                        r1 (extract-response r1)
-                        ]
-                        [r0 r1]
+                (let [r (update-repo (coer/to-long (time/now)))]
+                    (cond
+                        (= (:status r) 200) (-> r
+                            (:body)
+                            (json/read-str)
+                            (dissoc "recent-sync")
+                            (keys)
+                            (sort)
+                        )
+                        :else (:status r)
                     )
                 )
             )
         )
         :is
-        [
-            [200 {"tag" "xxx"}]
-            [200 {"tag" "xxx"}]
-        ]
+        ["origin/master" "origin/smile"]
     )
-)
 )

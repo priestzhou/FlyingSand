@@ -4,12 +4,17 @@
         [utilities.core :as util]
         [utilities.shutil :as sh]
     )
+    (:use
+        [logging.core :only [defloggers]]
+    )
     (:import
         [java.io IOException]
         [java.net URI]
         [java.nio.file Path]
     )
 )
+
+(defloggers debug info warn error)
 
 (defn- git [repo cmd]
 {
@@ -22,8 +27,11 @@
         cmd (vec (cons "git" cmd))
         r (sh/execute cmd :dir repo :out :pipe :out :pipe)
         ]
-        (util/throw-if-not (= (:exitcode r) 0)
-            IOException. (format "fail to git %s: %s" (pr-str cmd) (:out r))
+        (when-not (= (:exitcode r) 0)
+            (error "fail to git" :cmd cmd :stderr (:out r))
+            (throw (IOException.
+                (format "fail to git %s: %s" (pr-str cmd) (:out r))
+            ))
         )
         r
     )
@@ -44,6 +52,9 @@
 )
 
 (defn commit [repo & {:keys [msg]}]
+{
+    :pre [(not (nil? msg))]
+}
     (let [
         repo (sh/getPath repo)
         r (git repo ["status" "-s"])
@@ -108,6 +119,34 @@
         (->> (:out r)
             (str/split-lines)
             (first)
+        )
+    )
+)
+
+(defn fetch [repo]
+    (let [repo (sh/getPath repo)]
+        (git repo ["fetch" "-q" "--all" "--prune"])
+    )
+)
+
+(defn show-branches [repo & {:keys [remote]}]
+{
+    :pre [remote]
+}
+    (let [
+        repo (sh/getPath repo)
+        r (git repo ["branch" "--remote"])
+        o (str/trimr (:out r))
+        ]
+        (if (empty? o)
+            []
+            (for [
+                x (str/split-lines o)
+                :let [x (str/trim x)]
+                :when (not (re-find #" -> " x))
+                ]
+                x
+            )
         )
     )
 )
