@@ -184,6 +184,7 @@ var Common={
           "sInfo": "共 _TOTAL_ 条记录 _START_ 到 _END_ ",
           "sSearch":"搜索：",
           "sProcessing":"加载中...",
+          "sZeroRecords":"无记录",
           "oPaginate": {
             "sFirst": "首页",
             "sLast": "尾页",
