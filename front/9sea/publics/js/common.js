@@ -1,6 +1,6 @@
 var Common={
 	init:function(){
-		this.setInput();		
+		this.setInput();
 	},
 	uiInit:function(){
 		this.selectDown();
@@ -52,14 +52,14 @@ var Common={
 		    if(uid){
 		      delLink.find("strong").html('退出登录');
 		    }else{
-		    	location.href="/sql/home.html";
+		    	location.href="/sql/";
 		    	//delLink.find("strong").html('<a href="#" class="loginBtn">登录</a>');
-		    }	
-		
+		    }
+
 		delLink.click(function(){
 			//$(this).find("strong").html('<a href="#" class="loginBtn">登录</a>');
 			$.cookie("user_id",null,{path:"/sql/"});
-			location.href="/sql/home.html";
+			location.href="/sql/";
 		})
 	},
 	getTimes:function(){
@@ -75,11 +75,11 @@ var Common={
 	        hide: 1000
 	      }
 	    });
-	    		
+
 	},
 	getSelectTime:function(from,mainName){
 		var startTime=from;
-		
+
 		Common.timer[mainName]=setInterval(function(){
 			var currentTime=Common.getTimes(),
 				ms=currentTime-startTime;
@@ -97,7 +97,7 @@ var Common={
 				remainM<=9?remainM="0"+remainM:remainM=remainM;
 				remainS<=9?remainS="0"+remainS:remainS=remainS;
 
-				$("#sqlTab .body").find(".main[name="+mainName+"] .sqlTime").html(remainH+":"+remainM+":"+remainS);							
+				$("#sqlTab .body").find(".main[name="+mainName+"] .sqlTime").html(remainH+":"+remainM+":"+remainS);
 		},1000);
 
 	},
@@ -114,7 +114,7 @@ var Common={
 				m<12?m=m+1:m=1;
 				h<=9?h="0"+h:h=h;
 				mi<=9?mi="0"+mi:mi=mi;
-				s<=9?s="0"+s:s=s;			
+				s<=9?s="0"+s:s=s;
 
 			return y+"-"+m+"-"+d+" "+h+":"+mi+":"+s;
 	},
@@ -159,7 +159,7 @@ var Common={
 	  "status":"状态",
 	  "reason":"原因",
 	  "操作":"操作"
-	}    
+	}
     var values=value,
         column=title;
     var allColumn=[];
@@ -184,20 +184,21 @@ var Common={
           "sInfo": "共 _TOTAL_ 条记录 _START_ 到 _END_ ",
           "sSearch":"搜索：",
           "sProcessing":"加载中...",
+          "sZeroRecords":"无记录",
           "oPaginate": {
             "sFirst": "首页",
             "sLast": "尾页",
             "sNext": "下一页",
             "sPrevious": "上一页"
-          }                    
-        }     
+          }
+        }
       });
 
 
 
   },
   formatArr:function(arr){
- 	  var column=[];	
+ 	  var column=[];
       for (var j=0,l=arr.length;j<l;j++){
         if(typeof arr[j]!="undefined"){
           column.push(arr[j]);
@@ -213,12 +214,12 @@ var Common={
 		$(this).parent().siblings().find("span").removeClass("openIcon").addClass("closeIcon");
 		$(this).find("span").removeClass("closeIcon").addClass("openIcon");
 		$(this).parent().siblings().removeClass("active");
-		$(this).parent().addClass("active");	
+		$(this).parent().addClass("active");
 		helpCon.eq(index).show().siblings().hide();
 
 		return false;
 
-	})  	
+	})
   },
   selectDown:function(){
   	var selectDown=$(".topMenu1"),select=$(".selectMenu"),timer;
@@ -232,7 +233,7 @@ var Common={
   			t.removeClass("activeDown");
   			t.next().hide();
   		},800)
-  	})  	
+  	})
 
   	select.hover(function(){
   		clearTimeout(timer);
@@ -241,5 +242,5 @@ var Common={
   		$(this).prev().removeClass("activeDown");
   	})
 
-  }    	
+  }
 }

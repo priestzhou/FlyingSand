@@ -5,7 +5,6 @@
     )
     (:require 
         [org.httpkit.client :as client]
-        [query-server.query-backend :as qb]
         [query-server.hive-adapt :as ha]
         [clojure.java.jdbc :as jdbc]
         [clojure.data.json :as js]
@@ -15,6 +14,9 @@
         [query-server.mysql-connector :as mysql]
         [utilities.aes :as aes]
         [query-server.config :as config]
+        [clj-time.core :as time]
+        [clj-time.format :as tformat]
+        [clj-time.coerce :as coe]
     )
     (:gen-class)
 )
@@ -236,6 +238,7 @@
                 (:dbname dataset)
                 (:tablename dataset)
                 (:hiveName dataset)
+                "1"
             )
         )
     )
@@ -349,10 +352,9 @@
 )
 
 (defn- updata-agent-sync-time [agentid]
-    (let [now (System/currentTimeMillis)
-            nowstr (get-group-time now 1000)
-            _ (debug "updatetime" nowstr)
-            sql (str "update TblAgent set LastSyncTime=\"" nowstr"\" "
+    (let [now (tformat/unparse (tformat/formatters :date-hour-minute-second) (time/now))
+            _ (debug "updatetime" now)
+            sql (str "update TblAgent set LastSyncTime=\"" now "\" "
                     " where id =" agentid
                 )
             res (runupdate sql)

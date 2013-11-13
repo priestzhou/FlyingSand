@@ -63,6 +63,7 @@ var Collectors = {
                   var titles=["name", "url", "status", "recent-sync", "操作"];
                   var v=[],stop=[];
                   for (var j=0,l=data.length;j<l;j++){
+                    if(data[j].status !== "abandoned"){
                       v[j] = [];
                       v[j].push(data[j].name);
                       v[j].push(data[j].url);
@@ -90,6 +91,7 @@ var Collectors = {
                         var edit=Collectors.getTablesOp("edit",data[j].id+"__"+data[j].name+"__"+data[j].url)
                       }
                       v[j].push(del+" "+edit);
+                    }
                   }
 
 
@@ -102,8 +104,9 @@ var Collectors = {
                       $(this).parent().html("");
                     })
                   }
-                  
+
                   titles.push();
+                  v=Common.formatArr(v);
                   Common.setGrid(titles,v,"<span class='sqlIcon tipIcon'></span>常用查询");
                 }
               }
@@ -120,7 +123,7 @@ var Collectors = {
 
       var html='<textarea class="colDelTa popTextarea" placeholder="删除理由" value=""/><p><a id="colDel" class="btn_blue_long" href="javascript:void(0);" rel="'+id+'">提交</a></p>';
       Query.setPop("<span class='sqlIcon tipIcon tipCommonIcon'></span>删除收集器",html);
-      
+
     })
 
     $("#colDel").live("click",function(){
@@ -133,6 +136,7 @@ var Collectors = {
               url: "/sql/collectors/"+id,
               type: 'delete',
               data:{
+                        "reason":textareaVal,
                         "timestamp": Common.getTimes()
               },
               dataType: 'json',
@@ -232,51 +236,47 @@ var Collectors = {
                 401:function(){alert("暂时没有结果")},
                 200:function(data){
                   if(!data.length){return;}
-                  var titles=[],v=[],data_id=[];
+                  var titles=["name", "url", "recent-sync", "reason"],v=[];
 
                   for (var j=0,l=data.length;j<l;j++){
                       if(data[j].status=="abandoned"){
-                            titles[j]=[];
                             v[j]=[];
-
-                            for (var i in data[j]){
-                                if(i=="id"){
-                                  data_id.push(data[j][i]);
-                                  delete data[j][i];
-                                }else{
-                                  titles[j].push(i);
-                                  v[j].push(data[j][i]);
-                                }
-
+                            v[j].push(data[j].name);
+                            v[j].push(data[j].url);
+                            if (data[j]["recent-sync"] == undefined || data[j]["recent-sync"] == null) {
+                              v[j].push('--');
+                            } else {
+                              v[j].push(new Date(data[j]["recent-sync"]).toLocaleString())
                             }
-
+                            if (data[j]["reason"] == undefined || data[j]["reason"] == null) {
+                              v[j].push('--');
+                            } else {
+                              v[j].push(data[j].reason);
+                            }
                       }
-              
+
                   }
 
-                  Collectors.setPopGrid(titles,v,"<span class='sqlIcon tipIcon'></span>收集器历史操作");
+                  Collectors.setPopGrid(titles,v,"<span class='sqlIcon tipIcon'></span>查看已废弃收集器");
                 }
               }
 
           });
     })
   },
-  setPopGrid:function(title,value,poptitle,option){//列名，值，弹窗标题，是否要开启选项
+  setPopGrid:function(title,value,poptitle){//列名，值，弹窗标题，是否要开启选项
   var params={
-    "reason":"备注",
+    "reason":"废弃理由",
     "name":"数据收集器名称",
-    "recent-sync":"删除时间",
-    "url":"收集器地址",
-    "status":"状态"
+    "recent-sync":"最后一次同步时间",
+    "url":"收集器路径"
   }
-      var values=Common.formatArr(value),column=Common.formatArr(title);
-
-      column=column[0];
+      var values=Common.formatArr(value);
 
       var allColumn=[];
 
-      for (var i=0,l=column.length;i<l;i++){
-        allColumn.push({"sTitle":params[column[i]]});
+      for (var i=0,l=title.length;i<l;i++){
+        allColumn.push({"sTitle":params[title[i]]});
       }
 
       var popHtml='<div id="pop"><table cellpadding="0" cellspacing="0" border="0" id="popGrid"></table></div>';
@@ -291,9 +291,10 @@ var Collectors = {
           "sPaginationType": "full_numbers",
           bLengthChange:false,
           bSort:false,
-          bSortClasses:false,            
+          bSortClasses:false,
           "aaData": values,
           "aoColumns":allColumn,
+          sScrollY:"300px",
           oLanguage:{
             "sInfo": "共 _TOTAL_ 条记录 _START_ 到 _END_ ",
             "sSearch":"搜索：",

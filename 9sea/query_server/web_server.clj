@@ -206,7 +206,7 @@
                context (gen-context account-id app version db)
                ]
            (prn "query context" context)
-               (let [qid (backend/submit-query context user-id query)]
+               (let [qid (backend/submit-query context account-id user-id query)]
                  (println (str "qid is:" qid))
 
                  {

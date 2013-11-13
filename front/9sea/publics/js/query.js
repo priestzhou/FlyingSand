@@ -114,8 +114,8 @@ var Query = {
               html="`"+appName+"`.`"+verName+"`.`"+name+"`";
             }
 
-            var currentV=Query.getCurrentEditor().getValue();
-            Query.getCurrentEditor().setValue(currentV+" "+html);
+            var currentCursor=Query.getCurrentEditor().getCursor();
+            Query.getCurrentEditor().replaceRange(" "+html,currentCursor,currentCursor);
             return false;
           } else if (type == "namespace") {
             return false;
@@ -135,8 +135,8 @@ var Query = {
               html="`"+appName+"`.`"+verName+"`.`"+pNodeName+"`.`"+name+"`";
             }
 
-            var currentV=Query.getCurrentEditor().getValue();
-            Query.getCurrentEditor().setValue(currentV+" "+html);
+            var currentCursor=Query.getCurrentEditor().getCursor();
+            Query.getCurrentEditor().replaceRange(" "+html,currentCursor,currentCursor);
             return false;
           }
         }
@@ -177,6 +177,17 @@ var Query = {
         $("#sqlTree").unblock();
         if(status=="success"){
           //var data=[{"children":[{"children":[{"type":"table","name":"acter","hive-name":"tn_9cbbdac653a98fc3a7a604c5ab7f88d11cf86534","children":[{"name":"id","type":"int"},{"name":"userid","type":"int"},{"name":"name","type":"string"},{"name":"class","type":"int"},{"name":"sex","type":"tinyint"},{"name":"hp","type":"int"},{"name":"mp","type":"int"},{"name":"rage","type":"int"},{"name":"str","type":"int"},{"name":"int","type":"int"},{"name":"agi","type":"int"},{"name":"spi","type":"int"},{"name":"sta","type":"int"},{"name":"level","type":"int"},{"name":"exp","type":"int"},{"name":"mapid","type":"int"},{"name":"instanceid","type":"int"},{"name":"x","type":"int"},{"name":"y","type":"int"},{"name":"money","type":"int"},{"name":"gift","type":"int"},{"name":"gold","type":"int"},{"name":"fastpay","type":"int"},{"name":"faction","type":"int"},{"name":"bagnum","type":"int"},{"name":"titlelist","type":"string"},{"name":"storagenum","type":"int"},{"name":"unionid","type":"int"},{"name":"ki","type":"int"},{"name":"kimax","type":"int"},{"name":"sitstarttime","type":"int"},{"name":"doingguidegroups","type":"string"},{"name":"finishedguidegroups","type":"string"},{"name":"flowercount","type":"int"},{"name":"eggcount","type":"int"},{"name":"autotaskflag","type":"int"},{"name":"skillpoint","type":"int"},{"name":"defaultmountid","type":"int"},{"name":"currentmountid","type":"int"},{"name":"attackmeridianid","type":"int"},{"name":"herosoulbagcount","type":"int"},{"name":"herosoulstoragecount","type":"int"},{"name":"heroactive","type":"string"},{"name":"herosoulfragment","type":"int"},{"name":"pvpprotect","type":"int"},{"name":"herosuper","type":"string"},{"name":"dantiancdfinishtime","type":"double"},{"name":"dantiancding","type":"int"},{"name":"activity","type":"int"},{"name":"issit","type":"tinyint"},{"name":"degreelevel","type":"int"},{"name":"degreeexp","type":"int"},{"name":"canreadbooks","type":"string"},{"name":"officialposition","type":"int"},{"name":"reputation","type":"int"},{"name":"herochallengelist","type":"string"},{"name":"herochallengemaxindex","type":"int"},{"name":"treasurehuntstate","type":"int"},{"name":"funcopenindex","type":"int"},{"name":"funcopenids","type":"string"},{"name":"specialtitles","type":"string"},{"name":"createtime","type":"int"},{"name":"charminglevel","type":"int"},{"name":"charmingexp","type":"int"},{"name":"score","type":"int"},{"name":"arenawincount","type":"int"},{"name":"arathiwincount","type":"int"},{"name":"escortbeautyid","type":"int"},{"name":"bestscore","type":"int"},{"name":"herochallengemaxtime","type":"double"},{"name":"astrallevel","type":"int"},{"name":"astralexp","type":"int"},{"name":"astralpoint","type":"int"},{"name":"nowastralid","type":"int"},{"name":"petheroidx","type":"int"},{"name":"petheroinneridx","type":"int"},{"name":"energy","type":"int"},{"name":"valentinetotal","type":"int"},{"name":"valentine","type":"int"},{"name":"fastpaybind","type":"int"},{"name":"fs_agent","type":"string"}]},{"type":"table","name":"acter_statistics_new","hive-name":"tn_c82ce1f1743f5d68e888f30101d4395427fc4457","children":[{"name":"acterid","type":"int"},{"name":"name","type":"string"},{"name":"value","type":"double"},{"name":"fs_agent","type":"string"}]},{"type":"table","name":"user","hive-name":"tn_ef7fd7e08e83918904ec37364288320f39fd7b70","children":[{"name":"id","type":"int"},{"name":"username","type":"string"},{"name":"passtype","type":"string"},{"name":"password","type":"string"},{"name":"adult","type":"tinyint"},{"name":"dt","type":"double"},{"name":"lastacterid","type":"int"},{"name":"banneduntil","type":"int"},{"name":"allowdebug","type":"int"},{"name":"qqgiftget","type":"int"},{"name":"isyellow","type":"int"},{"name":"isyearyellow","type":"int"},{"name":"yellowlevel","type":"int"},{"name":"source","type":"string"},{"name":"fs_agent","type":"string"}]}],"type":"namespace","name":"v1"}],"type":"namespace","name":"bigtable"},{"children":[{"children":[{"type":"table","name":"item","hive-name":"testapp","children":[{"name":"id","type":"int"},{"name":"name","type":"string"},{"name":"fs_agent","type":"string"}]}],"type":"namespace","name":"v1"},{"children":[{"type":"table","name":"item","hive-name":"testapp2","children":[{"name":"userid","type":"int"},{"name":"name","type":"string"},{"name":"fs_agent","type":"string"},{"name":"city","type":"string"}]}],"type":"namespace","name":"v2"}],"type":"namespace","name":"testapp"}];
+
+          for(var i=0,l=data.length;i<l;i++){
+            if(data[i].type=="namespace"){
+              data[i]["isParent"]=true;
+            }
+            for (var j=0,jl=data[i].children.length;j<jl;j++){
+              if(data[i].children[j].type=="namespace"){
+                data[i].children[j]["isParent"]=true;
+              }
+            }
+          }
 
           Query.tree = $.fn.zTree.init(t, setting, data);
           Query.setTreeHandle(Query.tree);

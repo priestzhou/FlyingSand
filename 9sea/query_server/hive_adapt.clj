@@ -1,7 +1,9 @@
 (ns query-server.hive-adapt
     (:require
         [clojure.string :as cs]
-        [query-server.core :as qc]
+        [query-server.mysql-connector :as mysql]
+        [clojure.java.jdbc :as sql]
+        [utilities.core :as util]
     )
     (:use
         [clojure.set]
@@ -30,6 +32,39 @@
 
 (def ^:private partStr "fs_agent")
 
+(def ^:private hive-db (ref {:classname "org.apache.hadoop.hive.jdbc.HiveDriver"
+                             :subprotocol "hive"
+                             :user ""
+                             :password ""
+                            }
+                       )
+)
+
+(def ^:private hive-conn-str (ref ""))
+
+(def ^:private table-type ["" "table" "ctas" "view"])
+(def ^:private hive-conn-str (ref ""))
+
+(defn get-hive-conn-str
+  []
+  (-> @hive-conn-str)
+)
+
+(defn set-hive-db
+  [host port]
+  (dosync
+    (alter hive-db conj {:subname (format "//%s:%s" host port)})
+    (ref-set hive-conn-str (format "jdbc:hive://%s:%s" host port))
+  )
+  (prn "hive-db" @hive-db)
+  (prn "hive-conn-str" @hive-conn-str)
+)
+
+(defn get-hive-db
+  []
+  (-> @hive-db)
+)
+
 (defn- mysql-type-to-hive [colType]
     (->>
         colType
@@ -48,6 +83,48 @@
     )
 )
 
+(defn run-shark-query'
+  [q-id query-str]
+  (try
+    (debug "run-shark-query" :qid q-id)
+    (prn (str "query-str:" query-str))
+    (sql/with-connection (get-hive-db)
+      (sql/with-query-results rs [query-str]
+        (doall rs)
+        ))
+    (catch Exception exception
+      (error "run shark query:" (util/except->str exception))
+    )
+  )
+)
+
+(defn run-shark-command
+  [q-id query-str]
+  (try
+    (debug "run-shark-query" :qid q-id)
+    (prn (str "query-str:" query-str))
+    (sql/with-connection (get-hive-db)
+      ; we may need to use another API here
+      (sql/with-query-results rs [query-str]
+        (doall rs)
+        ))
+    {:status :succeeded}
+    (catch Exception exception
+      (error "run shark query:" (util/except->str exception))
+      {:status :failed :exception exception}
+      )
+  )
+)
+
+(defn run-shark-query-with-except-throw
+  [query-str]
+    (prn (str "query-str:" query-str))
+    (sql/with-connection (get-hive-db)
+      (sql/with-query-results rs [query-str]
+        (doall rs)
+        ))
+)
+
 (defn create-table [tn collist]
     (let [coll (map  get-column collist)
             colsql (reduce #(str %1 "," %2) coll)
@@ -57,7 +134,7 @@
                 ") PARTITIONED BY ("partStr" STRING) "
                 "ROW FORMAT DELIMITED FIELDS TERMINATED BY \"\\1\"" 
                 )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         res
     )
@@ -65,7 +142,7 @@
 
 (defn check-partition [tn pn]
     (let [mainSql (str "SHOW PARTITIONS " tn " PARTITION (" partStr "=\"" pn "\")")
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         (cond
             (nil? res) false
@@ -77,7 +154,7 @@
 
 (defn add-partition [tn pn]
     (let [mainSql (str "alter table " tn " add PARTITION (" partStr "=\"" pn "\")")
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         res
     )
@@ -87,7 +164,7 @@
     (let [mainSql (str "show table extended like " 
                     tn " PARTITION (" partStr "=\"" pn "\")"
                 )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
             flist (filter 
                     #(->>
                     (re-find #"^location:" (:tab_name %))
@@ -109,7 +186,7 @@
 
 (defn get-hive-clos [tn]
     (let [mainSql (str "DESCRIBE " tn )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
         (->>
             res
@@ -141,7 +218,7 @@
 
 (defn get-hive-cols [tn]
     (let [mainSql (str "DESCRIBE " tn )
-            res (qc/run-shark-query' "" mainSql)
+            res (run-shark-query' "" mainSql)
         ]
 ;      (println "get-hive-cols" res)
       (map #(select-keys % [:col_name :data_type]) res)
@@ -152,10 +229,12 @@
   [schema]
   (let [hive-table (get schema :hive_name)
         table-name (get schema :TableName)
+        ns-type (:NameSpaceType schema)
+        _ (prn "get-table-schema" (get table-type ns-type))
         cols (transform-cols (get-hive-cols hive-table))]
 ;    (println "table column" cols)
     {
-     :type "table"
+     :type (get table-type ns-type)
      :name table-name
      :hive-name hive-table
      :children (into [] cols)

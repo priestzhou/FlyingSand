@@ -1,21 +1,25 @@
 (ns logging.core
-    (:require 
+    (:require
         [utilities.core :as util]
     )
-    (:import 
+    (:import
         [org.slf4j LoggerFactory Logger]
     )
 )
 
 (defn- repack [args]
     (cond
-        (set? args) (set (map repack args))
-        (map? args) (apply hash-map (reduce concat (map repack args)))
+        (set? args) (into (sorted-set) (map repack args))
+        (map? args) (into (sorted-map)
+            (for [[k v] args]
+                [(repack k) (repack v)]
+            )
+        )
         (seq? args) (vec (map repack args))
         (instance? Throwable args) (do
             (util/format-stack-trace args)
         )
-        :else (prn-str args)
+        :else (pr-str args)
     )
 )
 
@@ -30,23 +34,23 @@
 (defn new-loggers [path]
     (let [logger (LoggerFactory/getLogger path)]
         {
-            :debug (fn [msg & args] 
+            :debug (fn [msg & args]
                 (logfn #(.isDebugEnabled logger) #(.debug logger %) msg args)
             )
-            :info (fn [msg & args] 
+            :info (fn [msg & args]
                 (logfn #(.isInfoEnabled logger) #(.info logger %) msg args)
             )
-            :warn (fn [msg & args] 
+            :warn (fn [msg & args]
                 (logfn #(.isWarnEnabled logger) #(.warn logger %) msg args)
             )
-            :error (fn [msg & args] 
+            :error (fn [msg & args]
                 (logfn #(.isErrorEnabled logger) #(.error logger %) msg args)
             )
         }
     )
 )
 
-(defmacro defloggers [debug info warn error] 
+(defmacro defloggers [debug info warn error]
     `(do
         (def ^:private loggers# (#'logging.core/new-loggers ~(str *ns*)))
         (def ^:private ~debug (:debug loggers#))

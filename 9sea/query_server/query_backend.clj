@@ -157,7 +157,7 @@
 )
 
 (defn submit-query
-  [context user-id query-str]
+  [context account-id user-id query-str]
     ;if-let [app-id (if-let [app (get-application account-id app-name)] (:application_id))]
     ;TODO we should replace table name with hive-table-name, 
     ; it is included: parse hql to AST, replace TOK_TABNAME, then rewrite back to hql
@@ -170,7 +170,7 @@
           query-id (log-query query-str user-id submit-date)
          ]
       (debug "submit-query" :queryid query-id :start-time submit-date)
-      (shark/submit-query context query-id query-str)
+      (shark/submit-query context query-id account-id query-str)
       (-> query-id)
     )
 )
@@ -192,15 +192,6 @@
       res
       )
   )
- )
-
-(defn get-hive-cols [tn]
-    (let [mainSql (str "DESCRIBE " tn )
-            res (shark/run-shark-query' "" mainSql)
-        ]
-      (prn "get-hive-cols" res)
-      (map #(select-keys % [:col_name :data_type]) res)
-    )
 )
 
 (defn add-children 
