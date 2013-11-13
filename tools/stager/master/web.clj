@@ -45,10 +45,16 @@
     (handler/api
         (defroutes app-routes
             (GET "/ruok" [] (ruok))
+
             (GET "/slaves/" [] (handle app/get-slaves))
             (POST "/slaves/" {:keys [params]}
                 (handle (partial app/add-slave params))
             )
+
+            ; (GET "/repository/" {:keys [params]}
+            ;     (handle (partial app/fetch-tag opts params))
+            ; )
+
             (route/files "/" {:root (:resource-root opts) :allow-symlinks? true})
             (route/not-found "Not Found")
         )
