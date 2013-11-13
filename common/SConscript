@@ -4,6 +4,9 @@ env.install(env.compileAndJar('testing.jar', 'testing',
     libs=[env['CLOJURE'],
         env.File('$BUILD_DIR/argparser.jar'),
     ],
+    install={
+        env.File('#common/testing/log4j.properties'): '@/',
+    },
     standalone=True, manifest={'Main-Class': 'testing.main'}))
 env.install(env.compileAndJar('runtests.jar', 'runtests',
     libs=[env['CLOJURE'],
@@ -57,7 +60,7 @@ env.install(env.compileAndJar('logging.jar', 'logging',
         env.File('$EXTLIB/slf4j-api-1.7.5.jar'),
     ]))
 env.install(env.compileAndJar('mailtool.jar', 'mailtool',
-    libs=[env['CLOJURE'], 
+    libs=[env['CLOJURE'],
         env.File('$EXTLIB/postal-1.11.0.jar'),
         env.File('$EXTLIB/commons-codec-1.7.jar'),
         env.File('$EXTLIB/mail-1.4.4.jar'),

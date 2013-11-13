@@ -26,26 +26,33 @@
     }
 )
 
+(defn- wrap-response [resp]
+    (let [r (cond
+            (nil? (:headers resp)) (assoc resp
+                :headers {"Content-Type" "application/json"}
+                :body "null"
+            )
+            (not (contains? (:headers resp) "Content-Type")) (assoc resp
+                :headers (assoc (:headers resp) "Content-Type" "application/json")
+                :body "null"
+            )
+            :else resp
+        )
+        ]
+        (info "http response" :response r)
+        r
+    )
+)
+
 (defn- handle [h]
     (try+
-        (let [r (h)]
-            (cond
-                (nil? (:headers r)) (assoc r
-                    :headers {"Content-Type" "application/json"}
-                    :body "null"
-                )
-                (not (contains? (:headers r) "Content-Type")) (assoc r
-                    :headers (assoc (:headers r) "Content-Type" "application/json")
-                    :body "null"
-                )
-                :else r
-            )
-        )
+        (wrap-response (h))
     (catch map? ex
-        ex
+        (wrap-response ex)
     )
     (catch Exception ex
         (error "exception!" :error (util/except->str ex))
+        (wrap-response {:status 500})
     )
     (catch Error ex
         (error "error!" :error (util/except->str ex))
@@ -67,9 +74,9 @@
                 (handle (partial app/fetch-remote opts params))
             )
 
-            ; (GET "/repository/" {:keys [params]}
-            ;     (handle (partial app/fetch-tag opts params))
-            ; )
+            (GET "/repository/:ver/*" {:keys [params]}
+                (handle (partial app/fetch-ver opts params))
+            )
 
             (route/files "/" {:root (:resource-root opts) :allow-symlinks? true})
             (route/not-found "Not Found")

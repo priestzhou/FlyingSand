@@ -6,6 +6,7 @@
         [clojure.pprint :as pp]
         [clj-time.core :as time]
         [clj-time.coerce :as coer]
+        [utilities.core :as util]
         [utilities.shutil :as sh]
         [master.git :as git]
     )
@@ -16,6 +17,7 @@
     )
     (:import
         [java.io IOException]
+        [java.nio.file Path Files CopyOption StandardCopyOption]
     )
 )
 
@@ -89,7 +91,9 @@
 
 (defn- fetch-remote-work [repo old]
     (try
+        (info "fetch remote")
         (git/fetch repo)
+        (info "remote fetched")
         (let [
             ts (coer/to-long (time/now))
             branches (git/show-branches repo :remote true)
@@ -102,6 +106,7 @@
             )
         )
     (catch IOException ex
+        (error "fail to fetch remote" :error (util/except->str ex))
         old
     ))
 )
@@ -129,6 +134,100 @@
                     )
                 )
                 {:status 102}
+            )
+        )
+    )
+)
+
+(def ^:private versions (ref {}))
+
+(defn- build [opts ver old]
+    (let [
+        ws (:workdir opts)
+        tmp-repo (sh/getPath ws "tmp" ver)
+        dst-repo (sh/getPath ws "repository" ver)
+        remote (sh/getPath ws "remote")
+        ]
+        (sh/mkdir (.getParent tmp-repo))
+        (sh/mkdir (.getParent dst-repo))
+        (debug "start to clone" :ver ver)
+        (git/clone tmp-repo :src (.toUri remote))
+        (git/checkout tmp-repo :branch ver)
+        (debug "cloned. start to build" :ver ver)
+        (let [
+            cout (sh/getPath tmp-repo "build.log")
+            r (sh/execute ["scons"] :out cout :err :out :dir tmp-repo)
+            ]
+            (when-not (= (:exitcode r) 0)
+                (error "fail to build" :ver ver)
+                (throw (RuntimeException. "fail to build"))
+            )
+            (debug "built" :ver ver)
+            (Files/move tmp-repo dst-repo
+                (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE])
+            )
+            (doall (for [
+                f (sh/postwalk dst-repo)
+                :let [f (.relativize dst-repo f)]
+                :when (not (= f (sh/getPath "build.log")))
+                :when (not (= f (sh/getPath ".sconsign.dblite")))
+                :when (not (.startsWith f (sh/getPath ".git")))
+                :when (not= (str f) "")
+                ]
+                (str f)
+            ))
+        )
+    )
+)
+
+(defn fetch-ver [opts params]
+    (debug :fetch-ver @versions)
+    (let [
+        ver (:ver params)
+        path (:* params)
+        _ (info "fetch-ver" :ver ver :path path)
+        repo (sh/getPath (:workdir opts) "repository" ver)
+        res (dosync
+            (if-let [ag (@versions ver)]
+                @ag
+                (let [ag (agent {:status 102})]
+                    (alter versions assoc ver ag)
+                    (send-off ag (partial build opts ver))
+                    {:status 102}
+                )
+            )
+        )
+        ]
+        (cond
+            (:status res) res
+            (empty? path) {
+                :status 200
+                :headers {"Content-Type" "application/json"}
+                :body (json/write-str res)
+            }
+            (.endsWith path "/")
+            (let [fs (for [
+                    f res
+                    :when (.startsWith f path)
+                    ]
+                    f
+                )
+                ]
+                {
+                    :status 200
+                    :headers {"Content-Type" "application/json"}
+                    :body (json/write-str fs)
+                }
+            )
+            :else (let [f (.toFile (sh/getPath repo path))]
+                (if-not (.exists f)
+                    {:status 404}
+                    {
+                        :status 200
+                        :headers {"Content-Type" "application/octet-stream"}
+                        :body f
+                    }
+                )
             )
         )
     )

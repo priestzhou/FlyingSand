@@ -1,12 +1,14 @@
 (ns smoketest.master.main
     (:use
         [testing.core :only (suite)]
+        [slingshot.slingshot :only (try+ throw+)]
     )
     (:require
         [clojure.data.json :as json]
         [clj-time.core :as time]
         [clj-time.coerce :as coer]
         [org.httpkit.client :as hc]
+        [utilities.core :as util]
         [utilities.shutil :as sh]
         [master.web :as mw]
         [master.git :as git]
@@ -27,7 +29,6 @@
     (let [
         response @req
         status (:status response)
-        _ (prn response)
         content-type (cond
             (nil? (:headers response)) nil
             (nil? (:content-type (:headers response))) nil
@@ -86,7 +87,23 @@
         ]
         (cond
             (= (:status r) 102) (recur now)
-            :else r
+            (= (:status r) 200) (json/read-str (:body r))
+            :else (throw+ r)
+        )
+    )
+)
+
+(defn- build-repo [ver]
+    (Thread/sleep 1000)
+    (let [r (hc/get
+            (format "http://localhost:11110/repository/%s/" ver)
+        )
+        r @r
+        ]
+        (cond
+            (= (:status r) 102) (recur ver)
+            (= (:status r) 200) (json/read-str (:body r))
+            :else (throw+ r)
         )
     )
 )
@@ -108,20 +125,50 @@
             (git/branch repo :branch "smile")
             (with-open [s (CloseableServer. (mw/start-server opt))]
                 (let [r (update-repo (coer/to-long (time/now)))]
-                    (cond
-                        (= (:status r) 200) (-> r
-                            (:body)
-                            (json/read-str)
-                            (dissoc "recent-sync")
-                            (keys)
-                            (sort)
-                        )
-                        :else (:status r)
+                    (-> r
+                        (dissoc "recent-sync")
+                        (keys)
+                        (sort)
                     )
                 )
             )
         )
         :is
         ["origin/master" "origin/smile"]
+    )
+    (:fact repo:build
+        (let [
+            rt (sh/tempdir)
+            tmp (sh/getPath rt "tmp")
+            repo (sh/getPath rt "repo")
+            opt {
+                :port 11110
+                :workdir rt
+            }
+            ]
+            (sh/mkdir tmp)
+            (git/init repo)
+            (sh/spitFile (sh/getPath repo "SConstruct") "
+env = Environment(tools=['textfile'])
+env.Textfile('smile.txt', source=['haha'])
+")
+            (git/commit repo :msg "scons")
+            (git/clone (sh/getPath rt "remote") :src (.toUri repo))
+            (with-open [s (CloseableServer. (mw/start-server opt))]
+                (let [
+                    r (update-repo (coer/to-long (time/now)))
+                    ver (r "origin/master")
+                    r1 (build-repo ver)
+                    r2 (hc/get
+                        (format "http://localhost:11110/repository/%s/smile.txt" ver)
+                    )
+                    r2 @r2
+                    ]
+                    [(sort r1) (slurp (:body r2))]
+                )
+            )
+        )
+        :is
+        [["SConstruct" "smile.txt"] "haha"]
     )
 )
