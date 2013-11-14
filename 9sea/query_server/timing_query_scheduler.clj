@@ -50,15 +50,13 @@
                     startTime
                     (iterate #(+ timeSpan % ))
                     (take-while #(> seq-end-time %))
-                    (map #(- % now))
                     (filter 
                         #(< 
-                            (config/get-key :timing_query_window_min) 
+                            (+ now (config/get-key :timing_query_window_min))
                             %
-                            (config/get-key :timing_query_window_max)
+                            (+ now (config/get-key :timing_query_window_max))
                         )
                     )
-                    (map #(+ now %))
                 )
         ]
         (debug "get-query-by-time" :now now :startTime startTime 
