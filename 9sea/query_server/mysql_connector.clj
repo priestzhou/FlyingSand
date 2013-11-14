@@ -70,6 +70,23 @@
   (-> @db)
 )
 
+(defn runsql [sql]
+  (jdbc/with-connection (get-mysql-db)
+    (jdbc/with-query-results res [sql]
+      (->>
+        res
+        doall
+      )
+    )
+  )
+)
+
+(defn runupdate [sql]
+    (jdbc/with-connection (get-mysql-db)
+        (jdbc/do-commands sql)
+    )
+)
+
 (set-delimiters "`")
 
 (orm/defentity TblApplication

@@ -14,11 +14,10 @@
         :subject subject
         :body 
             [:alternative
-                {:type "text/html"
+                {:type "text/html;charset=utf-8"
                     :content htmlbody
                 }
             ]
         }
-
     )
 )

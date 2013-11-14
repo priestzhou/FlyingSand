@@ -7,6 +7,7 @@
         [query-server.config :as config]
         [query-server.hive-adapt :as hive]
         [query-server.mysql-connector :as mysql]
+        [query-server.timing-query-scheduler :as tqs]
     )
     (:gen-class)
 )
@@ -59,22 +60,8 @@
           (config/get-key :shark-host)
           (config/get-key :shark-port)
         )
-        
-        (future 
-            (as/new-agent-check)
-        )
-        (future 
-            (as/inc-data-check)
-        )
-        (future
-            (do
-                (Thread/sleep 60000)
-                (as/all-data-check)
-            )
-        )
-        (future 
-            (as/mismatch-agent-check)
-        )        
+        (as/start_agent_future)
+        (tqs/start-timing-query)       
         (web/start opts)
     )
 )
