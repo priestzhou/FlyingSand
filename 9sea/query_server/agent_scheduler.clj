@@ -122,7 +122,7 @@
     (recur)
 )
 
-(defn start_agent_futurs []
+(defn start_agent_future []
     (when (config/get-key :agent_start_flag)    
         (future 
             (new-agent-check)

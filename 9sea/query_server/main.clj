@@ -60,7 +60,7 @@
           (config/get-key :shark-host)
           (config/get-key :shark-port)
         )
-        (as/start_agent_futurs)
+        (as/start_agent_future)
         (tqs/start-timing-query)       
         (web/start opts)
     )
