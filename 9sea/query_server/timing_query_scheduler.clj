@@ -23,33 +23,8 @@
 
 (defloggers debug info warn error)
 
-(defn- get-group-time-second [timeValue]
-    (let [modTime (mod timeValue 1000)
-            groupTime (- timeValue modTime)
-        ]
-        (.format 
-            (java.text.SimpleDateFormat. "yyyy-MM-dd-HH_mm_ss") 
-            groupTime
-        )
-    )
-)
-
 (def ^:private taskQueue 
-    (ref (sequence []))
-)
-
-(def testrecord 
-    {   
-        :timing_query_id 1
-        :accountid 1
-        :userid 1
-        :appname "test"
-        :appversion "v1"
-        :sqlstr "select * from user"
-        :startTime "1370000"
-        :endTime "1390000"
-        
-    }
+    (ref [])
 )
 
 (defn- get-now []
@@ -75,7 +50,7 @@
                     startTime
                     (iterate #(+ timeSpan % ))
                     (take-while #(> seq-end-time %))
-                    (map #(- now %))
+                    (map #(- % now))
                     (filter 
                         #(< 
                             (config/get-key :timing_query_window_min) 
@@ -113,7 +88,7 @@
                         @taskQueue
                     )
                 )
-                (alter taskQueue concat [taskmap])
+                (alter taskQueue conj taskmap)
             )
         )
     )
@@ -191,7 +166,6 @@
             }
                 task
             context (ws/gen-context accountid appname appversion nil)
-            _(println "keys :"  task)
             qid (qb/submit-query context accountid userid sqlstring)
             runtime (:task-run-time task)
             result (wait-for-task 
@@ -221,7 +195,6 @@
     (try 
         (debug (str "timing-query-check run  " (get-now)))
         (let [query-list (get-query-from-db)
-                _ (println "query-list  "  query-list)
                 task-list
                     (->>
                         query-list
@@ -235,7 +208,6 @@
                             )
                         )
                     )
-                _ (println "task-list  " task-list)
             ]
             (dorun (map add-to-task-queue task-list))
         )
