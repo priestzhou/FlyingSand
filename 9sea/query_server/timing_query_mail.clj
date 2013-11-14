@@ -72,7 +72,8 @@
             values (:values result)
         ]
         (str 
-            "<p>您也可通过此链接直接下载查询结果：<a ref=\""url "\">"
+            "<p>您也可通过此链接直接下载查询结果：<a href=\"" 
+            (config/get-key :timing-result-url-root) url"\">"
             url
             "</a> </p>"
             "<table border=\"1\">"
