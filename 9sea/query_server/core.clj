@@ -124,6 +124,7 @@
         (csv/write-csv wrtr (cons titles values))
       )
       (spit done-file "")
+      (info "write csv " filename "successed!")
     (catch IOException e
       (error "can't save query result:" (util/except->str e))
     )
@@ -538,7 +539,7 @@
 
 (defn add-result
   [q-id result]
-  (swap! result-map update-in [q-id] conj result)
+  (swap! result-map update-in [q-id] merge result)
 )
 
 (defn recover-result
@@ -551,7 +552,7 @@
 (defn result-clear-fn
   [now interval]
   (doseq[result @result-map]
-    (cond (#{"finished" "succeeded"} (:status (second result)))
+    (cond (#{"failed" "succeeded"} (:status (second result)))
           (if (> (- now (:end-time (second result))) interval)
             (swap! result-map dissoc (first result))
           )
