@@ -123,7 +123,7 @@
 )
 
 (defn start_agent_future []
-    (debug "start_agent_future")
+    (debug "start_agent_future" :key (config/get-key :agent_start_flag))
     (when (config/get-key :agent_start_flag)    
         (future 
             (new-agent-check)
