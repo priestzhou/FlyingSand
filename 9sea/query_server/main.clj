@@ -62,7 +62,7 @@
         )
 
         (future
-          (querycore/result-clear-monitor)
+          (querycore/result-clear-monitor config/get-key :result-clear-interval)
         )
         
         (future 

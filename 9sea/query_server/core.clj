@@ -93,7 +93,7 @@
   [sql-str]
     (let [conn (get-hive-conn (hive/get-hive-conn-str) "" "")
         result-size (config/get-key :max-result-size)
-        _ (prn "result-size:" result-size)
+        _ (debug "result-size:" result-size)
         ^Statement stmt (.createStatement conn)
         ^ResultSet rs (.executeQuery stmt sql-str)
         rsmeta (.getMetaData rs)
@@ -154,7 +154,7 @@
   [raw-result]
 
   (let [ret-rs-size (config/get-key :ret-result-size)
-        _ (prn "ret-rs-size" ret-rs-size)
+        _ (debug "ret-rs-size" ret-rs-size)
         titles (get raw-result :titles)
         values (doall (take ret-rs-size (get raw-result :values)))
        ]
@@ -357,7 +357,7 @@
                           (= query-type :drop-clause)
                             context
                     )
-        _ (prn "new context:" new-context)
+        _ (debug "new context:" new-context)
         hql (cond (= query-type :create-clause) (trans/dump-hive new-context dfg)
                   (= query-type :drop-clause) (trans/dump-hive new-context (assoc dfg :if-exists true))
             )
@@ -417,10 +417,10 @@
   [context q-id account-id query-str]
   (try
    (debug "run-shark-query" :qid q-id)
-    (prn "context:" (str context))
+   (debug "context:" (str context))
     (let [ 
            translated-result (translate-query account-id context query-str)
-           _ (prn "translated-result" (str translated-result))
+           _ (debug "translated-result" (str translated-result))
            clause-type (:clause-type translated-result)
          ]
      (if (= clause-type :select-clause)
@@ -482,7 +482,7 @@
 {
  :pre [(not (nil? url))]
 }
-  (let [_ (prn "url:" url)
+  (let [_ (debug "url:" url)
         csv-filename (str (config/get-key :result-file-dir) "/" (last (str/split url #"/")))
         _ (info "csv-filename:" csv-filename)
         need-size (config/get-key :ret-result-size)
@@ -507,7 +507,7 @@
                            date_format(SubmitTime,'%Y-%m-%d %H:%i:%s') as submittime
                           from TblHistoryQuery where QueryId=?" [q-id]] :results)
         rs (first raw-rs)
-        _ (prn "history result set:" rs)
+        _ (debug "history result set:" rs)
         url (:Url rs)
         result-data (read-result-from-csv url)
         status (get mysql/query-status (:ExecutionStatus rs))
@@ -575,7 +575,14 @@
   [q-id]
   (let [result (get @result-map q-id)
         _ (info "qid:" q-id)
-       ]
-    (get @result-map q-id)
+        rs (get @result-map q-id)
+      ]
+    (if (nil? rs)
+      (do
+        (recover-result q-id)
+        (get @result-map q-id)
+      )
+      rs
+    )
   )
 )
