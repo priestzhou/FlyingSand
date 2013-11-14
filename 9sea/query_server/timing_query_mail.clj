@@ -18,6 +18,8 @@
     )
 )
 
+(defloggers debug info warn error)
+
 (def mailcontext "<p>尊敬的用户：</p> <p>您的周期任务，任务名称：_taskname_，
     于_starttime_开始，于_endtime_结束。</p> <p>
     任务执行结果:_flag_，请登录系统查看详情。</p>")
@@ -42,9 +44,6 @@
 )
 
 (defn- send-mail' [maillist taskname starttime endtime flag titleflag tablecontext]
-    (println "endtime" endtime)
-    (println "starttime" starttime)
-    (println "taskname" taskname)
     (let [ title 
             (-> 
                 mailtitle
@@ -91,14 +90,13 @@
 
 (defn send-mail [tid qid] 
     (let [qinfo (get-query-from-db-by-id tid)
-            _ (println "qinfo" qinfo)
+            _ (debug "qinfo" qinfo)
             {:keys [maillist taskname]} qinfo
             result (qb/get-query-result qid)
             status (:status result)
             rcount (:count result)
             starttime (:submit-time result)
             endtime (:end-time result)
-            _ (println "result" (:result result) )
         ]
         (cond 
             (= status "failed")

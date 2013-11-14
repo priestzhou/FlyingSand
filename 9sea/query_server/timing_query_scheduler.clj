@@ -113,7 +113,6 @@
                         @taskQueue
                     )
                 )
-                (println "add-to-task-queue" taskmap)
                 (alter taskQueue concat [taskmap])
             )
         )
