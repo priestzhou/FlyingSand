@@ -39,7 +39,7 @@
         time-long
         (coerce/from-long)
         (time/to-time-zone  (time/time-zone-for-offset +8))
-        (tformat/unparse (tformat/formatters :date-hour-minute-second) )
+        (#(tformat/unparse (tformat/formatters :date-hour-minute-second) %))
     )
 )
 
