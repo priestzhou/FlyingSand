@@ -10,6 +10,7 @@
         [utilities.core :as uc]
         [clj-time.core :as time]
         [clj-time.coerce :as coerce]
+        [clj-time.format :as tformat]
         [query-server.mysql-connector :as mysql]
         [query-server.config :as config]
         [mailtool.core :as mail]
@@ -36,7 +37,7 @@
         time-long
         (coerce/from-long)
         (time/to-time-zone  (time/time-zone-for-offset +8))
-        (str )
+        (tformat/unparse (tformat/formatters :date-hour-minute-second) )
     )
 )
 
