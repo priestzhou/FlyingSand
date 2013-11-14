@@ -12,16 +12,28 @@
     )
     (:use
         [slingshot.slingshot :only (try+ throw+)]
-        [logging.core :only [defloggers]]
+        [logging.core :only (defloggers)]
         [master.core :only (throw+if throw+if-not)]
     )
     (:import
-        [java.io IOException]
+        [java.io IOException StringWriter]
         [java.nio.file Path Files CopyOption StandardCopyOption]
     )
 )
 
 (defloggers debug info warn error)
+
+(defmacro must [condition & {:keys [else]}]
+    `(when-not ~condition
+        (throw+ {:status ~else})
+    )
+)
+
+(defmacro must-not [condition & {:keys [else]}]
+    `(when ~condition
+        (throw+ {:status ~else})
+    )
+)
 
 (def ^:private slaves (ref (sorted-map)))
 (def ^:private save-slaves-agent (agent nil))
@@ -228,6 +240,72 @@
                         :body f
                     }
                 )
+            )
+        )
+    )
+)
+
+
+(def ^:private apps {"master" {}})
+
+(defn- clone-app [repo app src]
+    (must-not (nil? app) :else 400)
+    (must-not (nil? src) :else 400)
+    (locking #'apps
+        (info "app" :method "clone" :app app :src src)
+        (must-not (nil? (apps src)) :else 400)
+        (must (nil? (apps app)) :else 409)
+        (try+
+            (git/checkout repo :branch src)
+            (git/branch repo :branch app)
+            (let [
+                c (sh/slurpFile (sh/getPath repo "config"))
+                c (json/read-str c)
+                ]
+                (alter-var-root #'apps assoc app c)
+                {:status 201}
+            )
+        (catch IOException ex
+            (throw+ {:status 422})
+        ))
+    )
+)
+
+(defn- update-app [repo app author body]
+    (must-not (nil? app) :else 400)
+    (must-not (nil? author) :else 400)
+    (must-not (nil? body) :else 400)
+    (locking #'apps
+        (info "app" :method "update" :app app :author author)
+        (must-not (nil? (apps app)) :else 404)
+        (try+
+            (let [
+                body (json/read (io/reader body))
+                swrt (StringWriter.)
+                _ (pp/pprint body swrt)
+                s (str swrt)
+                ]
+                (git/checkout repo :branch app)
+                (sh/spitFile (sh/getPath repo "config") s)
+                (git/commit repo :msg author)
+                (alter-var-root #'apps assoc app body)
+                {:status 202}
+            )
+        (catch IOException ex
+            (throw+ {:status 422})
+        ))
+    )
+)
+
+(defn app [opts {:keys [method app author src]} body]
+    (must-not (nil? method) :else 400)
+    (let [repo (sh/getPath (:workdir opts) "apps")]
+        (case method
+            "clone" (clone-app repo app src)
+            "update" (update-app repo app author body)
+            (do
+                (error "unknown app method" :method method)
+                (throw+ {:status 405})
             )
         )
     )

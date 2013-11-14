@@ -23,6 +23,7 @@
         (sequential? cmd)
     ]
 }
+    (sh/mkdir (.getParent repo))
     (let [
         cmd (vec (cons "git" cmd))
         r (sh/execute cmd :dir repo :out :pipe :out :pipe)
@@ -92,6 +93,7 @@
             ["clone" "-q" (str src) nm]
         )
         ]
+        (sh/mkdir rt)
         (git rt cmd)
     )
 )

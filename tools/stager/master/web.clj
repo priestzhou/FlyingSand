@@ -27,6 +27,7 @@
 )
 
 (defn- wrap-response [resp]
+    (info "http response" :response resp)
     (let [r (cond
             (nil? (:headers resp)) (assoc resp
                 :headers {"Content-Type" "application/json"}
@@ -39,7 +40,6 @@
             :else resp
         )
         ]
-        (info "http response" :response r)
         r
     )
 )
@@ -76,6 +76,10 @@
 
             (GET "/repository/:ver/*" {:keys [params]}
                 (handle (partial app/fetch-ver opts params))
+            )
+
+            (PUT "/apps/:app" {:keys [params] :as req}
+                (handle (partial app/app opts params (:body req)))
             )
 
             (route/files "/" {:root (:resource-root opts) :allow-symlinks? true})

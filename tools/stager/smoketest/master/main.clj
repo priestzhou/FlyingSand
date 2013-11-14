@@ -2,6 +2,7 @@
     (:use
         [testing.core :only (suite)]
         [slingshot.slingshot :only (try+ throw+)]
+        [logging.core :only (defloggers)]
     )
     (:require
         [clojure.data.json :as json]
@@ -17,6 +18,8 @@
         [java.nio.file Path]
     )
 )
+
+(defloggers debug info warn error)
 
 (deftype CloseableServer [stop-server]
     java.lang.AutoCloseable
@@ -170,5 +173,85 @@ env.Textfile('smile.txt', source=['haha'])
         )
         :is
         [["SConstruct" "smile.txt"] "haha"]
+    )
+)
+
+(suite "apps"
+    (:fact apps:add
+        (let [
+            rt (sh/tempdir)
+            apps (sh/getPath rt "apps")
+            opt {
+                :port 11110
+                :workdir rt
+            }
+            ]
+            (git/init apps)
+            (sh/spitFile (sh/getPath apps "config") "{}")
+            (git/commit apps :msg "empty")
+            (with-open [s (CloseableServer. (mw/start-server opt))]
+                (let [
+                    r0 (hc/put "http://localhost:11110/apps/a0" {
+                            :query-params {
+                                :method "clone"
+                                :src "master"
+                            }
+                        }
+                    )
+                    r0 @r0
+                    _ (debug "clone" :app "a0" :src "master" :response r0)
+                    _ (assert (= (:status r0) 201))
+                    r1 (hc/put "http://localhost:11110/apps/a0" {
+                                :query-params {
+                                    :method "update"
+                                    :author "taoda"
+                                }
+                                :body (json/write-str {
+                                    :smile "hehe"
+                                }
+                            )
+                        }
+                    )
+                    r1 @r1
+                    _ (debug "update" :app "a0" :src "master" :response r1)
+                    _ (assert (= (:status r1) 202))
+                    r2 (hc/put "http://localhost:11110/apps/a1" {
+                            :query-params {
+                                :method "clone"
+                                :src "a0"
+                            }
+                        }
+                    )
+                    r2 @r2
+                    _ (debug "clone" :app "a1" :src "master" :response r2)
+                    _ (assert (= (:status r2) 201))
+                    r3 (hc/put "http://localhost:11110/apps/a1" {
+                                :query-params {
+                                    :method "update"
+                                    :author "taoda"
+                                }
+                                :body (json/write-str {
+                                    :smile "haha"
+                                }
+                            )
+                        }
+                    )
+                    r3 @r3
+                    _ (debug "update" :app "a1" :src "master" :response r3)
+                    _ (assert (= (:status r3) 202))
+
+                    _ (git/checkout apps :branch "master")
+                    m (json/read-str (sh/slurpFile (sh/getPath apps "config")))
+                    _ (git/checkout apps :branch "a0")
+                    a0 (json/read-str (sh/slurpFile (sh/getPath apps "config")))
+                    _ (git/checkout apps :branch "a1")
+                    a1 (json/read-str (sh/slurpFile (sh/getPath apps "config")))
+                    ]
+                    [m a0 a1]
+                )
+            )
+        )
+        :is
+        [{} {"smile" "hehe"} {"smile" "haha"}]
     )
 )
