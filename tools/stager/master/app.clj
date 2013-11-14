@@ -280,7 +280,7 @@
         (must-not (nil? (apps app)) :else 404)
         (try+
             (let [
-                body (json/read (io/reader body))
+                body (json/read-str body)
                 swrt (StringWriter.)
                 _ (pp/pprint body swrt)
                 s (str swrt)
@@ -297,7 +297,7 @@
     )
 )
 
-(defn put-app [opts {:keys [method app author src]} body]
+(defn put-app [opts {:keys [method app author src body]}]
     (must-not (nil? method) :else 400)
     (let [repo (sh/getPath (:workdir opts) "apps")]
         (case method

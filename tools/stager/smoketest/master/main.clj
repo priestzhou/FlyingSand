@@ -202,14 +202,11 @@ env.Textfile('smile.txt', source=['haha'])
                     _ (debug "clone" :app "a0" :src "master" :response r0)
                     _ (assert (= (:status r0) 201))
                     r1 (hc/put "http://localhost:11110/apps/a0" {
-                                :query-params {
-                                    :method "update"
-                                    :author "taoda"
-                                }
-                                :body (json/write-str {
-                                    :smile "hehe"
-                                }
-                            )
+                            :query-params {
+                                :method "update"
+                                :author "taoda"
+                                :body (json/write-str {:smile "hehe"})
+                            }
                         }
                     )
                     r1 @r1
@@ -226,14 +223,11 @@ env.Textfile('smile.txt', source=['haha'])
                     _ (debug "clone" :app "a1" :src "master" :response r2)
                     _ (assert (= (:status r2) 201))
                     r3 (hc/put "http://localhost:11110/apps/a1" {
-                                :query-params {
-                                    :method "update"
-                                    :author "taoda"
-                                }
-                                :body (json/write-str {
-                                    :smile "haha"
-                                }
-                            )
+                            :query-params {
+                                :method "update"
+                                :author "taoda"
+                                :body (json/write-str {:smile "haha"})
+                            }
                         }
                     )
                     r3 @r3
@@ -278,14 +272,11 @@ env.Textfile('smile.txt', source=['haha'])
                     r0 @r0
                     _ (debug "clone" :app "a0" :src "master" :response r0)
                     r1 (hc/put "http://localhost:11110/apps/a0" {
-                                :query-params {
-                                    :method "update"
-                                    :author "taoda"
-                                }
-                                :body (json/write-str {
-                                    :smile "hehe"
-                                }
-                            )
+                            :query-params {
+                                :method "update"
+                                :author "taoda"
+                                :body (json/write-str {:smile "hehe"})
+                            }
                         }
                     )
                     r1 @r1
