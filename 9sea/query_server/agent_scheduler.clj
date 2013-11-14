@@ -123,6 +123,7 @@
 )
 
 (defn start_agent_future []
+    (debug "start_agent_future")
     (when (config/get-key :agent_start_flag)    
         (future 
             (new-agent-check)
@@ -136,7 +137,7 @@
                 (all-data-check)
             )
         )
-        (future 
+        (future
             (mismatch-agent-check)
         ) 
     )
