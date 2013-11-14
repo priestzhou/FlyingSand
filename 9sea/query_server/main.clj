@@ -7,6 +7,7 @@
         [query-server.config :as config]
         [query-server.hive-adapt :as hive]
         [query-server.mysql-connector :as mysql]
+        [query-server.core :as querycore]
     )
     (:gen-class)
 )
@@ -58,6 +59,10 @@
         (hive/set-hive-db
           (config/get-key :shark-host)
           (config/get-key :shark-port)
+        )
+
+        (future
+          (querycore/result-clear-monitor)
         )
         
         (future 

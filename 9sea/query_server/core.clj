@@ -463,12 +463,118 @@
   (future (run-shark-query context q-id account-id query-str))
 )
 
-(defn get-result
-  [q-id]
-  (get @result-map q-id)
+(defn- read-csv
+  [file size]
+  (try
+    (with-open [rdr (io/reader file)]
+     (doall (take size (map (comp first csv/read-csv) (line-seq rdr))))
+    )
+  (catch IOException e
+    (error "can't read csv:" (util/except->str e))
+    nil
+  ))
 )
 
-(defn clear-result-map
+
+(defn- read-result-from-csv
+  [url]
+{
+ :pre [(not (nil? url))]
+}
+  (let [_ (prn "url:" url)
+        csv-filename (str (config/get-key :result-file-dir) "/" (last (str/split url #"/")))
+        _ (info "csv-filename:" csv-filename)
+        need-size (config/get-key :ret-result-size)
+        csv-data (read-csv csv-filename need-size)
+       ]
+    (if-not (nil? csv-data)
+      {:titles (first csv-data)
+       :values csv-data
+      }
+      nil
+    )
+  )
+)
+
+
+
+(defn- get-result-from-history-query
   [q-id]
-  (swap! result-map dissoc [q-id])
+  (let [
+        raw-rs (orm/exec-raw (mysql/get-korma-db) 
+                         ["select *,date_format(EndTime,'%Y-%m-%d %H:%i:%s') as endtime,
+                           date_format(SubmitTime,'%Y-%m-%d %H:%i:%s') as submittime
+                          from TblHistoryQuery where QueryId=?" [q-id]] :results)
+        rs (first raw-rs)
+        _ (prn "history result set:" rs)
+        url (:Url rs)
+        result-data (read-result-from-csv url)
+        status (get mysql/query-status (:ExecutionStatus rs))
+        end-time (if-not (nil? (:endtime rs))
+                               (to-long (parse (formatter "yyyy-MM-dd H:mm:ss") (:endtime rs)))
+                               nil
+                 )
+
+        submit-time (if-not (nil? (:submittime rs))
+                               (to-long (parse (formatter "yyyy-MM-dd H:mm:ss") (:endtime rs)))
+                               nil
+                    )
+        result {
+                :status status
+                :url url
+                :duration (:Duratoin rs)
+              }
+        ]
+    (cond (= status "succeeded")
+          (assoc result :result result-data :end-time end-time :log "query is succeeded!")
+          (= status "failed")
+          (assoc result :error (:Error rs) :log "query is failed!")
+          (= status "running")
+          (assoc result :submit-time submit-time :log "query is running!")
+    )
+
+  )
+)
+
+(defn add-result
+  [q-id result]
+  (swap! result-map update-in [q-id] conj result)
+)
+
+(defn recover-result
+  [q-id]
+  (let [rs (get-result-from-history-query q-id)]
+    (add-result q-id rs)
+  )
+)
+
+(defn result-clear-fn
+  [now interval]
+  (doseq[result @result-map]
+    (cond (#{"finished" "succeeded"} (:status (second result)))
+          (if (> (- now (:end-time (second result))) interval)
+            (swap! result-map dissoc (first result))
+          )
+    )
+  )
+)
+
+(defn result-clear-monitor
+  [interval]
+  (let [
+        now (time/now)
+       ]
+    (result-clear-fn now interval)
+  )
+  (Thread/sleep interval)
+  (recur interval)
+)
+
+(defn get-result
+  [q-id]
+  (let [result (get @result-map q-id)
+        _ (info "qid:" q-id)
+       ]
+    (get @result-map q-id)
+  )
 )

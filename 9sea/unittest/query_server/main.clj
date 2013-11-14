@@ -16,45 +16,6 @@
     )
 )
 
-(def test-context {
-                   :ns 
-                   [{:children 
-                     [
-                      {
-                         :children 
-                         [
-                          {
-                           :type "table", :name "acter", :hive-name "tn_84e56395378035cd6850fb913f9658a130d976f4", 
-                           :children [{:name "id",:type "int"}]
-                           } 
-                          {
-                           :type "table", :name "user", :hive-name "tn_79719c20120d0a7ef0e4d87c873a985eba87fc07", 
-                           :children []
-                          }
-                         ], 
-                         :type "namespace", :name "v1"
-                      }
-                      {
-                         :children 
-                         [
-                          {
-                           :type "table", :name "acter", :hive-name "tn_24e56395378035cd6850fb913f9658a130d976f4", 
-                           :children [{:name "id",:type "int"}]
-                           } 
-                          {
-                           :type "table", :name "user", :hive-name "tn_29719c20120d0a7ef0e4d87c873a985eba87fc07", :children []
-                          }
-                         ], 
-                         :type "namespace", :name "v2"
-                       }
-                       
-                       
-                      ], 
-                     :type "namespace", :name "御剑三国"}
-                    ], 
-                  :default-ns ["御剑三国" "v1"]
-                  }
-)
 (def test-context' {
                    :ns 
                    [{:children 
@@ -79,6 +40,33 @@
                     ], 
                   :default-ns ["御剑三国" "1.0"]
                   }
+)
+
+(suite "query result"
+       (:testbench
+         (fn [test]
+           (let [
+                 result1 {:status "succeeded" :end-time (to-long "2013-11-14")}
+                 result2 {:status "succeeded" :end-time (to-long "2013-11-14:10:47")}
+                 result3 {:status "Failed" :end-time (to-long "2013-11-14:10:40")}
+                ]
+             (shark/add-result 1 result1)
+             (shark/add-result 2 result2)
+             (shark/add-result 3 result3)
+            )
+           (test (to-long "2013-11-14:10:45") 5*60*1000)
+          )
+       )
+       (:fact query:result:test-result-clear
+              (fn [now interval]
+                (shark/result-clear-fn now interval)
+               (conj [] (shark/get-result 1) (shark/get-result 2) (shark/get-result 3))
+              )
+              :eq
+              (fn [_ _]
+                [nil {:status "successed" :end-time (to-long "2013-11-14:10:47")} nil]
+              )
+        )
 )
 
 (suite "create view-ctas"
