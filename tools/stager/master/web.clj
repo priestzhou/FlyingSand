@@ -78,8 +78,11 @@
                 (handle (partial app/fetch-ver opts params))
             )
 
+            (GET "/apps/" []
+                (handle (partial app/get-app opts))
+            )
             (PUT "/apps/:app" {:keys [params] :as req}
-                (handle (partial app/app opts params (:body req)))
+                (handle (partial app/put-app opts params (:body req)))
             )
 
             (route/files "/" {:root (:resource-root opts) :allow-symlinks? true})

@@ -297,7 +297,7 @@
     )
 )
 
-(defn app [opts {:keys [method app author src]} body]
+(defn put-app [opts {:keys [method app author src]} body]
     (must-not (nil? method) :else 400)
     (let [repo (sh/getPath (:workdir opts) "apps")]
         (case method
@@ -308,5 +308,16 @@
                 (throw+ {:status 405})
             )
         )
+    )
+)
+
+(defn get-app [opts]
+    (locking #'apps
+        (info "app" :method "get")
+        {
+            :status 200
+            :headers {"Content-Type" "application/json"}
+            :body (json/write-str apps)
+        }
     )
 )

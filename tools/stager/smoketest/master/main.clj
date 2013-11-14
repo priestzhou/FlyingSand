@@ -254,4 +254,50 @@ env.Textfile('smile.txt', source=['haha'])
         :is
         [{} {"smile" "hehe"} {"smile" "haha"}]
     )
+    (:fact apps:get
+        (let [
+            rt (sh/tempdir)
+            apps (sh/getPath rt "apps")
+            opt {
+                :port 11110
+                :workdir rt
+            }
+            ]
+            (git/init apps)
+            (sh/spitFile (sh/getPath apps "config") "{}")
+            (git/commit apps :msg "empty")
+            (with-open [s (CloseableServer. (mw/start-server opt))]
+                (let [
+                    r0 (hc/put "http://localhost:11110/apps/a0" {
+                            :query-params {
+                                :method "clone"
+                                :src "master"
+                            }
+                        }
+                    )
+                    r0 @r0
+                    _ (debug "clone" :app "a0" :src "master" :response r0)
+                    r1 (hc/put "http://localhost:11110/apps/a0" {
+                                :query-params {
+                                    :method "update"
+                                    :author "taoda"
+                                }
+                                :body (json/write-str {
+                                    :smile "hehe"
+                                }
+                            )
+                        }
+                    )
+                    r1 @r1
+                    _ (debug "update" :app "a0" :src "master" :response r1)
+
+                    r2 (hc/get "http://localhost:11110/apps/")
+                    ]
+                    (extract-response r2)
+                )
+            )
+        )
+        :is
+        [200 {"master" {}, "a0" {"smile" "hehe"}}]
+    )
 )
