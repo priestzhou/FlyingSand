@@ -76,25 +76,14 @@
     )
 )
 
-(defn add-slave [params]
-    (let [
-        {:keys [url type]} params
-        type (keyword type)
-        ]
+(defn add-slave [{:keys [url type]}]
+    (let [type (keyword type)]
         (info "add-slave" :slave url :type type)
         (dosync
-            (throw+if (@slaves url) {
-                :status 409
-                :headers {"Content-Type" "application/json"}
-                :body (json/write-str {:error "duplicated url"})
-            })
+            (must-not (@slaves url) :else 409)
             (alter slaves assoc url type)
         )
-        {
-            :status 201
-            :headers {"Content-Type" "application/json"}
-            :body "null"
-        }
+        {:status 201}
     )
 )
 
@@ -311,7 +300,7 @@
     )
 )
 
-(defn get-app [opts]
+(defn get-app []
     (locking #'apps
         (info "app" :method "get")
         {

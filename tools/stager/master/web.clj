@@ -79,7 +79,7 @@
             )
 
             (GET "/apps/" []
-                (handle (partial app/get-app opts))
+                (handle app/get-app)
             )
             (PUT "/apps/:app" {:keys [params]}
                 (handle (partial app/put-app opts params))

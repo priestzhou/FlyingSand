@@ -16,6 +16,7 @@
     )
     (:import
         [java.nio.file Path]
+        [java.net URI]
     )
 )
 
@@ -28,7 +29,7 @@
     )
 )
 
-(defn- extract-response [req]
+(defn- resp [req]
     (let [
         response @req
         status (:status response)
@@ -40,6 +41,7 @@
         body (:body response)
         body (case content-type
             "application/json" (json/read-str body)
+            "application/octet-stream" (slurp body)
             body
         )
         ]
@@ -47,248 +49,220 @@
     )
 )
 
+(def ^:private default-url (URI. "http://localhost:11110/"))
+
+(defn- http-resolve [res args]
+    (if (empty? args)
+        [res {}]
+        (let [[x & xs] args]
+            (if (keyword? x)
+                [res (apply hash-map args)]
+                (recur (.resolve res x) xs)
+            )
+        )
+    )
+)
+
+(defmacro def-http-method [symb method]
+    `(defn- ~symb [& args#]
+        (let [[url# params#] (http-resolve default-url args#)]
+            (~method (str url#) {:query-params params#})
+        )
+    )
+)
+
+(defn- d [p]
+    (if (.endsWith p "/") p (str p "/"))
+)
+
+(def-http-method http-get hc/get)
+(def-http-method http-post hc/post)
+(def-http-method http-put hc/put)
+
 (suite "ruok"
     (:fact ruok
         (with-open [s (CloseableServer. (mw/start-server {:port 11110}))]
-            (extract-response (hc/get "http://localhost:11110/ruok"))
+            (resp (http-get "ruok"))
         )
         :is
         [200 "imok"]
     )
 )
 
+(defn- tb [test]
+    (let [
+        rt (sh/tempdir)
+        opt {:port 11110, :workdir rt}
+        ]
+        (with-open [s (CloseableServer. (mw/start-server opt))]
+            (test rt opt)
+        )
+    )
+)
+
 (suite "slaves"
+    (:testbench tb)
     (:fact slaves:add
-        (with-open [s (CloseableServer. (mw/start-server {:port 11110}))]
-            (let [r0 (hc/post "http://localhost:11110/slaves/" {
-                    :query-params {
-                        "url" "http://localhost:11111/"
-                        "type" "staging"
-                    }
-                })
-                r0 (extract-response r0)
-                r1 (hc/get "http://localhost:11110/slaves/")
-                r1 (extract-response r1)
+        (fn [rt opt]
+            (let [
+                r0 (resp (http-post "slaves/"
+                    :url "http://localhost:11111/" :type "staging"))
+                r1 (resp (http-get "slaves/"))
                 ]
                 [r0 r1]
             )
         )
-        :is
-        [
-            [201 nil]
-            [200 [["http://localhost:11111/" "staging"]]]
-        ]
+        :eq
+        (fn [& _]
+            [
+                [201 nil]
+                [200 [["http://localhost:11111/" "staging"]]]
+            ]
+        )
     )
 )
 
-(defn- update-repo [now]
+(defn- continuable-request [fire]
     (Thread/sleep 100)
-    (let [r (hc/get
-            (format "http://localhost:11110/remote?timestamp=%d" now)
-        )
-        r @r
+    (let [r (resp (fire))
         ]
         (cond
-            (= (:status r) 102) (recur now)
-            (= (:status r) 200) (json/read-str (:body r))
+            (= (first r) 102) (recur fire)
+            (= (first r) 200) r
             :else (throw+ r)
         )
     )
+
+)
+
+(defn- update-repo []
+    (continuable-request (partial http-get "remote"
+        :timestamp (coer/to-long (time/now))))
 )
 
 (defn- build-repo [ver]
-    (Thread/sleep 1000)
-    (let [r (hc/get
-            (format "http://localhost:11110/repository/%s/" ver)
-        )
-        r @r
-        ]
-        (cond
-            (= (:status r) 102) (recur ver)
-            (= (:status r) 200) (json/read-str (:body r))
-            :else (throw+ r)
-        )
-    )
+    (continuable-request (partial http-get "repository/" (d ver)))
 )
 
 (suite "repository"
+    (:testbench tb)
     (:fact repo:update
-        (let [
-            rt (sh/tempdir)
-            repo (sh/getPath rt "repo")
-            opt {
-                :port 11110
-                :workdir rt
-            }
-            ]
-            (git/init repo)
-            (sh/spitFile (sh/getPath repo "smile.txt") "hehe")
-            (git/commit repo :msg "hehe")
-            (git/clone (sh/getPath rt "remote") :src (.toUri repo))
-            (git/branch repo :branch "smile")
-            (with-open [s (CloseableServer. (mw/start-server opt))]
-                (let [r (update-repo (coer/to-long (time/now)))]
-                    (-> r
-                        (dissoc "recent-sync")
-                        (keys)
-                        (sort)
-                    )
+        (fn [rt opt]
+            (let [repo (sh/getPath rt "repo")]
+                (git/init repo)
+                (sh/spitFile (sh/getPath repo "smile.txt") "hehe")
+                (git/commit repo :msg "hehe")
+                (git/clone (sh/getPath rt "remote") :src (.toUri repo))
+                (git/branch repo :branch "smile")
+                (-> (update-repo)
+                    (second)
+                    (dissoc "recent-sync")
+                    (keys)
+                    (sort)
                 )
             )
         )
-        :is
-        ["origin/master" "origin/smile"]
+        :eq
+        (fn [& _]
+            ["origin/master" "origin/smile"]
+        )
     )
     (:fact repo:build
-        (let [
-            rt (sh/tempdir)
-            tmp (sh/getPath rt "tmp")
-            repo (sh/getPath rt "repo")
-            opt {
-                :port 11110
-                :workdir rt
-            }
-            ]
-            (sh/mkdir tmp)
-            (git/init repo)
-            (sh/spitFile (sh/getPath repo "SConstruct") "
+        (fn [rt opt]
+            (let [
+                tmp (sh/getPath rt "tmp")
+                repo (sh/getPath rt "repo")
+                _ (sh/mkdir tmp)
+                _ (git/init repo)
+                _ (sh/spitFile (sh/getPath repo "SConstruct") "
 env = Environment(tools=['textfile'])
 env.Textfile('smile.txt', source=['haha'])
 ")
-            (git/commit repo :msg "scons")
-            (git/clone (sh/getPath rt "remote") :src (.toUri repo))
-            (with-open [s (CloseableServer. (mw/start-server opt))]
-                (let [
-                    r (update-repo (coer/to-long (time/now)))
-                    ver (r "origin/master")
-                    r1 (build-repo ver)
-                    r2 (hc/get
-                        (format "http://localhost:11110/repository/%s/smile.txt" ver)
-                    )
-                    r2 @r2
-                    ]
-                    [(sort r1) (slurp (:body r2))]
-                )
+                _ (git/commit repo :msg "scons")
+                _ (git/clone (sh/getPath rt "remote") :src (.toUri repo))
+                r (update-repo)
+                ver ((second r) "origin/master")
+                r1 (build-repo ver)
+                r2 (resp (http-get "repository/" (d ver) "smile.txt"))
+                ]
+                [(sort (second r1)) (second r2)]
             )
         )
-        :is
-        [["SConstruct" "smile.txt"] "haha"]
+        :eq
+        (fn [& _]
+            [["SConstruct" "smile.txt"] "haha"]
+        )
     )
 )
 
 (suite "apps"
+    (:testbench tb)
     (:fact apps:add
-        (let [
-            rt (sh/tempdir)
-            apps (sh/getPath rt "apps")
-            opt {
-                :port 11110
-                :workdir rt
-            }
-            ]
-            (git/init apps)
-            (sh/spitFile (sh/getPath apps "config") "{}")
-            (git/commit apps :msg "empty")
-            (with-open [s (CloseableServer. (mw/start-server opt))]
-                (let [
-                    r0 (hc/put "http://localhost:11110/apps/a0" {
-                            :query-params {
-                                :method "clone"
-                                :src "master"
-                            }
-                        }
-                    )
-                    r0 @r0
-                    _ (debug "clone" :app "a0" :src "master" :response r0)
-                    _ (assert (= (:status r0) 201))
-                    r1 (hc/put "http://localhost:11110/apps/a0" {
-                            :query-params {
-                                :method "update"
-                                :author "taoda"
-                                :body (json/write-str {:smile "hehe"})
-                            }
-                        }
-                    )
-                    r1 @r1
-                    _ (debug "update" :app "a0" :src "master" :response r1)
-                    _ (assert (= (:status r1) 202))
-                    r2 (hc/put "http://localhost:11110/apps/a1" {
-                            :query-params {
-                                :method "clone"
-                                :src "a0"
-                            }
-                        }
-                    )
-                    r2 @r2
-                    _ (debug "clone" :app "a1" :src "master" :response r2)
-                    _ (assert (= (:status r2) 201))
-                    r3 (hc/put "http://localhost:11110/apps/a1" {
-                            :query-params {
-                                :method "update"
-                                :author "taoda"
-                                :body (json/write-str {:smile "haha"})
-                            }
-                        }
-                    )
-                    r3 @r3
-                    _ (debug "update" :app "a1" :src "master" :response r3)
-                    _ (assert (= (:status r3) 202))
+        (fn [rt opt]
+            (let [
+                apps (sh/getPath rt "apps")
+                _ (git/init apps)
+                _ (sh/spitFile (sh/getPath apps "config") "{}")
+                _ (git/commit apps :msg "empty")
 
-                    _ (git/checkout apps :branch "master")
-                    m (json/read-str (sh/slurpFile (sh/getPath apps "config")))
-                    _ (git/checkout apps :branch "a0")
-                    a0 (json/read-str (sh/slurpFile (sh/getPath apps "config")))
-                    _ (git/checkout apps :branch "a1")
-                    a1 (json/read-str (sh/slurpFile (sh/getPath apps "config")))
-                    ]
-                    [m a0 a1]
-                )
+                r0 (resp (http-put "apps/a0" :method "clone" :src "master"))
+                _ (debug "clone" :app "a0" :src "master" :response r0)
+                _ (assert (= (first r0) 201))
+
+                r1 (resp (http-put "apps/a0" :method "update" :author "taoda"
+                    :body (json/write-str {:smile "hehe"})
+                ))
+                _ (debug "update" :app "a0" :src "master" :response r1)
+                _ (assert (= (first r1) 202))
+
+                r2 (resp (http-put "apps/a1" :method "clone" :src "a0"))
+                _ (debug "clone" :app "a1" :src "master" :response r2)
+                _ (assert (= (first r2) 201))
+
+                r3 (resp (http-put "apps/a1" :method "update" :author "taoda"
+                    :body (json/write-str {:smile "haha"})
+                ))
+                _ (debug "update" :app "a1" :src "master" :response r3)
+                _ (assert (= (first r3) 202))
+
+                _ (git/checkout apps :branch "master")
+                m (json/read-str (sh/slurpFile (sh/getPath apps "config")))
+                _ (git/checkout apps :branch "a0")
+                a0 (json/read-str (sh/slurpFile (sh/getPath apps "config")))
+                _ (git/checkout apps :branch "a1")
+                a1 (json/read-str (sh/slurpFile (sh/getPath apps "config")))
+                ]
+                [m a0 a1]
             )
         )
-        :is
-        [{} {"smile" "hehe"} {"smile" "haha"}]
+        :eq
+        (fn [& _]
+            [{} {"smile" "hehe"} {"smile" "haha"}]
+        )
     )
     (:fact apps:get
-        (let [
-            rt (sh/tempdir)
-            apps (sh/getPath rt "apps")
-            opt {
-                :port 11110
-                :workdir rt
-            }
-            ]
-            (git/init apps)
-            (sh/spitFile (sh/getPath apps "config") "{}")
-            (git/commit apps :msg "empty")
-            (with-open [s (CloseableServer. (mw/start-server opt))]
-                (let [
-                    r0 (hc/put "http://localhost:11110/apps/a0" {
-                            :query-params {
-                                :method "clone"
-                                :src "master"
-                            }
-                        }
-                    )
-                    r0 @r0
-                    _ (debug "clone" :app "a0" :src "master" :response r0)
-                    r1 (hc/put "http://localhost:11110/apps/a0" {
-                            :query-params {
-                                :method "update"
-                                :author "taoda"
-                                :body (json/write-str {:smile "hehe"})
-                            }
-                        }
-                    )
-                    r1 @r1
-                    _ (debug "update" :app "a0" :src "master" :response r1)
+        (fn [rt opt]
+            (let [
+                apps (sh/getPath rt "apps")
+                _ (git/init apps)
+                _ (sh/spitFile (sh/getPath apps "config") "{}")
+                _ (git/commit apps :msg "empty")
 
-                    r2 (hc/get "http://localhost:11110/apps/")
-                    ]
-                    (extract-response r2)
-                )
+                r0 (resp (http-put "apps/a0" :method "clone" :src "master"))
+                _ (debug "clone" :app "a0" :src "master" :response r0)
+                r1 (resp (http-put "apps/a0" :method "update" :author "taoda"
+                    :body (json/write-str {:smile "hehe"})
+                ))
+                _ (debug "update" :app "a0" :src "master" :response r1)
+
+                r2 (resp (http-get "apps/"))
+                ]
+                r2
             )
         )
-        :is
-        [200 {"master" {}, "a0" {"smile" "hehe"}}]
+        :eq
+        (fn [& _]
+            [200 {"master" {}, "a0" {"smile" "hehe"}}]
+        )
     )
 )
