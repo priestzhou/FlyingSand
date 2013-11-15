@@ -14,6 +14,7 @@
         [query-server.web-server :as web]
         [clj-time.core]
         [korma.core :as orm]
+        [clojure.java.io :as io]
     ) 
 )
 
@@ -31,7 +32,7 @@
  :mysql-user \"root\"
  :mysql-password \"fs123\"
  :max-result-size 500
- :ret-result-size 50
+ :ret-result-size 2
  :result-file-dir \"./\"
  :new-agent-check-interval 600000
  :inc-data-check-interval 500000
@@ -45,7 +46,7 @@
        (:testbench
          (fn [test]
            (spit "./webserver_props.conf" config-content)
-           (spit "./978_1384228898242_result.csv" "id,username,passtype,password,adult,dt,lastacterid,banneduntil,allowdebug,qqgiftget,isyellow,isyearyellow,yellowlevel,source,fs_agent\n820,39998A456353AB34D54379CAFA4DC3E7,,,,1.362549533E12,,,,,,,,,s3")
+           (spit "./978_1384228898242_result.csv" "id\n820\n830")
            
             (config/set-config-path "./webserver_props.conf")
             (mysql/set-mysql-db
@@ -60,11 +61,10 @@
             (config/get-key :shark-port)
           )
            (try
-
               (test "test")
            (finally
-             (slurp "./webserver_props.conf")
-             (slurp "./978_1384228898242_result.csv")
+             (io/delete-file "./webserver_props.conf")
+             (io/delete-file "./978_1384228898242_result.csv")
            ))
          )
        )
@@ -77,8 +77,12 @@
             )
               :eq
               (fn [_]
-                {:duration nil, :url "/result/978_1384228898242_result.csv", :status "failed", 
-                 :error nil, :log "query is failed!"}
+                {:duration "1", 
+                 :url "/result/978_1384228898242_result.csv", 
+                 :status "succeeded", 
+                 :result {:titles ["id"], :values [["820"] ["830"]]},
+                 :end-time 1382502088000, 
+                 :log "query is succeeded!"}
               )
        )
 )

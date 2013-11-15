@@ -11,10 +11,10 @@
 
 (defn set-config-path
   [config-file-path]
+  (debug "set config-file-path" config-path)
   (if-not (nil? config-file-path)
     (
      dosync (ref-set config-path config-file-path)
-     (prn "config-file-path" @config-path)
     )
   )
 )
@@ -37,6 +37,3 @@
  [key]
  (get (get-config @config-path) key)
 ) 
-
-;(defn get-
-

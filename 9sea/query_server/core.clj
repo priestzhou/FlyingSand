@@ -25,7 +25,6 @@
          [javax.sql DataSource]
 )
 
-
 (:use
   [korma.db]
   [korma.config]
@@ -36,7 +35,6 @@
   [clojure.java.shell :only [sh]]
   [query-server.agent-driver :only (sha1-hash)]
 )
-;; (:use [logging.core :only [deffloggers]])
 )
 
 (defloggers debug info warn error)
@@ -371,7 +369,6 @@
   )
 )
 
-
 (defn translate-query
   [account-id context query-str]
   (let [
@@ -417,10 +414,10 @@
   [context q-id account-id query-str]
   (try
    (debug "run-shark-query" :qid q-id)
-   (debug "context:" (str context))
+   (debug "context:" context)
     (let [ 
            translated-result (translate-query account-id context query-str)
-           _ (debug "translated-result" (str translated-result))
+           _ (debug "translated-result" translated-result)
            clause-type (:clause-type translated-result)
          ]
      (if (= clause-type :select-clause)
@@ -476,7 +473,6 @@
   ))
 )
 
-
 (defn- read-result-from-csv
   [url]
 {
@@ -485,19 +481,17 @@
   (let [_ (debug "url:" url)
         csv-filename (str (config/get-key :result-file-dir) "/" (last (str/split url #"/")))
         _ (info "csv-filename:" csv-filename)
-        need-size (config/get-key :ret-result-size)
+        need-size (inc (config/get-key :ret-result-size))
         csv-data (read-csv csv-filename need-size)
        ]
     (if-not (nil? csv-data)
       {:titles (first csv-data)
-       :values csv-data
+       :values (drop 1 csv-data)
       }
       nil
     )
   )
 )
-
-
 
 (defn- get-result-from-history-query
   [q-id]
@@ -523,7 +517,7 @@
         result {
                 :status status
                 :url url
-                :duration (:Duratoin rs)
+                :duration (:Duration rs)
               }
         ]
     (cond (= status "succeeded")
