@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Publisher Master for Flying-Sand.com</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+<link href="css/justified-nav.css" rel="stylesheet">
+</head>
+
+<body onload="master_front.main.on_load()">
+<header>
+<nav class="navbar navbar-default" role="navigation">
+    <div class="navbar-header">
+        <a class="navbar-brand" href="#">FlyingSand</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="navbar">
+        <ul class="nav navbar-nav">
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Apps <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                    <li><a href="#" data-toggle="modal">Add</a></li>
+                </ul>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav">
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Slaves <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                    <li><a href="#" data-toggle="modal" data-target="#add-slave">Add</a></li>
+                </ul>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+            <li><a href="#">Document</a></li>
+        </ul>
+    </div>
+</nav>
+</header>
+
+<section id="slaves-page" class="container">
+    <div class="row">
+        <div class="col-lg-12 table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr><th>Slave</th><th>Apps</th></tr>
+                </thead>
+                <tbody id="slaves-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="add-slave" tabindex="-1" role="dialog" aria-labelledby="add-slave-title" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="add-slave-title">Add a slave</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <input type="text" id="slave-url" class="form-control" placeholder="URL">
+                        <span class="input-group-addon" style="padding:0px">
+                            <div class="btn-group">
+                                <button id="slave-type" type="button" class="btn btn-default" style="border:0px" data-toggle="dropdown">
+                                    staging <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu text-left" role="menu">
+                                    <li><a href="#">staging</a></li>
+                                    <li><a href="#">production</a></li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button id="slave-add-btn" type="button" class="btn btn-primary" data-dismiss="modal">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="doc-page" hidden class="container">
+    <div class="jumbotron">
+        <h1>Flying-Sand Publisher</h1>
+        <p class="lead">
+        Flying-Sand Publisher is indeed a deployment system.
+        Its target is to be trackable, flexible, scalable and easy to use.
+        </p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <h2>Trackable</h2>
+            <p>Settings are all tracked by git.</p>
+        </div>
+        <div class="col-lg-3">
+            <h2>Flexible</h2>
+            <p>Settings are clojure data and functions.</p>
+        </div>
+        <div class="col-lg-3">
+            <h2>Scalable</h2>
+            <p>
+            It can handle a lots of slaves with only a little increasement of memory.
+            </p>
+        </div>
+        <div class="col-lg-3">
+            <h2>Easy to Use</h2>
+            <p>
+            It can be communicated by HTTP.
+            That is to say, anything, including scripts, can talk with it.
+            </p>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>&copy; Flying-Sand.com 2013</p>
+</footer>
+
+<script type="application/javascript" src="js/jquery-2.0.3.js"></script>
+<script type="application/javascript" src="js/bootstrap-3.0.1.js"></script>
+<script type="application/javascript" src="js/master_front.js"></script>
+</body>
+</html>

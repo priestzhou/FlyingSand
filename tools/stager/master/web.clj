@@ -31,11 +31,11 @@
     (let [r (cond
             (nil? (:headers resp)) (assoc resp
                 :headers {"Content-Type" "application/json"}
-                :body "null"
+                :body "{}"
             )
             (not (contains? (:headers resp) "Content-Type")) (assoc resp
                 :headers (assoc (:headers resp) "Content-Type" "application/json")
-                :body "null"
+                :body "{}"
             )
             :else resp
         )

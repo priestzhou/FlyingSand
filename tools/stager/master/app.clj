@@ -43,10 +43,19 @@
 (defn- watch-slaves [_ _ old new]
     (when (not= old new)
         (send-off save-slaves-agent (fn [f]
-            (with-open [wrt (io/writer f)]
-                (pp/pprint new wrt)
+            (let [
+                s (format "[\n%s\n]\n"
+                    (str/join ",\n"
+                        (for [[k v] new]
+                            (json/write-str [k v])
+                        )
+                    )
+                )
+                ]
+                (sh/spitFile f s)
+                (info "save-slaves" :new new)
+                f
             )
-            f
         ))
     )
 )
@@ -55,12 +64,12 @@
     (let [
         f (sh/getPath (:workdir opts) "slaves")
         s (->> f
-            (.toFile)
-            (slurp)
+            (sh/slurpFile)
             (json/read-str)
         )
+        s (vec (for [[k v] s] [k (keyword v)]))
         ]
-        (debug "init-slaves" :slaves (pr-str s))
+        (info "init-slaves" :slaves (pr-str s))
         (dosync
             (alter slaves into s)
         )
@@ -153,6 +162,7 @@
         repos (sh/getPath ws "repository")
         vers (-> repos (.toFile) (.list) (util/array->lazy-seq))
         ]
+        (info "init-versions" :versions vers)
         (dosync
             (doseq [
                 v vers

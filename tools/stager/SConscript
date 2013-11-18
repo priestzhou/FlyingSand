@@ -25,3 +25,21 @@ env.compileAndJar('stager_smoketest.jar', 'smoketest',
         master
     ],
     standalone=True, manifest={'Main-Class': 'smoketest.main'})
+
+env.compileAndJar('echo_server.jar', 'echo_server',
+    libs=[env['CLOJURE'],
+        env.File('$EXTLIB/slingshot-0.10.3.jar'),
+        env.File('$EXTLIB/ring-1.2.1.jar'),
+        env.File('$EXTLIB/http-kit-2.1.13.jar'),
+        env.File('$EXTLIB/compojure-1.1.6.jar'),
+    ],
+    standalone=True, manifest={'Main-Class': 'echo_server.main'})
+
+env.Default(env.compileJs('master_front.js', 'master_front',
+    libs=[env.File('$BUILD_DIR/jsutilities.jar'),
+        env.File('$EXTLIB/cljs-ajax-0.2.1.jar'),
+        env.File('$EXTLIB/domina-1.0.3-SNAPSHOT.jar'),
+        env.File('$EXTLIB/hiccups-0.2.0.jar'),
+    ],
+    options={":optimizations": ":simple", ":pretty-print": True}
+))

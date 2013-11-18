@@ -18,8 +18,8 @@
 (defn -main [& args]
     (warn "start")
     (let [opts {
-            :resource-root (sh/getPath "publics")
-            :slaves (sh/getPath "slaves")
+            :resource-root "publics"
+            :workdir (sh/getPath ".")
             :port 9999
         }
         ]
