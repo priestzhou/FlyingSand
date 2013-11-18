@@ -1,6 +1,7 @@
 (ns master.main
     (:require
         [argparser.core :as arg]
+        [utilities.shutil :as sh]
         [master.app :as app]
         [master.web :as web]
     )
@@ -29,12 +30,12 @@
     (warn "start")
     (parseArgs args)
     (let [opts {
-            :resource-root "publics"
-            :slaves "slaves"
+            :resource-root (sh/getPath "publics")
+            :slaves (sh/getPath "slaves")
             :port 9999
         }
         ]
-        (app/init-slaves opts)
+        (app/init opts)
         (web/start-server opts)
     )
 )

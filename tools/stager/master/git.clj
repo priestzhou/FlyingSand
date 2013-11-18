@@ -132,12 +132,10 @@
 )
 
 (defn show-branches [repo & {:keys [remote]}]
-{
-    :pre [remote]
-}
     (let [
         repo (sh/getPath repo)
-        r (git repo ["branch" "--remote"])
+        cmd (if-not remote ["branch"] ["branch" "--remote"])
+        r (git repo cmd)
         o (str/trimr (:out r))
         ]
         (if (empty? o)
@@ -146,8 +144,9 @@
                 x (str/split-lines o)
                 :let [x (str/trim x)]
                 :when (not (re-find #" -> " x))
+                :let [x (str/split x #" ")]
                 ]
-                x
+                (last x)
             )
         )
     )

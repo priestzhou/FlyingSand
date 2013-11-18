@@ -51,12 +51,13 @@
     )
 )
 
-(defn init-slaves [opts]
+(defn- init-slaves [opts]
     (let [
-        f (:slaves opts)
+        f (sh/getPath (:workdir opts) "slaves")
         s (->> f
+            (.toFile)
             (slurp)
-            (read-string)
+            (json/read-str)
         )
         ]
         (debug "init-slaves" :slaves (str s))
@@ -143,6 +144,36 @@
 )
 
 (def ^:private versions (ref {}))
+
+(defn- init-versions [opts]
+    (let [
+        ws (:workdir opts)
+        tmp-repo (sh/getPath ws "tmp")
+        _ (sh/rmtree tmp-repo)
+        repos (sh/getPath ws "repository")
+        vers (-> repos (.toFile) (.list) (util/array->lazy-seq))
+        ]
+        (dosync
+            (doseq [
+                v vers
+                :let [vrt (sh/getPath repos v)]
+                ]
+                (alter versions assoc v (agent
+                    (doall (for [
+                        f (sh/postwalk vrt)
+                        :let [f (.relativize vrt f)]
+                        :when (not (= f (sh/getPath "build.log")))
+                        :when (not (= f (sh/getPath ".sconsign.dblite")))
+                        :when (not (.startsWith f (sh/getPath ".git")))
+                        :when (not= (str f) "")
+                        ]
+                        (str f)
+                    ))
+                ))
+            )
+        )
+    )
+)
 
 (defn- build [opts ver old]
     (let [
@@ -238,6 +269,21 @@
 
 
 (def ^:private apps {"master" {}})
+
+(defn- init-apps [opts]
+    (let [
+        apps-rt (sh/getPath (:workdir opts) "apps")
+        branches (git/show-branches apps-rt :remote false)
+        _ (info "init-apps" :branches branches)
+        ]
+        (doseq [
+            b branches
+            ]
+            (git/checkout apps-rt :branch b)
+            (alter-var-root #'apps assoc b (json/read-str (sh/slurpFile (sh/getPath apps-rt "config"))))
+        )
+    )
+)
 
 (defn- clone-app [repo app src]
     (must-not (nil? app) :else 400)
@@ -378,4 +424,11 @@
             )
         )
     )
+)
+
+
+(defn init [opts]
+    (init-slaves opts)
+    (init-versions opts)
+    (init-apps opts)
 )

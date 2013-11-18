@@ -370,3 +370,48 @@ env.Textfile('smile.txt', source=['haha'])
         )
     )
 )
+
+(suite "failover"
+    (:fact failover
+        (let [
+            rt (sh/tempdir)
+            opt {:port 11110, :workdir rt}
+            slaves-file (sh/getPath rt "slaves")
+            repo (sh/getPath rt "repository")
+            apps (sh/getPath rt "apps")
+            ]
+            (debug "failover" :opt opt)
+
+            (sh/spitFile slaves-file
+                (json/write-str [["http://localhost:11111/" "staging"]]))
+
+            (sh/spitFile (sh/getPath repo "a" "smile.txt") "haha")
+
+            (git/init apps)
+            (sh/spitFile (sh/getPath apps "config") "{}")
+            (git/commit apps :msg "empty")
+            (git/branch apps :branch "a0")
+            (sh/spitFile (sh/getPath apps "config") (json/write-str {"smile" "hehe"}))
+            (git/commit apps :msg "a0")
+
+            (app/init opt)
+
+            (shutdown-agents)
+            (let [
+                vs (into (sorted-map) (for [
+                    [k v] @@#'app/versions
+                    ]
+                    [k @v]
+                ))
+                ]
+                [@@#'app/slaves vs @#'app/apps]
+            )
+        )
+        :is
+        [
+            {"http://localhost:11111/" "staging"}
+            {"a" ["smile.txt"]}
+            {"master" {}, "a0" {"smile" "hehe"}}
+        ]
+    )
+)
