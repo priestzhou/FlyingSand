@@ -60,7 +60,7 @@
             (json/read-str)
         )
         ]
-        (debug "init-slaves" :slaves (str s))
+        (debug "init-slaves" :slaves (pr-str s))
         (dosync
             (alter slaves into s)
         )

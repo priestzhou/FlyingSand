@@ -15,20 +15,8 @@
 
 (defloggers debug info warn error)
 
-(defn parseArgs [args]
-    (let [arg-spec {
-            :usage "Usage:"
-            :args []
-        }
-        opts (arg/transform->map (arg/parse arg-spec args))
-        ]
-        opts
-    )
-)
-
 (defn -main [& args]
     (warn "start")
-    (parseArgs args)
     (let [opts {
             :resource-root (sh/getPath "publics")
             :slaves (sh/getPath "slaves")
