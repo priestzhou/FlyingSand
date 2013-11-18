@@ -208,7 +208,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         if self.path == '/apps/':
             length = int(self.headers['Content-Length'])
             workitems.put(self.rfile.read(length))
-            self.send_response(200)
+            self.send_response(202)
 
 def fetch_app_ver(p):
     x = p

@@ -85,6 +85,13 @@
                 (handle (partial app/put-app opts params))
             )
 
+            (GET "/deploy" []
+                (handle app/get-deploy)
+            )
+            (POST "/deploy" {:keys [params]}
+                (handle (partial app/start-deploy opts params))
+            )
+
             (route/files "/" {:root (:resource-root opts) :allow-symlinks? true})
             (route/not-found "Not Found")
         )

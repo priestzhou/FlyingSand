@@ -6,6 +6,7 @@
         [clojure.pprint :as pp]
         [clj-time.core :as time]
         [clj-time.coerce :as coer]
+        [org.httpkit.client :as hc]
         [utilities.core :as util]
         [utilities.shutil :as sh]
         [master.git :as git]
@@ -18,6 +19,7 @@
     (:import
         [java.io IOException StringWriter]
         [java.nio.file Path Files CopyOption StandardCopyOption]
+        [java.net URI]
     )
 )
 
@@ -308,5 +310,72 @@
             :headers {"Content-Type" "application/json"}
             :body (json/write-str apps)
         }
+    )
+)
+
+(def ^:private deployment (ref nil))
+(def ^:private deploy-agent (agent nil))
+
+(defn get-deploy []
+    (if-let [d @deployment]
+        {
+            :status 200
+            :headers {"Content-Type" "application/json"}
+            :body (json/write-str d)
+        }
+        {:status 404}
+    )
+)
+
+(defn- deploy [opts app-opt slaves old]
+    (info "new deployment")
+    (dosync
+        (ref-set deployment [])
+    )
+    (doseq [
+        [s] slaves
+        :let [slave-opts (for [
+            [a o] app-opt
+            :when (some #{s} (get o "slaves"))
+            ]
+            (-> o
+                (dissoc "slaves")
+                (assoc "app" a)
+                (assoc "sources" [(:my-repository opts)])
+            )
+        )]
+        :let [_ (debug "deploy" :slave s :slave-opts slave-opts)]
+        :let [slave-url (-> (URI. s) (.resolve "apps/") (str))]
+        :let [r @(hc/put slave-url {:body (json/write-str slave-opts)})]
+        :let [status (:status r)]
+        ]
+        (if (<= 200 status 299)
+            (info "sent to slave" :slave slave-url :response-status status)
+            (warn "sent to slave" :slave slave-url :response-status status)
+        )
+        (dosync
+            (alter deployment conj {:slave s :status status})
+        )
+    )
+    (info "finish deployment")
+)
+
+(defn start-deploy [opts params]
+    (must (:apps params) :else 400)
+    (let [app-opt (json/read-str (:apps params))]
+        (locking #'apps
+            (info "new deployment" :apps app-opt)
+            (must-not (= app-opt apps) :else 409)
+            (let [ss @slaves]
+                (doseq [
+                    [_ a] app-opt
+                    s (:slaves a)
+                    ]
+                    (must (ss s) :else 404)
+                )
+                (send-off deploy-agent (partial deploy opts app-opt ss))
+                {:status 202}
+            )
+        )
     )
 )

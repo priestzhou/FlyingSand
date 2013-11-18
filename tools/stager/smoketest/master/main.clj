@@ -2,17 +2,23 @@
     (:use
         [testing.core :only (suite)]
         [slingshot.slingshot :only (try+ throw+)]
+        [compojure.core :only (defroutes GET PUT POST DELETE HEAD ANY)]
         [logging.core :only (defloggers)]
     )
     (:require
+        [clojure.java.io :as io]
         [clojure.data.json :as json]
         [clj-time.core :as time]
         [clj-time.coerce :as coer]
+        [compojure.handler :as handler]
+        [compojure.route :as route]
+        [org.httpkit.server :as http]
         [org.httpkit.client :as hc]
         [utilities.core :as util]
         [utilities.shutil :as sh]
         [master.web :as mw]
         [master.git :as git]
+        [master.app :as app]
     )
     (:import
         [java.nio.file Path]
@@ -92,9 +98,11 @@
 (defn- tb [test]
     (let [
         rt (sh/tempdir)
-        opt {:port 11110, :workdir rt}
+        opt {:port 11110, :workdir rt
+            :my-repository "http://localhost:11110/repository/"
+        }
         ]
-        (with-open [s (CloseableServer. (mw/start-server opt))]
+        (with-open [master (CloseableServer. (mw/start-server opt))]
             (test rt opt)
         )
     )
@@ -263,6 +271,102 @@ env.Textfile('smile.txt', source=['haha'])
         :eq
         (fn [& _]
             [200 {"master" {}, "a0" {"smile" "hehe"}}]
+        )
+    )
+)
+
+(defn- tb [test]
+    (let [
+        rt (sh/tempdir)
+        opt {:port 11110, :workdir rt
+            :my-repository "http://localhost:11110/repository/"
+        }
+        ]
+        (with-open [master (CloseableServer. (mw/start-server opt))]
+            (test rt opt)
+        )
+    )
+)
+
+(defn- start-slave [req->slave]
+    (http/run-server
+        (handler/api
+            (defroutes app-routes
+                (PUT "/apps/" req
+                    (reset! req->slave
+                        (-> req (:body) (io/reader) (json/read :key-fn keyword))
+                    )
+                    (debug :req->slave req)
+                    {:status 202}
+                )
+                (route/not-found "Not Found")
+            )
+        )
+        {:port 11111}
+    )
+)
+
+(suite "deploy"
+    (:testbench
+        (fn [test]
+            (let [
+                rt (sh/tempdir)
+                opt {:port 11110, :workdir rt
+                    :my-repository "http://localhost:11110/repository/"
+                }
+                req->slave (atom nil)
+                ]
+                (with-open [
+                    master (CloseableServer. (mw/start-server opt))
+                    slave (CloseableServer. (start-slave req->slave))
+                    ]
+                    (test rt opt req->slave)
+                )
+            )
+        )
+    )
+    (:fact deploy:get:no-deployment
+        (fn [& _]
+            (first (resp (http-get "deploy")))
+        )
+        :eq
+        (fn [& _] 404)
+    )
+    (:fact deploy:post
+        (fn [rt opt req->slave]
+            (let [
+                slave-url "http://localhost:11111/"
+                app-opt {
+                    "app" {
+                        :slaves [slave-url]
+                        :ver "ver"
+                        :todo "cheese"
+                    }
+                }
+                ]
+                (with-redefs [
+                    app/slaves (ref {slave-url "staging"})
+                    app/versions (ref {"ver" ["smile.txt"]})
+                    app/apps (ref app-opt)
+                    ]
+                    (http-post "deploy" :apps (json/write-str app-opt))
+                    (Thread/sleep 1000)
+                    (let [
+                        req->slave @req->slave
+                        resp<-master (resp (http-get "deploy"))
+                        ]
+                        [req->slave resp<-master]
+                    )
+                )
+            )
+        )
+        :eq
+        (fn [& _]
+            [
+                [{:app "app" :ver "ver" :todo "cheese"
+                    :sources ["http://localhost:11110/repository/"]}]
+                [200 [{"slave" "http://localhost:11111/", "status" 202}]]
+            ]
         )
     )
 )
