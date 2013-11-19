@@ -24,13 +24,42 @@
 ])
 
 (def slaves (atom []))
+(def apps (atom {}))
+
+(defn- apps-contains-slave [slave apps]
+    (for [
+        [app cfg] apps
+        :let [xs (get cfg "slaves")]
+        :when (some #{slave} xs)
+        ]
+        app
+    )
+)
+
+(defn- slave-not-in-any-apps [slaves apps]
+    (for [
+        [s] slaves
+        :when (empty? (apps-contains-slave s apps))
+        ]
+        s
+    )
+)
 
 (defn- refresh-table [_ _ _ _]
-    (let [ss @slaves]
-        (dom/set-html! (dom/by-id "slaves-table")
+    (let [
+        slaves @slaves
+        apps @apps
+        ]
+        (dom/set-html! (dom/by-id "dashboard-table")
             (html
-                (for [[k] ss]
-                    [:tr [:td k]]
+                (concat
+                    (for [
+                        [s] slaves
+                        app (apps-contains-slave s apps)
+                        ]
+                        [:tr [:td s] [:td app]]
+                    )
+                    (slave-not-in-any-apps slaves apps)
                 )
             )
         )
@@ -63,11 +92,27 @@
     )
 )
 
+(defn- switch-slave-type [ty]
+    (-> "slave-type"
+        (dom/by-id)
+        (dom/set-html! (str (name ty) " <span class=\"caret\"></span>"))
+    )
+)
+
 (defn ^:export on-load []
-    (add-watch slaves :refresh refresh-table)
+    (add-watch slaves :slaves refresh-table)
+    (add-watch apps :apps refresh-table)
     (fetch-slaves)
     (-> "slave-add-btn"
         (dom/by-id)
         (evt/listen! :click add-slave)
+    )
+    (-> "slave-type-staging"
+        (dom/by-id)
+        (evt/listen! :click (partial switch-slave-type :staging))
+    )
+    (-> "slave-type-production"
+        (dom/by-id)
+        (evt/listen! :click (partial switch-slave-type :production))
     )
 )
