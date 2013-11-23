@@ -138,7 +138,7 @@
                 :headers {"Content-Type" "application/json"}
                 :body (json/write-str w)
             }
-            (= r :busy) {:status 102}
+            (= r :busy) {:status 202}
             :else (do
                 (send remote-receptionist
                     (fn [_]
@@ -146,7 +146,7 @@
                         :busy
                     )
                 )
-                {:status 102}
+                {:status 202}
             )
         )
     )
@@ -234,10 +234,10 @@
         res (dosync
             (if-let [ag (@versions ver)]
                 @ag
-                (let [ag (agent {:status 102})]
+                (let [ag (agent {:status 202})]
                     (alter versions assoc ver ag)
                     (send-off ag (partial build opts ver))
-                    {:status 102}
+                    {:status 202}
                 )
             )
         )

@@ -90,12 +90,28 @@
                     <h4 class="modal-title">Add an app</h4>
                 </div>
                 <form class="modal-body form-horizontal" role="form">
-                    <div class="form-group">
-                        <label for="app-name" class="col-lg-1">App: </label>
-                        <div class="col-lg-11">
+                    <fieldset class="form-group">
+                        <label for="app-name" class="col-lg-1 control-label">App: </label>
+                        <div class="col-lg-10">
                             <input id="app-name" type="text" class="form-control">
                         </div>
-                    </div>
+                        <span class="col-lg-1 text-success glyphicon glyphicon-ok"></span>
+                    </fieldset>
+                    <fieldset class="form-group">
+                        <label for="version" class="col-lg-2 control-label">Version: </label>
+                        <div class="col-lg-7">
+                            <input id="version" type="text" class="form-control" placeholder="commit">
+                        </div>
+                        <div class="col-lg-2 btn-group">
+                            <button id="pull-branches-btn" type="button" class="btn btn-primary" style="border:0px" data-toggle="dropdown">
+                            Pull Branches <span class="caret"></span>
+                            </button>
+                            <ul id="pull-branches-lst" class="dropdown-menu text-left" role="menu">
+                                <li><a href="#">something</a></li>
+                                <li><a href="#">anything</a></li>
+                            </ul>
+                        </div>
+                    </fieldset>
                 </form>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

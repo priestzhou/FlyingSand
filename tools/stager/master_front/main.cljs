@@ -18,6 +18,10 @@
     (dom/log (pr-str resp))
 )
 
+(defn- now []
+    (Date/now)
+)
+
 (def ^:private pages [
     [:home "nav-docs" "doc-page"]
     [:slaves "nav-slaves" "slaves-page"]
@@ -99,6 +103,18 @@
     )
 )
 
+(defn- pull-branches' [ts]
+    (ajax/GET (ajax/uri-with-params "remote" {:timestamp ts}) {
+            :response-format :json
+            :handler (fn [resp] (dom/log resp))
+            :error-handler handle-error
+        })
+)
+
+(defn- pull-branches []
+    (pull-branches' (now))
+)
+
 (defn ^:export on-load []
     (add-watch slaves :slaves refresh-table)
     (add-watch apps :apps refresh-table)
@@ -114,5 +130,9 @@
     (-> "slave-type-production"
         (dom/by-id)
         (evt/listen! :click (partial switch-slave-type :production))
+    )
+    (-> "pull-branches-btn"
+        (dom/by-id)
+        (evt/listen! :click pull-branches)
     )
 )

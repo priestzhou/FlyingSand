@@ -123,7 +123,7 @@
         :eq
         (fn [& _]
             [
-                [201 nil]
+                [201 {}]
                 [200 [["http://localhost:11111/" "staging"]]]
             ]
         )
@@ -135,7 +135,7 @@
     (let [r (resp (fire))
         ]
         (cond
-            (= (first r) 102) (recur fire)
+            (= (first r) 202) (recur fire)
             (= (first r) 200) r
             :else (throw+ r)
         )
@@ -409,7 +409,7 @@ env.Textfile('smile.txt', source=['haha'])
         )
         :is
         [
-            {"http://localhost:11111/" "staging"}
+            {"http://localhost:11111/" :staging}
             {"a" ["smile.txt"]}
             {"master" {}, "a0" {"smile" "hehe"}}
         ]
